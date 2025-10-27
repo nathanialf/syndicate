@@ -47,6 +47,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -154,7 +155,7 @@ fun FeedListScreen(
         ) {
             // Top bar only for full screen mode
             if (!isSidebarMode) {
-                AppTopBar(title = "Feeds")
+                AppTopBar(title = "Syndicate", subtitle = "Feeds")
             }
             
             // Feed list content
@@ -296,10 +297,11 @@ private fun FeedListContent(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 12.dp, vertical = 4.dp)
+                                .clip(RoundedCornerShape(12.dp))
                                 .clickable { onAllFeedsClick() },
                             shape = RoundedCornerShape(12.dp),
                             color = if (isAllFeedsSelected) {
-                                MaterialTheme.colorScheme.secondaryContainer
+                                MaterialTheme.colorScheme.primaryContainer
                             } else {
                                 MaterialTheme.colorScheme.surface
                             },
@@ -311,7 +313,7 @@ private fun FeedListContent(
                                         text = "All Feeds",
                                         style = MaterialTheme.typography.titleMedium,
                                         color = if (isAllFeedsSelected) {
-                                            MaterialTheme.colorScheme.onSecondaryContainer
+                                            MaterialTheme.colorScheme.onPrimaryContainer
                                         } else {
                                             MaterialTheme.colorScheme.onSurface
                                         }
@@ -322,7 +324,7 @@ private fun FeedListContent(
                                         imageVector = Icons.Default.RssFeed,
                                         contentDescription = null,
                                         tint = if (isAllFeedsSelected) {
-                                            MaterialTheme.colorScheme.onSecondaryContainer
+                                            MaterialTheme.colorScheme.onPrimaryContainer
                                         } else {
                                             MaterialTheme.colorScheme.outline
                                         },
@@ -342,7 +344,7 @@ private fun FeedListContent(
                                     text = "All Feeds",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = if (isAllFeedsSelected) {
-                                        MaterialTheme.colorScheme.onSecondaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     } else {
                                         MaterialTheme.colorScheme.onSurface
                                     }
@@ -353,7 +355,7 @@ private fun FeedListContent(
                                     imageVector = Icons.Default.RssFeed,
                                     contentDescription = null,
                                     tint = if (isAllFeedsSelected) {
-                                        MaterialTheme.colorScheme.onSecondaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     } else {
                                         MaterialTheme.colorScheme.outline
                                     },
@@ -362,7 +364,7 @@ private fun FeedListContent(
                             },
                             colors = androidx.compose.material3.ListItemDefaults.colors(
                                 containerColor = if (isAllFeedsSelected) {
-                                    MaterialTheme.colorScheme.secondaryContainer
+                                    MaterialTheme.colorScheme.primaryContainer
                                 } else {
                                     MaterialTheme.colorScheme.surface
                                 }
@@ -380,7 +382,7 @@ private fun FeedListContent(
                 item {
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 8.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant
+                        color = MaterialTheme.colorScheme.outline
                     )
                 }
             }
@@ -522,8 +524,8 @@ private fun ExpandableFabMenu(
         // Main FAB
         FloatingActionButton(
             onClick = onToggle,
-            containerColor = if (expanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer,
-            contentColor = if (expanded) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer,
+            containerColor = if (expanded) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiaryContainer,
+            contentColor = if (expanded) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onTertiaryContainer,
             shape = RoundedCornerShape(cornerRadius),
             elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(
                 defaultElevation = 6.dp,
@@ -547,8 +549,8 @@ private fun FabMenuItem(
 ) {
     ExtendedFloatingActionButton(
         onClick = onClick,
-        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         shape = RoundedCornerShape(50),
         elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(
             defaultElevation = 6.dp,
@@ -608,6 +610,7 @@ private fun SwipeToDeleteFeedItem(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 4.dp)
+                        .clip(RoundedCornerShape(12.dp))
                         .clickable { onFeedClick(feed.id) },
                     shape = RoundedCornerShape(12.dp),
                     color = if (isSelected) {
@@ -710,13 +713,13 @@ private fun SwipeBackground(
 ) {
     val backgroundColor = when (swipeDirection) {
         SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.errorContainer
-        SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.secondaryContainer
+        SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.tertiaryContainer
         else -> MaterialTheme.colorScheme.surface
     }
     
     val iconColor = when (swipeDirection) {
         SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.onErrorContainer
-        SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.onSecondaryContainer
+        SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.onTertiaryContainer
         else -> MaterialTheme.colorScheme.onSurface
     }
     
@@ -787,7 +790,7 @@ private fun FaviconIcon(
     val iconTint = if (isSelected) {
         MaterialTheme.colorScheme.onSecondaryContainer
     } else if (isAvailable) {
-        MaterialTheme.colorScheme.primary
+        MaterialTheme.colorScheme.tertiary
     } else {
         MaterialTheme.colorScheme.outline
     }

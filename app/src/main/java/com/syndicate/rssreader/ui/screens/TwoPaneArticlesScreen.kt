@@ -24,6 +24,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,10 +37,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.syndicate.rssreader.R
 import com.syndicate.rssreader.ui.common.AppTopBar
 import com.syndicate.rssreader.ui.common.LayoutConstants
 import com.syndicate.rssreader.ui.theme.CormorantGaramond
+import com.syndicate.rssreader.ui.viewmodel.ArticleListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +55,13 @@ fun TwoPaneArticlesScreen(
     var topBarVisible by remember { mutableStateOf(true) }
     var showSettings by remember { mutableStateOf(false) }
     
+    val articleViewModel: ArticleListViewModel = hiltViewModel()
+    val currentFeed by articleViewModel.currentFeed.collectAsState()
+    
+    LaunchedEffect(selectedFeedId) {
+        articleViewModel.setFeedId(selectedFeedId)
+    }
+    
     Row(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -59,7 +70,7 @@ fun TwoPaneArticlesScreen(
             modifier = Modifier
                 .width(LayoutConstants.SidebarWidth)
                 .fillMaxHeight(),
-            color = MaterialTheme.colorScheme.background
+            color = MaterialTheme.colorScheme.surface
         ) {
             Column {
                 // Top padding for system bar  
@@ -152,7 +163,12 @@ fun TwoPaneArticlesScreen(
                             )
                     ) {
                         AppTopBar(
-                            title = if (showSettings) "Settings" else stringResource(R.string.app_name),
+                            title = "Syndicate",
+                            subtitle = if (showSettings) {
+                                "Settings"
+                            } else {
+                                currentFeed?.title ?: "All Articles"
+                            },
                             showSettingsButton = !showSettings,
                             onSettingsClick = { showSettings = true },
                             showBackButton = showSettings,

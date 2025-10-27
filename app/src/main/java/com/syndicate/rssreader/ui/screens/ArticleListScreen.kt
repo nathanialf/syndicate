@@ -119,10 +119,11 @@ fun ArticleListScreen(
                     exit = slideOutVertically(targetOffsetY = { -it })
                 ) {
                     AppTopBar(
-                        title = if (feedId != null) {
+                        title = "Syndicate",
+                        subtitle = if (feedId != null) {
                             currentFeed?.title ?: "Feed Articles"
                         } else {
-                            stringResource(R.string.app_name)
+                            "All Articles"
                         },
                         showBackButton = feedId != null,
                         onBackClick = onBackClick
