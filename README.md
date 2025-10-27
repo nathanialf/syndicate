@@ -8,16 +8,18 @@ A modern Android RSS reader built with Jetpack Compose and Material 3 design, fe
 - **Modern Material 3 Design**: Clean, intuitive interface following Material Design guidelines
 - **Responsive Layout**: Two-pane layout for tablets, single-pane for phones
 - **Feed Management**: Add, organize, and delete RSS feeds with swipe gestures
+- **Feed Groups/Folders**: Organize feeds into custom groups with full CRUD operations
 - **Favicon Support**: Automatic favicon loading for visual feed identification
 - **OPML Export**: Export your feed subscriptions in OPML format
+- **OPML Import**: Import feed subscriptions from OPML files with duplicate detection
 - **Dark/Light Theme**: System-aware theming with manual override options
-- **Smooth Animations**: Polished transitions and micro-interactions
+- **Scroll-Based UI Animation**: Top app bar and FAB animate away on scroll for immersive reading
+- **Smart Duplicate Detection**: HTTP/HTTPS URL normalization prevents duplicate feeds
 - **Material 3 List-Detail Layout**: Selected feeds highlighted with proper Material colors
 - **Swipe Gestures**: Swipe feeds to delete or add to groups with animated feedback
+- **Enhanced Error Reporting**: Detailed import error messages with specific failure reasons
 
 ### 🚧 Planned Features
-- **Feed Groups/Folders**: Organize feeds into custom groups and folders
-- **OPML Import**: Import feed subscriptions from OPML files
 - **Article Reading**: Full article content display with WebView
 - **Read/Unread Status**: Mark articles as read/unread with swipe gestures
 - **Pull-to-Refresh**: Manual refresh to fetch new articles
@@ -47,8 +49,10 @@ A modern Android RSS reader built with Jetpack Compose and Material 3 design, fe
 
 ## Usage
 
-1. **Adding Feeds**: Tap the + button to add RSS feeds by URL
-2. **Feed Organization**: Swipe feeds to delete or organize into groups
-3. **Reading Articles**: Tap any feed to view its articles
-4. **Export**: Use Settings > Export OPML to backup your feed list
-5. **Theme**: Access theme settings through the gear icon
+1. **Adding Feeds**: Tap the + button to add RSS feeds by URL or import from OPML files
+2. **Feed Organization**: Swipe feeds to delete or organize into custom groups
+3. **Group Management**: Create, edit, and delete feed groups for better organization
+4. **OPML Import**: Import feed subscriptions with intelligent duplicate detection
+5. **Reading Articles**: Tap any feed to view its articles with immersive scroll animations
+6. **Export**: Use Settings > Export OPML to backup your feed list
+7. **Theme**: Access theme settings through the gear icon

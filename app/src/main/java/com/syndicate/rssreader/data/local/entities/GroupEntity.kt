@@ -20,6 +20,9 @@ data class GroupEntity(
     @ColumnInfo(name = "is_default", defaultValue = "0")
     val isDefault: Boolean = false,
     
+    @ColumnInfo(name = "notifications_enabled", defaultValue = "0")
+    val notificationsEnabled: Boolean = false,
+    
     @ColumnInfo(name = "created_at")
     val createdAt: Long = System.currentTimeMillis()
 ) {
@@ -27,6 +30,7 @@ data class GroupEntity(
         id = id,
         name = name,
         isDefault = isDefault,
+        notificationsEnabled = notificationsEnabled,
         createdAt = createdAt
     )
 }

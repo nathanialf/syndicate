@@ -35,6 +35,9 @@ data class FeedEntity(
     @ColumnInfo(name = "is_available", defaultValue = "1")
     val isAvailable: Boolean = true,
     
+    @ColumnInfo(name = "notifications_enabled", defaultValue = "0")
+    val notificationsEnabled: Boolean = false,
+    
     @ColumnInfo(name = "created_at")
     val createdAt: Long = System.currentTimeMillis()
 ) {
@@ -47,6 +50,7 @@ data class FeedEntity(
         faviconUrl = faviconUrl,
         lastFetched = lastFetched,
         isAvailable = isAvailable,
+        notificationsEnabled = notificationsEnabled,
         createdAt = createdAt
     )
 }

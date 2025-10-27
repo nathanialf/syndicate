@@ -23,7 +23,7 @@ import com.syndicate.rssreader.data.local.entities.ReadStatusEntity
         ReadStatusEntity::class,
         FeedGroupCrossRef::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -38,13 +38,15 @@ abstract class RssDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: RssDatabase? = null
         
+        
         fun getDatabase(context: Context): RssDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     RssDatabase::class.java,
                     "rss_database"
-                ).build()
+                )
+                .build()
                 INSTANCE = instance
                 instance
             }

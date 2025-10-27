@@ -52,6 +52,7 @@ import com.syndicate.rssreader.ui.common.LayoutConstants
 import com.syndicate.rssreader.ui.theme.CormorantGaramond
 import com.syndicate.rssreader.ui.viewmodel.ArticleListViewModel
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -59,6 +60,8 @@ import java.util.Locale
 @Composable
 fun ArticleListScreen(
     feedId: Long? = null,
+    groupId: Long? = null,
+    forceAllArticles: Boolean = false,
     onBackClick: () -> Unit = {},
     onScrollDirectionChanged: (Boolean) -> Unit = {},
     isSidebarMode: Boolean = false,
@@ -84,8 +87,21 @@ fun ArticleListScreen(
         }
     )
     
-    LaunchedEffect(feedId) {
-        viewModel.setFeedId(feedId)
+    LaunchedEffect(feedId, groupId, forceAllArticles) {
+        when {
+            feedId != null -> viewModel.setFeedId(feedId)
+            groupId != null -> viewModel.setGroupId(groupId)
+            forceAllArticles -> viewModel.setFeedId(null) // Explicitly show all articles
+            else -> {
+                // When no specific feed or group is selected, check for default group
+                val defaultGroup = viewModel.getDefaultGroup()
+                if (defaultGroup != null) {
+                    viewModel.setGroupId(defaultGroup.id)
+                } else {
+                    viewModel.setFeedId(null) // Show all articles
+                }
+            }
+        }
     }
     
     if (isSidebarMode) {
@@ -120,12 +136,12 @@ fun ArticleListScreen(
                 ) {
                     AppTopBar(
                         title = "Syndicate",
-                        subtitle = if (feedId != null) {
-                            currentFeed?.title ?: "Feed Articles"
-                        } else {
-                            "All Articles"
+                        subtitle = when {
+                            feedId != null -> currentFeed?.title ?: "Feed Articles"
+                            groupId != null -> currentFeed?.title ?: "Group Articles"
+                            else -> currentFeed?.title ?: "All Articles"
                         },
-                        showBackButton = feedId != null,
+                        showBackButton = feedId != null || groupId != null,
                         onBackClick = onBackClick
                     )
                 }
@@ -259,8 +275,20 @@ private fun ArticleListContent(
 }
 
 private fun formatDate(timestamp: Long): String {
-    val dateFormat = SimpleDateFormat("MMM dd", Locale.getDefault())
-    return dateFormat.format(Date(timestamp))
+    val date = Date(timestamp)
+    val calendar = Calendar.getInstance()
+    val currentYear = calendar.get(Calendar.YEAR)
+    
+    calendar.time = date
+    val articleYear = calendar.get(Calendar.YEAR)
+    
+    val dateFormat = if (articleYear == currentYear) {
+        SimpleDateFormat("MMM dd", Locale.getDefault())
+    } else {
+        SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+    }
+    
+    return dateFormat.format(date)
 }
 
 private fun parseHtmlText(html: String): String {

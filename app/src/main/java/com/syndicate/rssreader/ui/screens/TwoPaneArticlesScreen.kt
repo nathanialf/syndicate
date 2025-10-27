@@ -49,17 +49,36 @@ import com.syndicate.rssreader.ui.viewmodel.ArticleListViewModel
 fun TwoPaneArticlesScreen(
     onScrollDirectionChanged: (Boolean) -> Unit = {},
     onSettingsClick: () -> Unit = {},
-    themeViewModel: com.syndicate.rssreader.ui.viewmodel.ThemeViewModel? = null
+    themeViewModel: com.syndicate.rssreader.ui.viewmodel.ThemeViewModel? = null,
+    onNavigateToGroupManagement: () -> Unit = {}
 ) {
     var selectedFeedId by remember { mutableStateOf<Long?>(null) }
+    var selectedGroupId by remember { mutableStateOf<Long?>(null) }
+    var forceAllArticles by remember { mutableStateOf(false) }
     var topBarVisible by remember { mutableStateOf(true) }
     var showSettings by remember { mutableStateOf(false) }
     
     val articleViewModel: ArticleListViewModel = hiltViewModel()
+    val feedListViewModel: com.syndicate.rssreader.ui.viewmodel.FeedListViewModel = hiltViewModel()
     val currentFeed by articleViewModel.currentFeed.collectAsState()
     
-    LaunchedEffect(selectedFeedId) {
-        articleViewModel.setFeedId(selectedFeedId)
+    // Load default group on startup if no specific selection and not forcing all articles
+    LaunchedEffect(Unit) {
+        if (selectedFeedId == null && selectedGroupId == null && !forceAllArticles) {
+            val defaultGroup = feedListViewModel.getDefaultGroup()
+            if (defaultGroup != null) {
+                selectedGroupId = defaultGroup.id
+            }
+        }
+    }
+    
+    LaunchedEffect(selectedFeedId, selectedGroupId, forceAllArticles) {
+        when {
+            selectedFeedId != null -> articleViewModel.setFeedId(selectedFeedId)
+            selectedGroupId != null -> articleViewModel.setGroupId(selectedGroupId)
+            forceAllArticles -> articleViewModel.setFeedId(null) // Explicitly show all articles
+            else -> articleViewModel.setFeedId(null) // Show all articles
+        }
     }
     
     Row(
@@ -85,14 +104,18 @@ fun TwoPaneArticlesScreen(
                 FeedListScreen(
                     onFeedClick = { feedId ->
                         selectedFeedId = feedId
+                        selectedGroupId = null
+                        forceAllArticles = false
                         showSettings = false
                     },
                     onScrollDirectionChanged = { /* Feeds don't control top bar in this layout */ },
                     isSidebarMode = true,
                     selectedFeedId = selectedFeedId,
-                    showAllFeedsOption = true,
+                    selectedGroupId = selectedGroupId,
                     onAllFeedsClick = { 
                         selectedFeedId = null
+                        selectedGroupId = null
+                        forceAllArticles = true
                         showSettings = false
                     },
                     onDeleteFeed = { deletedFeedId ->
@@ -101,7 +124,21 @@ fun TwoPaneArticlesScreen(
                             selectedFeedId = null
                         }
                         showSettings = false
-                    }
+                    },
+                    onGroupClick = { groupId ->
+                        selectedGroupId = groupId
+                        selectedFeedId = null
+                        forceAllArticles = false
+                        showSettings = false
+                    },
+                    onDeleteGroup = { deletedGroupId ->
+                        // If the currently selected group is deleted, go back to "All Feeds"
+                        if (selectedGroupId == deletedGroupId) {
+                            selectedGroupId = null
+                        }
+                        showSettings = false
+                    },
+                    onNavigateToGroupManagement = onNavigateToGroupManagement
                 )
             }
         }
@@ -140,6 +177,8 @@ fun TwoPaneArticlesScreen(
                     
                     ArticleListScreen(
                         feedId = selectedFeedId,
+                        groupId = selectedGroupId,
+                        forceAllArticles = forceAllArticles,
                         onScrollDirectionChanged = { isScrollingDown ->
                             topBarVisible = !isScrollingDown
                             onScrollDirectionChanged(isScrollingDown)

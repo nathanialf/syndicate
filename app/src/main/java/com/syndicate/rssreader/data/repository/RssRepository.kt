@@ -4,14 +4,21 @@ import com.syndicate.rssreader.data.local.dao.ArticleDao
 import com.syndicate.rssreader.data.local.dao.FeedDao
 import com.syndicate.rssreader.data.local.dao.GroupDao
 import com.syndicate.rssreader.data.local.dao.ReadStatusDao
+import com.syndicate.rssreader.data.local.entities.FeedEntity
+import com.syndicate.rssreader.data.local.entities.FeedGroupCrossRef
+import com.syndicate.rssreader.data.local.entities.GroupEntity
 import com.syndicate.rssreader.data.local.entities.ReadStatusEntity
 import com.syndicate.rssreader.data.local.toDomain
 import com.syndicate.rssreader.data.models.Article
 import com.syndicate.rssreader.data.models.ArticleFilter
 import com.syndicate.rssreader.data.models.Feed
 import com.syndicate.rssreader.data.models.Group
+import com.syndicate.rssreader.data.models.OpmlImportResult
+import com.syndicate.rssreader.data.models.OpmlFeed
 import com.syndicate.rssreader.data.remote.RssFetcher
 import com.syndicate.rssreader.data.remote.RssParser
+import com.syndicate.rssreader.data.remote.OpmlParser
+import java.io.InputStream
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -24,7 +31,8 @@ class RssRepository @Inject constructor(
     private val articleDao: ArticleDao,
     private val readStatusDao: ReadStatusDao,
     private val rssFetcher: RssFetcher,
-    private val rssParser: RssParser
+    private val rssParser: RssParser,
+    private val opmlParser: OpmlParser
 ) {
     
     fun getAllFeeds(): Flow<List<Feed>> = 
@@ -32,6 +40,9 @@ class RssRepository @Inject constructor(
     
     fun getAllGroups(): Flow<List<Group>> = 
         groupDao.getAllGroups().map { entities -> entities.map { it.toDomain() } }
+    
+    suspend fun getDefaultGroup(): Group? = 
+        groupDao.getDefaultGroup()?.toDomain()
     
     fun getFeedsByGroup(groupId: Long): Flow<List<Feed>> = 
         feedDao.getFeedsByGroup(groupId).map { entities -> entities.map { it.toDomain() } }
@@ -44,9 +55,6 @@ class RssRepository @Inject constructor(
     
     suspend fun getGroupById(groupId: Long): Group? = 
         groupDao.getGroupById(groupId)?.toDomain()
-    
-    suspend fun getDefaultGroup(): Group? = 
-        groupDao.getDefaultGroup()?.toDomain()
     
     suspend fun insertFeed(feed: Feed): Long = 
         feedDao.insertFeed(feed.toEntity())
@@ -127,6 +135,9 @@ class RssRepository @Inject constructor(
     suspend fun getUnreadCountForGroup(groupId: Long): Int = 
         groupDao.getUnreadCountForGroup(groupId)
     
+    suspend fun getFeedCountForGroup(groupId: Long): Int = 
+        groupDao.getFeedCountForGroup(groupId)
+    
     suspend fun updateFeedGroups(feedId: Long, groupIds: List<Long>) {
         groupDao.updateFeedGroups(feedId, groupIds)
     }
@@ -196,6 +207,213 @@ class RssRepository @Inject constructor(
             Result.success(Unit)
         } catch (e: Exception) {
             updateFeedAvailability(feedId, false)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun createGroup(name: String, isDefault: Boolean = false, notificationsEnabled: Boolean = false): Long {
+        val group = GroupEntity(
+            name = name,
+            isDefault = false, // Initially set to false
+            notificationsEnabled = notificationsEnabled
+        )
+        val groupId = groupDao.insertGroup(group)
+        
+        // If this group should be default, use the transaction method
+        if (isDefault) {
+            groupDao.setDefaultGroup(groupId)
+        }
+        
+        return groupId
+    }
+    
+    suspend fun updateGroup(groupId: Long, name: String, isDefault: Boolean, notificationsEnabled: Boolean) {
+        val existingGroup = groupDao.getGroupById(groupId)
+        existingGroup?.let { group ->
+            val updatedGroup = group.copy(
+                name = name,
+                isDefault = false, // Initially set to false
+                notificationsEnabled = notificationsEnabled
+            )
+            groupDao.updateGroup(updatedGroup)
+            
+            // If this group should be default, use the transaction method
+            if (isDefault) {
+                groupDao.setDefaultGroup(groupId)
+            }
+        }
+    }
+    
+    suspend fun deleteGroup(groupId: Long) {
+        // Check if this is the default group before deleting
+        val groupToDelete = groupDao.getGroupById(groupId)
+        val wasDefault = groupToDelete?.isDefault == true
+        
+        // Remove all feed-group relationships (preserves the feeds themselves)
+        groupDao.removeAllFeedsFromGroup(groupId)
+        
+        // Delete the group
+        groupDao.deleteGroupById(groupId)
+        
+        // If the deleted group was default, clear all defaults (revert to "All Feeds")
+        if (wasDefault) {
+            groupDao.clearDefaultGroup()
+        }
+    }
+    
+    suspend fun getFeedsForGroup(groupId: Long): List<FeedEntity> {
+        return feedDao.getFeedsForGroup(groupId)
+    }
+    
+    suspend fun updateFeedGroups(feedIds: List<Long>, groupIds: List<Long>) {
+        feedIds.forEach { feedId ->
+            groupDao.updateFeedGroups(feedId, groupIds)
+        }
+    }
+    
+    suspend fun updateGroupFeeds(groupId: Long, feedIds: List<Long>) {
+        groupDao.removeAllFeedsFromGroup(groupId)
+        val crossRefs = feedIds.map { FeedGroupCrossRef(it, groupId) }
+        groupDao.insertFeedGroupCrossRefs(crossRefs)
+    }
+    
+    suspend fun updateFeedNotifications(feedId: Long, enabled: Boolean) {
+        feedDao.updateFeedNotifications(feedId, enabled)
+    }
+    
+    suspend fun updateGroupNotifications(groupId: Long, enabled: Boolean) {
+        groupDao.updateGroupNotifications(groupId, enabled)
+    }
+    
+    fun getFeedsWithNotificationsEnabled() = feedDao.getFeedsWithNotificationsEnabled()
+    
+    fun getGroupsWithNotificationsEnabled() = groupDao.getGroupsWithNotificationsEnabled()
+    
+    suspend fun importOpml(inputStream: InputStream): OpmlImportResult {
+        val parseResult = opmlParser.parseOpml(inputStream)
+        
+        // Check for existing feeds to identify duplicates
+        val existingFeeds = feedDao.getAllFeedUrls()
+        val normalizedExistingFeeds = existingFeeds.map { normalizeUrl(it) }
+        
+        val duplicates = parseResult.feedsToImport.filter { opmlFeed ->
+            val normalizedOpmlUrl = normalizeUrl(opmlFeed.url)
+            normalizedExistingFeeds.any { it.equals(normalizedOpmlUrl, ignoreCase = true) }
+        }.map { it.url }
+        
+        return parseResult.copy(duplicateFeeds = duplicates)
+    }
+    
+    private fun normalizeUrl(url: String): String {
+        // Remove protocol to treat http and https as the same
+        return url.removePrefix("https://").removePrefix("http://")
+    }
+    
+    suspend fun executeOpmlImport(importResult: OpmlImportResult, skipDuplicates: Boolean = true): Result<String> {
+        return try {
+            val groupIdMap = mutableMapOf<String, Long>()
+            val failedFeeds = mutableListOf<String>()
+            
+            // Create groups first
+            for (groupName in importResult.groupsToCreate) {
+                val existingGroup = groupDao.getGroupByName(groupName)
+                
+                if (existingGroup != null) {
+                    groupIdMap[groupName] = existingGroup.id
+                } else {
+                    val groupId = groupDao.insertGroup(
+                        GroupEntity(
+                            name = groupName,
+                            isDefault = false,
+                            notificationsEnabled = false,
+                            createdAt = System.currentTimeMillis()
+                        )
+                    )
+                    groupIdMap[groupName] = groupId
+                }
+            }
+            
+            var successCount = 0
+            var skipCount = 0
+            var errorCount = 0
+            
+            // Import feeds
+            for (opmlFeed in importResult.feedsToImport) {
+                try {
+                    // Skip duplicates if requested
+                    if (skipDuplicates && importResult.duplicateFeeds.contains(opmlFeed.url)) {
+                        skipCount++
+                        continue
+                    }
+                    
+                    // Try to fetch and validate the feed
+                    val feedContentResult = rssFetcher.fetchFeed(opmlFeed.url)
+                    if (feedContentResult.isFailure) {
+                        errorCount++
+                        failedFeeds.add("${opmlFeed.title} (${opmlFeed.url}): ${feedContentResult.exceptionOrNull()?.message ?: "Failed to fetch"}")
+                        continue
+                    }
+                    
+                    val feedContent = feedContentResult.getOrThrow()
+                    val parsedFeed = rssParser.parseFeed(feedContent, opmlFeed.url)
+                    
+                    // Create feed entity
+                    val feedEntity = FeedEntity(
+                        url = opmlFeed.url,
+                        title = parsedFeed.title.ifBlank { opmlFeed.title },
+                        description = parsedFeed.description ?: opmlFeed.description,
+                        siteUrl = parsedFeed.siteUrl,
+                        faviconUrl = parsedFeed.faviconUrl,
+                        lastFetched = System.currentTimeMillis(),
+                        isAvailable = true,
+                        notificationsEnabled = false,
+                        createdAt = System.currentTimeMillis()
+                    )
+                    
+                    val feedId = feedDao.insertFeed(feedEntity)
+                    
+                    // Assign to group if specified
+                    opmlFeed.groupName?.let { groupName ->
+                        groupIdMap[groupName]?.let { groupId ->
+                            groupDao.insertFeedGroupCrossRef(
+                                FeedGroupCrossRef(feedId, groupId)
+                            )
+                        }
+                    }
+                    
+                    // Parse and store articles
+                    val articles = rssParser.parseArticles(feedContent, feedId)
+                    if (articles.isNotEmpty()) {
+                        articleDao.insertArticles(articles)
+                    }
+                    
+                    successCount++
+                } catch (e: Exception) {
+                    errorCount++
+                    failedFeeds.add("${opmlFeed.title} (${opmlFeed.url}): ${e.message ?: "Unknown error"}")
+                }
+            }
+            
+            val message = buildString {
+                append("Import completed: ")
+                append("$successCount feeds imported")
+                if (skipCount > 0) append(", $skipCount duplicates skipped")
+                if (errorCount > 0) {
+                    append(", $errorCount failed")
+                    if (failedFeeds.isNotEmpty()) {
+                        append("\n\nFailed feeds:")
+                        failedFeeds.take(10).forEach { failedFeed ->
+                            append("\n• $failedFeed")
+                        }
+                        if (failedFeeds.size > 10) {
+                            append("\n... and ${failedFeeds.size - 10} more")
+                        }
+                    }
+                }
+            }
+            
+            Result.success(message)
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }

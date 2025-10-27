@@ -16,6 +16,7 @@ import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,8 +34,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.syndicate.rssreader.ui.screens.ArticleListScreen
 import com.syndicate.rssreader.ui.screens.FeedListScreen
+import com.syndicate.rssreader.ui.screens.GroupManagementScreen
 import com.syndicate.rssreader.ui.screens.SettingsScreen
 import com.syndicate.rssreader.ui.screens.TwoPaneArticlesScreen
 
@@ -68,7 +71,10 @@ fun RssNavigation(
                         bottomBarVisible = !isScrollingDown
                         topBarVisible = !isScrollingDown
                     },
-                    themeViewModel = themeViewModel
+                    themeViewModel = themeViewModel,
+                    onNavigateToGroupManagement = {
+                        navController.navigate(Screen.GroupManagement.route)
+                    }
                 )
             }
             
@@ -82,7 +88,27 @@ fun RssNavigation(
                         bottomBarVisible = !isScrollingDown
                         topBarVisible = !isScrollingDown
                     },
-                    themeViewModel = themeViewModel
+                    themeViewModel = themeViewModel,
+                    onNavigateToGroupManagement = {
+                        navController.navigate(Screen.GroupManagement.route)
+                    }
+                )
+            }
+            
+            composable(
+                route = "articles/group/{groupId}",
+                arguments = listOf(navArgument("groupId") { type = NavType.LongType })
+            ) { 
+                // Redirect to main articles view in wide screen mode
+                TwoPaneArticlesScreen(
+                    onScrollDirectionChanged = { isScrollingDown ->
+                        bottomBarVisible = !isScrollingDown
+                        topBarVisible = !isScrollingDown
+                    },
+                    themeViewModel = themeViewModel,
+                    onNavigateToGroupManagement = {
+                        navController.navigate(Screen.GroupManagement.route)
+                    }
                 )
             }
             
@@ -93,12 +119,21 @@ fun RssNavigation(
                         bottomBarVisible = !isScrollingDown
                         topBarVisible = !isScrollingDown
                     },
-                    themeViewModel = themeViewModel
+                    themeViewModel = themeViewModel,
+                    onNavigateToGroupManagement = {
+                        navController.navigate(Screen.GroupManagement.route)
+                    }
                 )
             }
             
             composable(Screen.Settings.route) {
                 SettingsScreen(themeViewModel = themeViewModel)
+            }
+            
+            composable(Screen.GroupManagement.route) {
+                GroupManagementScreen(
+                    onBackClick = { navController.popBackStack() }
+                )
             }
         }
     } else {
@@ -172,6 +207,16 @@ fun RssNavigation(
                     )
                 }
                 
+                composable("articles/all") {
+                    ArticleListScreen(
+                        forceAllArticles = true,
+                        onScrollDirectionChanged = { isScrollingDown ->
+                            bottomBarVisible = !isScrollingDown
+                            topBarVisible = !isScrollingDown
+                        }
+                    )
+                }
+                
                 composable(
                     route = "articles/{feedId}",
                     arguments = listOf(navArgument("feedId") { type = NavType.LongType })
@@ -187,12 +232,14 @@ fun RssNavigation(
                     )
                 }
                 
-                composable(Screen.Feeds.route) {
-                    Log.d("RssNavigation", "Navigating to Feeds screen - narrow mode, isSidebarMode should be false")
-                    FeedListScreen(
-                        onFeedClick = { feedId ->
-                            navController.navigate("articles/$feedId")
-                        },
+                composable(
+                    route = "articles/group/{groupId}",
+                    arguments = listOf(navArgument("groupId") { type = NavType.LongType })
+                ) { backStackEntry ->
+                    val groupId = backStackEntry.arguments?.getLong("groupId") ?: 0L
+                    ArticleListScreen(
+                        groupId = groupId,
+                        onBackClick = { navController.popBackStack() },
                         onScrollDirectionChanged = { isScrollingDown ->
                             bottomBarVisible = !isScrollingDown
                             topBarVisible = !isScrollingDown
@@ -200,8 +247,43 @@ fun RssNavigation(
                     )
                 }
                 
+                composable(Screen.Feeds.route) {
+                    Log.d("RssNavigation", "Navigating to Feeds screen - narrow mode, isSidebarMode should be false")
+                    
+                    val feedListViewModel: com.syndicate.rssreader.ui.viewmodel.FeedListViewModel = hiltViewModel()
+                    
+                    FeedListScreen(
+                        onFeedClick = { feedId ->
+                            navController.navigate("articles/$feedId")
+                        },
+                        onScrollDirectionChanged = { isScrollingDown ->
+                            bottomBarVisible = !isScrollingDown
+                            topBarVisible = !isScrollingDown
+                        },
+                        onNavigateToGroupManagement = {
+                            navController.navigate(Screen.GroupManagement.route)
+                        },
+                        onGroupClick = { groupId ->
+                            navController.navigate("articles/group/$groupId")
+                        },
+                        bottomBarVisible = bottomBarVisible,
+                        onDeleteGroup = { deletedGroupId ->
+                            // No special handling needed for narrow screen
+                        },
+                        onAllFeedsClick = {
+                            navController.navigate("articles/all")
+                        }
+                    )
+                }
+                
                 composable(Screen.Settings.route) {
                     SettingsScreen(themeViewModel = themeViewModel)
+                }
+                
+                composable(Screen.GroupManagement.route) {
+                    GroupManagementScreen(
+                        onBackClick = { navController.popBackStack() }
+                    )
                 }
             }
         }
@@ -212,6 +294,7 @@ sealed class Screen(val route: String) {
     object Articles : Screen("articles")
     object Feeds : Screen("feeds")
     object Settings : Screen("settings")
+    object GroupManagement : Screen("group_management")
 }
 
 data class BottomNavItem(

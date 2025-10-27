@@ -11,6 +11,7 @@ data class Feed(
     val faviconUrl: String?,
     val lastFetched: Long?,
     val isAvailable: Boolean,
+    val notificationsEnabled: Boolean = false,
     val createdAt: Long
 ) {
     fun toEntity(): FeedEntity = FeedEntity(
@@ -22,6 +23,7 @@ data class Feed(
         faviconUrl = faviconUrl,
         lastFetched = lastFetched,
         isAvailable = isAvailable,
+        notificationsEnabled = notificationsEnabled,
         createdAt = createdAt
     )
 }

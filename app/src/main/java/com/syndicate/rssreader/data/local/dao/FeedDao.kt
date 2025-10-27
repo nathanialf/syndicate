@@ -49,4 +49,21 @@ interface FeedDao {
     
     @Query("UPDATE feeds SET is_available = :isAvailable WHERE id = :feedId")
     suspend fun updateFeedAvailability(feedId: Long, isAvailable: Boolean)
+    
+    @Query("SELECT * FROM feeds WHERE notifications_enabled = 1")
+    fun getFeedsWithNotificationsEnabled(): Flow<List<FeedEntity>>
+    
+    @Query("UPDATE feeds SET notifications_enabled = :enabled WHERE id = :feedId")
+    suspend fun updateFeedNotifications(feedId: Long, enabled: Boolean)
+    
+    @Query("""
+        SELECT f.* FROM feeds f
+        INNER JOIN feed_group_cross_ref fgcr ON f.id = fgcr.feed_id
+        WHERE fgcr.group_id = :groupId
+        ORDER BY f.title ASC
+    """)
+    suspend fun getFeedsForGroup(groupId: Long): List<FeedEntity>
+    
+    @Query("SELECT url FROM feeds")
+    suspend fun getAllFeedUrls(): List<String>
 }
