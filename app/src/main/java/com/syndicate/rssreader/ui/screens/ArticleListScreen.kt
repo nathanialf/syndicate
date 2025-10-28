@@ -1,14 +1,11 @@
 package com.syndicate.rssreader.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -42,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,7 +49,6 @@ import androidx.core.text.HtmlCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.syndicate.rssreader.R
 import com.syndicate.rssreader.ui.common.AppTopBar
-import com.syndicate.rssreader.ui.common.LazyListScrollHandler
 import com.syndicate.rssreader.ui.common.LayoutConstants
 import com.syndicate.rssreader.ui.components.SwipeableArticleCard
 import com.syndicate.rssreader.ui.theme.CormorantGaramond
@@ -69,10 +66,8 @@ fun ArticleListScreen(
     groupId: Long? = null,
     forceAllArticles: Boolean = false,
     onBackClick: () -> Unit = {},
-    onScrollDirectionChanged: (Boolean) -> Unit = {},
     onArticleClick: (com.syndicate.rssreader.data.models.Article) -> Unit = {},
     isSidebarMode: Boolean = false,
-    topBarVisible: Boolean = true,
     additionalTopPadding: androidx.compose.ui.unit.Dp = 0.dp
 ) {
     val viewModel: ArticleListViewModel = hiltViewModel()
@@ -82,26 +77,24 @@ fun ArticleListScreen(
     val showFilter by viewModel.showFilter.collectAsState()
     
     val listState = rememberLazyListState()
-    var topBarVisible by remember { mutableStateOf(true) }
-    
-    LazyListScrollHandler(
-        listState = listState,
-        onScrollDirectionChanged = { isScrollingDown ->
-            val newVisibility = !isScrollingDown
-            if (topBarVisible != newVisibility) {
-                topBarVisible = newVisibility
-                onScrollDirectionChanged(isScrollingDown)
-            }
-        }
-    )
     
     LaunchedEffect(feedId, groupId, forceAllArticles) {
         when {
-            feedId != null -> viewModel.setFeedId(feedId)
-            groupId != null -> viewModel.setGroupId(groupId)
-            forceAllArticles -> viewModel.setFeedId(null) // Explicitly show all articles
+            feedId != null -> {
+                // Explicitly selected feed
+                viewModel.setFeedId(feedId)
+            }
+            groupId != null -> {
+                // Explicitly selected group
+                viewModel.setGroupId(groupId)
+            }
+            forceAllArticles -> {
+                // Explicitly show all articles
+                viewModel.setFeedId(null)
+            }
             else -> {
-                // When no specific feed or group is selected, check for default group
+                // Only use default group for initial load when no explicit selection
+                // This prevents overriding explicit selections with default behavior
                 val defaultGroup = viewModel.getDefaultGroup()
                 if (defaultGroup != null) {
                     viewModel.setGroupId(defaultGroup.id)
@@ -114,11 +107,6 @@ fun ArticleListScreen(
     
     if (isSidebarMode) {
         // Sidebar content without Scaffold
-        val baseTopPadding = if (topBarVisible) LayoutConstants.TopBarWithPadding else LayoutConstants.StandardPadding
-        val animatedTopPadding by animateDpAsState(
-            targetValue = baseTopPadding + additionalTopPadding,
-            label = "topPadding"
-        )
         
         ArticleListContent(
             articles = articles,
@@ -143,34 +131,28 @@ fun ArticleListScreen(
                 start = LayoutConstants.StandardPadding,
                 end = LayoutConstants.StandardPadding,
                 bottom = LayoutConstants.StandardPadding * 2,
-                top = animatedTopPadding
+                top = LayoutConstants.ContentTopPadding + additionalTopPadding
             )
         )
     } else {
         // Full screen with Scaffold
         Scaffold(
             topBar = {
-                AnimatedVisibility(
-                    visible = topBarVisible,
-                    enter = slideInVertically(initialOffsetY = { -it }),
-                    exit = slideOutVertically(targetOffsetY = { -it })
-                ) {
-                    AppTopBar(
-                        title = "Syndicate",
-                        subtitle = when {
-                            feedId != null -> currentFeed?.title ?: "Feed Articles"
-                            groupId != null -> currentFeed?.title ?: "Group Articles"
-                            else -> currentFeed?.title ?: "All Articles"
-                        },
-                        showBackButton = feedId != null || groupId != null,
-                        onBackClick = onBackClick
-                    )
-                }
+                AppTopBar(
+                    title = "Syndicate",
+                    subtitle = when {
+                        feedId != null -> currentFeed?.title ?: "Feed Articles"
+                        groupId != null -> currentFeed?.title ?: "Group Articles"
+                        else -> currentFeed?.title ?: "All Articles"
+                    },
+                    showBackButton = feedId != null || groupId != null,
+                    onBackClick = onBackClick
+                )
             },
             containerColor = MaterialTheme.colorScheme.background
         ) { paddingValues ->
             val contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                top = if (topBarVisible) paddingValues.calculateTopPadding() else 0.dp,
+                top = LayoutConstants.ContentTopPadding,
                 bottom = LayoutConstants.StandardPadding * 2,
                 start = 0.dp,
                 end = 0.dp
@@ -213,6 +195,7 @@ private fun ArticleListContent(
     listState: LazyListState,
     paddingValues: androidx.compose.foundation.layout.PaddingValues
 ) {
+    
     Column(
         modifier = Modifier
             .fillMaxSize()

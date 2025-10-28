@@ -13,12 +13,11 @@ A modern Android RSS reader built with Jetpack Compose and Material 3 design, fe
 - **OPML Export**: Export your feed subscriptions in OPML format
 - **OPML Import**: Import feed subscriptions from OPML files with duplicate detection
 - **Dark/Light Theme**: System-aware theming with manual override options
-- **Scroll-Based UI Animation**: Top app bar and FAB animate away on scroll for immersive reading
 - **Smart Duplicate Detection**: HTTP/HTTPS URL normalization prevents duplicate feeds
 - **Material 3 List-Detail Layout**: Selected feeds highlighted with proper Material colors
 - **Swipe Gestures**: Swipe feeds to delete or toggle notifications with haptic feedback
 - **Enhanced Error Reporting**: Detailed import error messages with specific failure reasons
-- **Article Reading**: Full article detail view with slide-over animations on both screen sizes
+- **Article Reading**: Full article detail view on both screen sizes
 - **Read/Unread Status**: Mark articles as read/unread with swipe gestures and visual indicators
 - **Article Detail Screen**: In-app article viewer with share and browser open actions
 - **Background Sync**: Periodic article fetching with WorkManager for battery optimization
@@ -55,6 +54,6 @@ A modern Android RSS reader built with Jetpack Compose and Material 3 design, fe
 2. **Feed Organization**: Swipe feeds to delete or organize into custom groups
 3. **Group Management**: Create, edit, and delete feed groups for better organization
 4. **OPML Import**: Import feed subscriptions with intelligent duplicate detection
-5. **Reading Articles**: Tap any feed to view its articles with immersive scroll animations
+5. **Reading Articles**: Tap any feed to view its articles
 6. **Export**: Use Settings > Export OPML to backup your feed list
 7. **Theme**: Access theme settings through the gear icon

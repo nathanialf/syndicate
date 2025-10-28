@@ -13,6 +13,9 @@ object LayoutConstants {
     val TopBarHeight = 64.dp
     val TopBarWithPadding = TopBarHeight + StandardPadding // 80dp
     
+    // Content top padding - matches what Scaffold.calculateTopPadding() provides
+    val ContentTopPadding = TopBarHeight // 64dp - space for top bar only
+    
     // Screen width breakpoint
     val WideScreenBreakpoint = 600.dp
     

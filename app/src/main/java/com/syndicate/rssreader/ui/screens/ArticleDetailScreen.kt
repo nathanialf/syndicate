@@ -46,6 +46,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.syndicate.rssreader.ui.theme.CormorantGaramond
 import com.syndicate.rssreader.ui.viewmodel.ArticleDetailViewModel
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.systemBars
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -58,7 +60,8 @@ import android.net.Uri
 fun ArticleDetailScreen(
     articleId: String,
     onBackClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    useSystemBarInsets: Boolean = true
 ) {
     val viewModel: ArticleDetailViewModel = hiltViewModel()
     val article by viewModel.article.collectAsState()
@@ -77,6 +80,11 @@ fun ArticleDetailScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
+                windowInsets = if (useSystemBarInsets) {
+                    WindowInsets.systemBars
+                } else {
+                    WindowInsets(0, 0, 0, 0)
+                },
                 title = {
                     Text(
                         text = "Article",

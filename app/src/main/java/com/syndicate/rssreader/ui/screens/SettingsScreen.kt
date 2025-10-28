@@ -55,6 +55,7 @@ import com.syndicate.rssreader.ui.viewmodel.ExportState
 @Composable
 fun SettingsScreen(
     themeViewModel: ThemeViewModel,
+    modifier: Modifier = Modifier,
     settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val currentThemeMode by themeViewModel.themeMode.collectAsState()
@@ -74,6 +75,7 @@ fun SettingsScreen(
     }
     
     Scaffold(
+        modifier = modifier,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {

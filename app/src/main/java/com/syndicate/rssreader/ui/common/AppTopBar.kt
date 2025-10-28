@@ -1,6 +1,8 @@
 package com.syndicate.rssreader.ui.common
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -25,7 +27,8 @@ fun AppTopBar(
     showBackButton: Boolean = false,
     onBackClick: () -> Unit = {},
     showSettingsButton: Boolean = false,
-    onSettingsClick: () -> Unit = {}
+    onSettingsClick: () -> Unit = {},
+    useSystemBarInsets: Boolean = false
 ) {
     CenterAlignedTopAppBar(
         title = { 
@@ -75,6 +78,10 @@ fun AppTopBar(
                 }
             }
         },
-        windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
+        windowInsets = if (useSystemBarInsets) {
+            androidx.compose.foundation.layout.WindowInsets.systemBars
+        } else {
+            androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
+        }
     )
 }

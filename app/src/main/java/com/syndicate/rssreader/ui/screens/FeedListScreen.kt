@@ -111,8 +111,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.hilt.navigation.compose.hiltViewModel
 import android.util.Log
 import com.syndicate.rssreader.ui.common.AppTopBar
-import com.syndicate.rssreader.ui.common.LazyListScrollHandler
 import com.syndicate.rssreader.ui.common.LayoutConstants
+import com.syndicate.rssreader.ui.common.LayoutUtils
 import com.syndicate.rssreader.ui.theme.CormorantGaramond
 import com.syndicate.rssreader.ui.viewmodel.FeedListViewModel
 
@@ -120,7 +120,6 @@ import com.syndicate.rssreader.ui.viewmodel.FeedListViewModel
 @Composable
 fun FeedListScreen(
     onFeedClick: (Long) -> Unit,
-    onScrollDirectionChanged: (Boolean) -> Unit,
     onNavigateToGroupManagement: () -> Unit,
     isSidebarMode: Boolean = false,
     selectedFeedId: Long? = null,
@@ -129,7 +128,8 @@ fun FeedListScreen(
     onDeleteFeed: (Long) -> Unit = {},
     onGroupClick: (Long) -> Unit = {},
     onDeleteGroup: (Long) -> Unit = {},
-    bottomBarVisible: Boolean = true,
+    useSystemBarInsets: Boolean = true,
+    modifier: Modifier = Modifier,
     viewModel: FeedListViewModel = hiltViewModel(),
     opmlImportViewModel: com.syndicate.rssreader.ui.viewmodel.OpmlImportViewModel = hiltViewModel()
 ) {
@@ -144,7 +144,6 @@ fun FeedListScreen(
     var fabExpanded by remember { mutableStateOf(false) }
     var feedUrlInput by remember { mutableStateOf("") }
     var groupNameInput by remember { mutableStateOf("") }
-    var topBarVisible by remember { mutableStateOf(true) }
     
     val showFeedGroupDialog by viewModel.showFeedGroupDialog.collectAsState()
     val selectedFeedForGrouping by viewModel.selectedFeedForGrouping.collectAsState()
@@ -167,16 +166,6 @@ fun FeedListScreen(
     
     val context = LocalContext.current
     
-    LazyListScrollHandler(
-        listState = listState,
-        onScrollDirectionChanged = { isScrollingDown ->
-            val newVisibility = !isScrollingDown
-            if (topBarVisible != newVisibility) {
-                topBarVisible = newVisibility
-                onScrollDirectionChanged(isScrollingDown)
-            }
-        }
-    )
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
@@ -219,42 +208,36 @@ fun FeedListScreen(
                 )
             
             // FAB for sidebar mode
-            AnimatedVisibility(
-                visible = bottomBarVisible,
-                enter = slideInVertically(initialOffsetY = { it }),
-                exit = slideOutVertically(targetOffsetY = { it }),
-                modifier = Modifier.align(Alignment.BottomEnd)
-            ) {
-                ExpandableFabMenu(
-                    expanded = fabExpanded,
-                    onToggle = { fabExpanded = !fabExpanded },
-                    onAddFeed = { 
-                        fabExpanded = false
-                        viewModel.showAddFeedDialog() 
-                    },
-                    onImportFeed = {
-                        fabExpanded = false
-                        opmlImportViewModel.showFileDialog()
-                    },
-                    onAddGroup = {
-                        fabExpanded = false
-                        viewModel.showAddGroupDialog()
-                    },
-                    modifier = Modifier.padding(end = 16.dp, bottom = 80.dp) // Consistent height with single pane
-                )
-            }
+            ExpandableFabMenu(
+                expanded = fabExpanded,
+                onToggle = { fabExpanded = !fabExpanded },
+                onAddFeed = { 
+                    fabExpanded = false
+                    viewModel.showAddFeedDialog() 
+                },
+                onImportFeed = {
+                    fabExpanded = false
+                    opmlImportViewModel.showFileDialog()
+                },
+                onAddGroup = {
+                    fabExpanded = false
+                    viewModel.showAddGroupDialog()
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 16.dp, bottom = 80.dp) // Consistent height with single pane
+            )
         }
     } else {
         // Full screen with Scaffold
         Scaffold(
+            modifier = modifier,
             topBar = {
-                AnimatedVisibility(
-                    visible = topBarVisible,
-                    enter = slideInVertically(initialOffsetY = { -it }),
-                    exit = slideOutVertically(targetOffsetY = { -it })
-                ) {
-                    AppTopBar(title = "Syndicate", subtitle = "Feeds")
-                }
+                AppTopBar(
+                    title = "Syndicate", 
+                    subtitle = "Feeds",
+                    useSystemBarInsets = useSystemBarInsets
+                )
             },
             snackbarHost = {
                 SnackbarHost(
@@ -265,7 +248,7 @@ fun FeedListScreen(
         ) { paddingValues ->
             Box(modifier = Modifier.fillMaxSize()) {
                 val contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                    top = if (topBarVisible) paddingValues.calculateTopPadding() else 0.dp,
+                    top = paddingValues.calculateTopPadding(),
                     bottom = 16.dp,
                     start = 0.dp,
                     end = 0.dp
@@ -296,31 +279,26 @@ fun FeedListScreen(
                     isSidebarMode = isSidebarMode
                 )
                 
-                // FAB for single pane mode with bottom nav animation
-                AnimatedVisibility(
-                    visible = bottomBarVisible,
-                    enter = slideInVertically(initialOffsetY = { it }),
-                    exit = slideOutVertically(targetOffsetY = { it }),
-                    modifier = Modifier.align(Alignment.BottomEnd)
-                ) {
-                    ExpandableFabMenu(
-                        expanded = fabExpanded,
-                        onToggle = { fabExpanded = !fabExpanded },
-                        onAddFeed = { 
-                            fabExpanded = false
-                            viewModel.showAddFeedDialog() 
-                        },
-                        onImportFeed = {
-                            fabExpanded = false
-                            opmlImportViewModel.showFileDialog()
-                        },
-                        onAddGroup = {
-                            fabExpanded = false
-                            viewModel.showAddGroupDialog()
-                        },
-                        modifier = Modifier.padding(end = 16.dp, bottom = 120.dp) // Higher up above bottom nav
-                    )
-                }
+                // FAB for single pane mode
+                ExpandableFabMenu(
+                    expanded = fabExpanded,
+                    onToggle = { fabExpanded = !fabExpanded },
+                    onAddFeed = { 
+                        fabExpanded = false
+                        viewModel.showAddFeedDialog() 
+                    },
+                    onImportFeed = {
+                        fabExpanded = false
+                        opmlImportViewModel.showFileDialog()
+                    },
+                    onAddGroup = {
+                        fabExpanded = false
+                        viewModel.showAddGroupDialog()
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 16.dp, bottom = 120.dp) // Higher up above bottom nav
+                )
             }
         }
     }
@@ -365,9 +343,10 @@ fun FeedListScreen(
             DeleteFeedDialog(
                 feed = feed,
                 onConfirm = {
-                    viewModel.confirmDeleteFeed()
-                    // Also call the provided callback
+                    // Call the provided callback first to update parent state
                     onDeleteFeed(feed.id)
+                    // Then confirm deletion which will close dialog and update VM state
+                    viewModel.confirmDeleteFeed()
                 },
                 onDismiss = viewModel::hideDeleteFeedDialog
             )
