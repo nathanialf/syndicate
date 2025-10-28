@@ -127,6 +127,10 @@ class RssRepository @Inject constructor(
         readStatusDao.markAllAsRead(System.currentTimeMillis())
     }
     
+    suspend fun getArticleById(articleId: String): Article? {
+        return articleDao.getArticleById(articleId)?.toDomain()
+    }
+    
     suspend fun getUnreadCount(): Int = readStatusDao.getUnreadCount()
     
     suspend fun getUnreadCountForFeed(feedId: Long): Int = 

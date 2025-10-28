@@ -196,7 +196,7 @@ fun FeedListScreen(
                     onDeleteFeed = { feedId ->
                         viewModel.showDeleteFeedDialog(feedId)
                     },
-                    onAddToGroup = { feedId -> viewModel.showFeedGroupDialog(feedId) },
+                    onNotificationToggle = { feedId -> viewModel.toggleFeedNotifications(feedId) },
                     onGroupClick = onGroupClick,
                     onDeleteGroup = { groupId ->
                         viewModel.showDeleteGroupDialog(groupId)
@@ -279,7 +279,7 @@ fun FeedListScreen(
                     onDeleteFeed = { feedId ->
                         viewModel.showDeleteFeedDialog(feedId)
                     },
-                    onAddToGroup = { feedId -> viewModel.showFeedGroupDialog(feedId) },
+                    onNotificationToggle = { feedId -> viewModel.toggleFeedNotifications(feedId) },
                     onGroupClick = onGroupClick,
                     onDeleteGroup = { groupId ->
                         viewModel.showDeleteGroupDialog(groupId)
@@ -474,7 +474,7 @@ private fun FeedListContent(
     isLoading: Boolean,
     onFeedClick: (Long) -> Unit,
     onDeleteFeed: (Long) -> Unit,
-    onAddToGroup: (Long) -> Unit,
+    onNotificationToggle: (Long) -> Unit,
     onGroupClick: (Long) -> Unit,
     onDeleteGroup: (Long) -> Unit,
     onEditGroup: (Long) -> Unit = {},
@@ -598,7 +598,7 @@ private fun FeedListContent(
                     isSelected = selectedFeedId == feed.id,
                     onFeedClick = onFeedClick,
                     onDeleteFeed = onDeleteFeed,
-                    onAddToGroup = onAddToGroup,
+                    onNotificationToggle = onNotificationToggle,
                     isSidebarMode = isSidebarMode,
                     resetSwipe = resetSwipeState
                 )

@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -58,6 +59,7 @@ fun SettingsScreen(
 ) {
     val currentThemeMode by themeViewModel.themeMode.collectAsState()
     val exportState by settingsViewModel.exportState.collectAsState()
+    val notificationsEnabled by settingsViewModel.notificationsEnabled.collectAsState()
     val context = LocalContext.current
     
     // Clear export state after showing success/error for 3 seconds
@@ -96,6 +98,19 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Notifications Section  
+            SettingsSection(title = "Notifications") {
+                SettingsToggleItem(
+                    title = "Enable Notifications",
+                    subtitle = "Receive notifications for new articles",
+                    icon = Icons.Default.Notifications,
+                    checked = notificationsEnabled,
+                    onCheckedChange = { enabled ->
+                        settingsViewModel.toggleNotifications(enabled)
+                    }
+                )
+            }
+            
             // Data Section
             SettingsSection(title = "Data") {
                 SettingsClickableItem(
@@ -343,5 +358,47 @@ private fun SettingsItem(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Composable
+private fun SettingsToggleItem(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        
+        Spacer(modifier = Modifier.width(16.dp))
+        
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
     }
 }

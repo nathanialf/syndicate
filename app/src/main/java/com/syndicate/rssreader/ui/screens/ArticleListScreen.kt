@@ -18,7 +18,11 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,8 +53,10 @@ import com.syndicate.rssreader.R
 import com.syndicate.rssreader.ui.common.AppTopBar
 import com.syndicate.rssreader.ui.common.LazyListScrollHandler
 import com.syndicate.rssreader.ui.common.LayoutConstants
+import com.syndicate.rssreader.ui.components.SwipeableArticleCard
 import com.syndicate.rssreader.ui.theme.CormorantGaramond
 import com.syndicate.rssreader.ui.viewmodel.ArticleListViewModel
+import com.syndicate.rssreader.ui.viewmodel.ArticleShowFilter
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -64,6 +70,7 @@ fun ArticleListScreen(
     forceAllArticles: Boolean = false,
     onBackClick: () -> Unit = {},
     onScrollDirectionChanged: (Boolean) -> Unit = {},
+    onArticleClick: (com.syndicate.rssreader.data.models.Article) -> Unit = {},
     isSidebarMode: Boolean = false,
     topBarVisible: Boolean = true,
     additionalTopPadding: androidx.compose.ui.unit.Dp = 0.dp
@@ -72,6 +79,7 @@ fun ArticleListScreen(
     val articles by viewModel.articles.collectAsState()
     val currentFeed by viewModel.currentFeed.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val showFilter by viewModel.showFilter.collectAsState()
     
     val listState = rememberLazyListState()
     var topBarVisible by remember { mutableStateOf(true) }
@@ -117,6 +125,19 @@ fun ArticleListScreen(
             currentFeed = currentFeed,
             isLoading = isLoading,
             feedId = feedId,
+            showFilter = showFilter,
+            onFilterChange = viewModel::setShowFilter,
+            onArticleClick = { article ->
+                viewModel.markAsRead(article.id)
+                onArticleClick(article)
+            },
+            onToggleReadState = { article ->
+                if (article.isRead) {
+                    viewModel.markAsUnread(article.id)
+                } else {
+                    viewModel.markAsRead(article.id)
+                }
+            },
             listState = listState,
             paddingValues = androidx.compose.foundation.layout.PaddingValues(
                 start = LayoutConstants.StandardPadding,
@@ -159,6 +180,19 @@ fun ArticleListScreen(
                 currentFeed = currentFeed,
                 isLoading = isLoading,
                 feedId = feedId,
+                showFilter = showFilter,
+                onFilterChange = viewModel::setShowFilter,
+                onArticleClick = { article ->
+                    viewModel.markAsRead(article.id)
+                    onArticleClick(article)
+                },
+                onToggleReadState = { article ->
+                    if (article.isRead) {
+                        viewModel.markAsUnread(article.id)
+                    } else {
+                        viewModel.markAsRead(article.id)
+                    }
+                },
                 listState = listState,
                 paddingValues = contentPadding
             )
@@ -172,91 +206,98 @@ private fun ArticleListContent(
     currentFeed: com.syndicate.rssreader.data.models.Feed?,
     isLoading: Boolean,
     feedId: Long?,
+    showFilter: ArticleShowFilter,
+    onFilterChange: (ArticleShowFilter) -> Unit,
+    onArticleClick: (com.syndicate.rssreader.data.models.Article) -> Unit,
+    onToggleReadState: (com.syndicate.rssreader.data.models.Article) -> Unit,
     listState: LazyListState,
     paddingValues: androidx.compose.foundation.layout.PaddingValues
 ) {
-    if (articles.isEmpty() && !isLoading) {
-        Box(
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
+    ) {
+        // Filter chips
+        androidx.compose.foundation.layout.Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Article,
-                    contentDescription = null,
-                    modifier = Modifier.padding(16.dp),
-                    tint = MaterialTheme.colorScheme.outline
-                )
-                Text(
-                    text = if (feedId != null) "No articles in this feed" else "No articles yet",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = if (feedId != null) "This feed doesn't have any articles yet" else "Add some feeds to see articles here",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
+            FilterChip(
+                onClick = { onFilterChange(ArticleShowFilter.UNREAD) },
+                label = { Text("Unread") },
+                selected = showFilter == ArticleShowFilter.UNREAD
+            )
+            FilterChip(
+                onClick = { onFilterChange(ArticleShowFilter.ALL) },
+                label = { Text("All") },
+                selected = showFilter == ArticleShowFilter.ALL
+            )
+            FilterChip(
+                onClick = { onFilterChange(ArticleShowFilter.READ) },
+                label = { Text("Read") },
+                selected = showFilter == ArticleShowFilter.READ
+            )
         }
-    } else {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(articles) { article ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
+        
+        // Articles list
+        if (articles.isEmpty() && !isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Column(
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Article,
+                        contentDescription = null,
                         modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = article.title,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        
-                        article.description?.let { description ->
-                            val cleanDescription = parseHtmlText(description).trim()
-                            if (cleanDescription.isNotBlank()) {
-                                SelectionContainer {
-                                    Text(
-                                        text = cleanDescription,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 3,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                        }
-                        
-                        Text(
-                            text = buildString {
-                                append(article.feedTitle)
-                                article.publishedDate?.let { date ->
-                                    append(" • ")
-                                    append(formatDate(date))
-                                }
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
+                        tint = MaterialTheme.colorScheme.outline
+                    )
+                    Text(
+                        text = when (showFilter) {
+                            ArticleShowFilter.UNREAD -> "No unread articles"
+                            ArticleShowFilter.READ -> "No read articles"
+                            ArticleShowFilter.ALL -> if (feedId != null) "No articles in this feed" else "No articles yet"
+                        },
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = when (showFilter) {
+                            ArticleShowFilter.UNREAD -> "All articles have been read"
+                            ArticleShowFilter.READ -> "No articles have been read yet"
+                            ArticleShowFilter.ALL -> if (feedId != null) "This feed doesn't have any articles yet" else "Add some feeds to see articles here"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
+        } else {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                    horizontal = 16.dp,
+                    vertical = 8.dp
+                )
+            ) {
+                items(
+                    items = articles,
+                    key = { article -> article.id }
+                ) { article ->
+                    SwipeableArticleCard(
+                        article = article,
+                        onArticleClick = onArticleClick,
+                        onToggleReadState = onToggleReadState,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }

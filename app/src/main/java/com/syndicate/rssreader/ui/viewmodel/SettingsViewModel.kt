@@ -4,12 +4,16 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.syndicate.rssreader.data.export.OpmlExporter
+import com.syndicate.rssreader.data.preferences.NotificationPreferences
 import com.syndicate.rssreader.data.repository.RssRepository
+import com.syndicate.rssreader.sync.SyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
@@ -17,11 +21,20 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val repository: RssRepository,
-    private val opmlExporter: OpmlExporter
+    private val opmlExporter: OpmlExporter,
+    private val notificationPreferences: NotificationPreferences,
+    private val syncScheduler: SyncScheduler
 ) : ViewModel() {
     
     private val _exportState = MutableStateFlow<ExportState>(ExportState.Idle)
     val exportState: StateFlow<ExportState> = _exportState.asStateFlow()
+    
+    val notificationsEnabled: StateFlow<Boolean> = notificationPreferences.notificationsEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
     
     fun exportOpml(context: Context) {
         viewModelScope.launch {
@@ -61,6 +74,17 @@ class SettingsViewModel @Inject constructor(
     
     fun clearExportState() {
         _exportState.value = ExportState.Idle
+    }
+    
+    fun toggleNotifications(enabled: Boolean) {
+        viewModelScope.launch {
+            notificationPreferences.setNotificationsEnabled(enabled)
+            if (enabled) {
+                syncScheduler.schedulePeriodSync()
+            } else {
+                syncScheduler.cancelSync()
+            }
+        }
     }
 }
 

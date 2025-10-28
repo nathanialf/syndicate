@@ -14,9 +14,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+enum class ArticleShowFilter {
+    ALL, UNREAD, READ
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -26,19 +31,30 @@ class ArticleListViewModel @Inject constructor(
     
     private val _feedId = MutableStateFlow<Long?>(null)
     private val _groupId = MutableStateFlow<Long?>(null)
+    private val _showFilter = MutableStateFlow(ArticleShowFilter.UNREAD) // Default to unread only
     
-    val articles: StateFlow<List<Article>> = combine(_feedId, _groupId) { feedId, groupId ->
-            Pair(feedId, groupId)
+    val articles: StateFlow<List<Article>> = combine(_feedId, _groupId, _showFilter) { feedId, groupId, showFilter ->
+            Triple(feedId, groupId, showFilter)
         }
-        .flatMapLatest { (feedId, groupId) ->
+        .flatMapLatest { (feedId, groupId, showFilter) ->
             repository.getArticles(
                 ArticleFilter(
                     feedId = feedId,
-                    unreadOnly = false,
+                    unreadOnly = when (showFilter) {
+                        ArticleShowFilter.ALL -> false
+                        ArticleShowFilter.UNREAD -> true
+                        ArticleShowFilter.READ -> false // We'll filter read articles separately
+                    },
                     searchQuery = null,
                     groupId = groupId
                 )
-            )
+            ).map { articleList ->
+                when (showFilter) {
+                    ArticleShowFilter.ALL -> articleList
+                    ArticleShowFilter.UNREAD -> articleList.filter { !it.isRead }
+                    ArticleShowFilter.READ -> articleList.filter { it.isRead }
+                }
+            }
         }
         .stateIn(
             scope = viewModelScope,
@@ -51,6 +67,8 @@ class ArticleListViewModel @Inject constructor(
     
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    
+    val showFilter: StateFlow<ArticleShowFilter> = _showFilter.asStateFlow()
     
     fun setFeedId(feedId: Long?) {
         _feedId.value = feedId
@@ -113,6 +131,10 @@ class ArticleListViewModel @Inject constructor(
         viewModelScope.launch {
             repository.markAsRead(articleId, false)
         }
+    }
+    
+    fun setShowFilter(filter: ArticleShowFilter) {
+        _showFilter.value = filter
     }
     
     suspend fun getDefaultGroup(): com.syndicate.rssreader.data.models.Group? {

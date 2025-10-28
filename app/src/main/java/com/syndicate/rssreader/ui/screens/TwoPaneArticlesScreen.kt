@@ -1,10 +1,19 @@
 package com.syndicate.rssreader.ui.screens
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,6 +39,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInParent
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -57,6 +69,7 @@ fun TwoPaneArticlesScreen(
     var forceAllArticles by remember { mutableStateOf(false) }
     var topBarVisible by remember { mutableStateOf(true) }
     var showSettings by remember { mutableStateOf(false) }
+    var selectedArticleId by remember { mutableStateOf<String?>(null) }
     
     val articleViewModel: ArticleListViewModel = hiltViewModel()
     val feedListViewModel: com.syndicate.rssreader.ui.viewmodel.FeedListViewModel = hiltViewModel()
@@ -146,73 +159,126 @@ fun TwoPaneArticlesScreen(
         // Invisible spacer for separation without visible divider
         Spacer(modifier = Modifier.width(0.dp))
         
-        // Right pane content (Articles or Settings)
+        // Right pane content (Articles, Settings, or Article Detail)
         Surface(
             modifier = Modifier.weight(1f),
             color = MaterialTheme.colorScheme.background
         ) {
-            if (showSettings && themeViewModel != null) {
-                // Settings content
-                Column {
-                    // Top padding for system bar  
-                    Spacer(
-                        modifier = Modifier.padding(
-                            top = with(androidx.compose.ui.platform.LocalDensity.current) {
+            val contentState = when {
+                showSettings && themeViewModel != null -> "settings"
+                selectedArticleId != null -> "article_detail"
+                else -> "articles"
+            }
+            
+            AnimatedContent(
+                targetState = contentState,
+                transitionSpec = {
+                    when (targetState) {
+                        "article_detail" -> {
+                            // Slide in from right when opening article
+                            slideInHorizontally(
+                                initialOffsetX = { fullWidth -> fullWidth }
+                            ) togetherWith slideOutHorizontally(
+                                targetOffsetX = { fullWidth -> -fullWidth }
+                            )
+                        }
+                        "articles" -> {
+                            // Slide in from left when going back to articles
+                            slideInHorizontally(
+                                initialOffsetX = { fullWidth -> -fullWidth }
+                            ) togetherWith slideOutHorizontally(
+                                targetOffsetX = { fullWidth -> fullWidth }
+                            )
+                        }
+                        else -> {
+                            // Simple fade for settings
+                            fadeIn() togetherWith fadeOut()
+                        }
+                    }
+                },
+                label = "content_transition"
+            ) { state ->
+                when (state) {
+                    "settings" -> {
+                        // Settings content
+                        Column {
+                            // Top padding for system bar  
+                            Spacer(
+                                modifier = Modifier.padding(
+                                    top = with(androidx.compose.ui.platform.LocalDensity.current) {
+                                        WindowInsets.systemBars.getTop(this).toDp()
+                                    }
+                                )
+                            )
+                            
+                            SettingsScreen(themeViewModel = themeViewModel!!)
+                        }
+                    }
+                    "article_detail" -> {
+                        // Article detail content
+                        selectedArticleId?.let { articleId ->
+                            ArticleDetailScreen(
+                                articleId = articleId,
+                                onBackClick = { selectedArticleId = null }
+                            )
+                        }
+                    }
+                    else -> {
+                        // Articles content
+                        Box(
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            // Articles content that fills the entire space
+                            val systemBarPadding = with(LocalDensity.current) {
                                 WindowInsets.systemBars.getTop(this).toDp()
                             }
-                        )
-                    )
-                    
-                    SettingsScreen(themeViewModel = themeViewModel)
-                }
-            } else {
-                // Articles content
-                Box(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    // Articles content that fills the entire space
-                    val systemBarPadding = with(LocalDensity.current) {
-                        WindowInsets.systemBars.getTop(this).toDp()
-                    }
-                    
-                    ArticleListScreen(
-                        feedId = selectedFeedId,
-                        groupId = selectedGroupId,
-                        forceAllArticles = forceAllArticles,
-                        onScrollDirectionChanged = { isScrollingDown ->
-                            topBarVisible = !isScrollingDown
-                            onScrollDirectionChanged(isScrollingDown)
-                        },
-                        isSidebarMode = true,
-                        topBarVisible = topBarVisible,
-                        additionalTopPadding = systemBarPadding
-                    )
-                    
-                    // Top app bar for articles positioned at the top
-                    androidx.compose.animation.AnimatedVisibility(
-                        visible = topBarVisible,
-                        enter = slideInVertically(initialOffsetY = { -it }),
-                        exit = slideOutVertically(targetOffsetY = { -it }),
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(
-                                top = with(LocalDensity.current) {
-                                    WindowInsets.systemBars.getTop(this).toDp()
-                                }
+                            
+                            ArticleListScreen(
+                                feedId = selectedFeedId,
+                                groupId = selectedGroupId,
+                                forceAllArticles = forceAllArticles,
+                                onScrollDirectionChanged = { isScrollingDown ->
+                                    topBarVisible = !isScrollingDown
+                                    onScrollDirectionChanged(isScrollingDown)
+                                },
+                                onArticleClick = { article ->
+                                    selectedArticleId = article.id
+                                },
+                                isSidebarMode = true,
+                                topBarVisible = topBarVisible,
+                                additionalTopPadding = systemBarPadding
                             )
-                    ) {
-                        AppTopBar(
-                            title = "Syndicate",
-                            subtitle = if (showSettings) {
-                                "Settings"
-                            } else {
-                                currentFeed?.title ?: "All Articles"
-                            },
-                            showSettingsButton = !showSettings,
-                            onSettingsClick = { showSettings = true },
-                            showBackButton = showSettings,
-                            onBackClick = { showSettings = false }
-                        )
+                            
+                            // Top app bar for articles positioned at the top
+                            androidx.compose.animation.AnimatedVisibility(
+                                visible = topBarVisible,
+                                enter = slideInVertically(initialOffsetY = { -it }),
+                                exit = slideOutVertically(targetOffsetY = { -it }),
+                                modifier = Modifier
+                                    .align(Alignment.TopCenter)
+                                    .padding(
+                                        top = with(LocalDensity.current) {
+                                            WindowInsets.systemBars.getTop(this).toDp()
+                                        }
+                                    )
+                            ) {
+                                AppTopBar(
+                                    title = "Syndicate",
+                                    subtitle = when {
+                                        showSettings -> "Settings"
+                                        selectedArticleId != null -> "Article"
+                                        else -> currentFeed?.title ?: "All Articles"
+                                    },
+                                    showSettingsButton = !showSettings && selectedArticleId == null,
+                                    onSettingsClick = { showSettings = true },
+                                    showBackButton = showSettings || selectedArticleId != null,
+                                    onBackClick = { 
+                                        if (showSettings) showSettings = false
+                                        if (selectedArticleId != null) selectedArticleId = null
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }

@@ -66,6 +66,16 @@ interface ArticleDao {
     """)
     fun searchArticles(query: String): Flow<List<ArticleWithReadStatus>>
     
+    @Query("""
+        SELECT a.*, f.title as feed_title, f.favicon_url as feed_favicon_url,
+               COALESCE(rs.is_read, 0) as is_read, rs.read_at
+        FROM articles a
+        INNER JOIN feeds f ON a.feed_id = f.id
+        LEFT JOIN read_status rs ON a.id = rs.article_id
+        WHERE a.id = :articleId
+    """)
+    suspend fun getArticleById(articleId: String): ArticleWithReadStatus?
+    
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertArticle(article: ArticleEntity)
     

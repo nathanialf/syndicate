@@ -16,19 +16,21 @@ A modern Android RSS reader built with Jetpack Compose and Material 3 design, fe
 - **Scroll-Based UI Animation**: Top app bar and FAB animate away on scroll for immersive reading
 - **Smart Duplicate Detection**: HTTP/HTTPS URL normalization prevents duplicate feeds
 - **Material 3 List-Detail Layout**: Selected feeds highlighted with proper Material colors
-- **Swipe Gestures**: Swipe feeds to delete or add to groups with animated feedback
+- **Swipe Gestures**: Swipe feeds to delete or toggle notifications with haptic feedback
 - **Enhanced Error Reporting**: Detailed import error messages with specific failure reasons
+- **Article Reading**: Full article detail view with slide-over animations on both screen sizes
+- **Read/Unread Status**: Mark articles as read/unread with swipe gestures and visual indicators
+- **Article Detail Screen**: In-app article viewer with share and browser open actions
+- **Background Sync**: Periodic article fetching with WorkManager for battery optimization
+- **Push Notifications**: Per-feed notification system with mark-as-read actions
+- **Notification Channels**: Organized notifications with proper Android 8+ channel support
+- **Haptic Feedback**: Tactile feedback for swipe actions and article interactions
 
 ### 🚧 Planned Features
-- **Article Reading**: Full article content display with WebView
-- **Read/Unread Status**: Mark articles as read/unread with swipe gestures
 - **Pull-to-Refresh**: Manual refresh to fetch new articles
 - **Article Search**: Search through article titles and descriptions
-- **Article Detail Screen**: In-app article viewer with browser fallback
 - **Feed Availability Monitoring**: Track and display feed status
 - **Article Filtering**: Filter by read/unread status, sort by date
-- **Article Sharing**: Share articles via Android's native share system
-- **Background Sync**: Periodic article fetching with per-feed notifications
 
 ## Tech Stack
 

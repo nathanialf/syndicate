@@ -2,11 +2,16 @@ package com.syndicate.rssreader.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.syndicate.rssreader.data.models.Feed
 
 @Composable
@@ -49,6 +54,16 @@ fun FeedListItem(
                 isAvailable = feed.isAvailable
             )
         },
+        trailingContent = if (feed.notificationsEnabled) {
+            {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = "Notifications enabled",
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        } else null,
         colors = androidx.compose.material3.ListItemDefaults.colors(
             containerColor = if (isSelected) {
                 MaterialTheme.colorScheme.secondaryContainer

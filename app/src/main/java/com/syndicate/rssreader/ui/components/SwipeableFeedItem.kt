@@ -11,6 +11,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import com.syndicate.rssreader.data.models.Feed
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -20,22 +22,25 @@ fun SwipeableFeedItem(
     isSelected: Boolean,
     onFeedClick: (Long) -> Unit,
     onDeleteFeed: (Long) -> Unit,
-    onAddToGroup: (Long) -> Unit,
+    onNotificationToggle: (Long) -> Unit,
     isSidebarMode: Boolean = false,
     resetSwipe: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val hapticFeedback = LocalHapticFeedback.current
     val swipeState = rememberSwipeToDismissBoxState(
         confirmValueChange = { dismissValue ->
             when (dismissValue) {
                 SwipeToDismissBoxValue.StartToEnd -> {
                     // Delete action (swipe right) - don't dismiss yet, wait for confirmation
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                     onDeleteFeed(feed.id)
                     false // Don't dismiss, wait for dialog result
                 }
                 SwipeToDismissBoxValue.EndToStart -> {
-                    // Add to group action (swipe left)
-                    onAddToGroup(feed.id)
+                    // Notification toggle action (swipe left)
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onNotificationToggle(feed.id)
                     false // Don't dismiss, just trigger action
                 }
                 SwipeToDismissBoxValue.Settled -> false
@@ -50,7 +55,7 @@ fun SwipeableFeedItem(
         }
     }
     
-    // Reset swipe state after add to group action
+    // Reset swipe state after notification toggle action
     LaunchedEffect(swipeState.targetValue) {
         if (swipeState.targetValue == SwipeToDismissBoxValue.EndToStart) {
             swipeState.snapTo(SwipeToDismissBoxValue.Settled)
@@ -61,7 +66,8 @@ fun SwipeableFeedItem(
         state = swipeState,
         backgroundContent = {
             SwipeBackground(
-                swipeDirection = swipeState.dismissDirection
+                swipeDirection = swipeState.dismissDirection,
+                isNotificationEnabled = feed.notificationsEnabled
             )
         },
         modifier = modifier

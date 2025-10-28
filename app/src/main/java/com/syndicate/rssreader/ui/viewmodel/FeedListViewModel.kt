@@ -377,4 +377,17 @@ class FeedListViewModel @Inject constructor(
             }
         }
     }
+    
+    fun toggleFeedNotifications(feedId: Long) {
+        viewModelScope.launch {
+            try {
+                val feed = repository.getFeedById(feedId)
+                if (feed != null) {
+                    repository.updateFeedNotifications(feedId, !feed.notificationsEnabled)
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to update feed notifications: ${e.message}"
+            }
+        }
+    }
 }

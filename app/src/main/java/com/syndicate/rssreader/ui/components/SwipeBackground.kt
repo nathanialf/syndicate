@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.CreateNewFolder
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -21,7 +23,8 @@ import androidx.compose.ui.unit.dp
 fun SwipeBackground(
     swipeDirection: SwipeToDismissBoxValue,
     modifier: Modifier = Modifier,
-    isGroupMode: Boolean = false
+    isGroupMode: Boolean = false,
+    isNotificationEnabled: Boolean = false
 ) {
     val backgroundColor = when (swipeDirection) {
         SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.errorContainer
@@ -37,7 +40,12 @@ fun SwipeBackground(
     
     val icon = when (swipeDirection) {
         SwipeToDismissBoxValue.StartToEnd -> Icons.Default.Delete
-        SwipeToDismissBoxValue.EndToStart -> if (isGroupMode) Icons.Default.Edit else Icons.Default.CreateNewFolder
+        SwipeToDismissBoxValue.EndToStart -> if (isGroupMode) {
+            Icons.Default.Edit
+        } else {
+            // For feeds: show opposite of current state
+            if (isNotificationEnabled) Icons.Default.NotificationsOff else Icons.Default.Notifications
+        }
         else -> null
     }
     
@@ -63,7 +71,11 @@ fun SwipeBackground(
                     imageVector = it,
                     contentDescription = when (swipeDirection) {
                         SwipeToDismissBoxValue.StartToEnd -> if (isGroupMode) "Delete group" else "Delete feed"
-                        SwipeToDismissBoxValue.EndToStart -> if (isGroupMode) "Edit group" else "Add to group"
+                        SwipeToDismissBoxValue.EndToStart -> if (isGroupMode) {
+                            "Edit group"
+                        } else {
+                            if (isNotificationEnabled) "Disable notifications" else "Enable notifications"
+                        }
                         else -> null
                     },
                     tint = iconColor,

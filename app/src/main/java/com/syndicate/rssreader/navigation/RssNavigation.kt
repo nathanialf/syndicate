@@ -35,6 +35,16 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import androidx.hilt.navigation.compose.hiltViewModel
+import java.net.URLEncoder
+import java.net.URLDecoder
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
+import com.syndicate.rssreader.ui.screens.ArticleDetailScreen
 import com.syndicate.rssreader.ui.screens.ArticleListScreen
 import com.syndicate.rssreader.ui.screens.FeedListScreen
 import com.syndicate.rssreader.ui.screens.GroupManagementScreen
@@ -135,158 +145,14 @@ fun RssNavigation(
                     onBackClick = { navController.popBackStack() }
                 )
             }
+            
         }
     } else {
         Log.d("RssNavigation", "Using NARROW SCREEN layout with bottom navigation")
-        // Narrow screen: use traditional navigation with bottom bar
-        Scaffold(
-            bottomBar = {
-                AnimatedVisibility(
-                    visible = bottomBarVisible,
-                    enter = slideInVertically(initialOffsetY = { it }),
-                    exit = slideOutVertically(targetOffsetY = { it })
-                ) {
-                    NavigationBar(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                    ) {
-                        bottomNavItems.forEach { item ->
-                            NavigationBarItem(
-                                icon = { 
-                                    Icon(
-                                        imageVector = item.icon, 
-                                        contentDescription = item.label
-                                    ) 
-                                },
-                                label = { Text(item.label) },
-                                selected = when (item.route) {
-                                    Screen.Feeds.route -> {
-                                        // Feeds tab is selected when on feeds screen OR viewing a specific feed
-                                        currentDestination?.route == Screen.Feeds.route ||
-                                        currentDestination?.route?.startsWith("articles/") == true
-                                    }
-                                    else -> currentDestination?.hierarchy?.any { it.route == item.route } == true
-                                },
-                                onClick = {
-                                    // Special handling for Feeds tab - always navigate to feeds list
-                                    if (item.route == Screen.Feeds.route) {
-                                        // Always navigate to feeds, even if already on a feed-related screen
-                                        navController.navigate(Screen.Feeds.route) {
-                                            popUpTo(navController.graph.startDestinationId) {
-                                                saveState = true
-                                            }
-                                            launchSingleTop = true
-                                            restoreState = false // Never restore state for feeds
-                                        }
-                                    } else if (currentDestination?.route != item.route) {
-                                        navController.navigate(item.route) {
-                                            popUpTo(navController.graph.startDestinationId) {
-                                                saveState = true
-                                            }
-                                            launchSingleTop = true
-                                            restoreState = (item.route == Screen.Articles.route)
-                                        }
-                                    }
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        ) { paddingValues ->
-            NavHost(
-                navController = navController,
-                startDestination = Screen.Articles.route,
-                modifier = Modifier.padding(top = paddingValues.calculateTopPadding())
-            ) {
-                composable(Screen.Articles.route) {
-                    ArticleListScreen(
-                        onScrollDirectionChanged = { isScrollingDown ->
-                            bottomBarVisible = !isScrollingDown
-                            topBarVisible = !isScrollingDown
-                        }
-                    )
-                }
-                
-                composable("articles/all") {
-                    ArticleListScreen(
-                        forceAllArticles = true,
-                        onScrollDirectionChanged = { isScrollingDown ->
-                            bottomBarVisible = !isScrollingDown
-                            topBarVisible = !isScrollingDown
-                        }
-                    )
-                }
-                
-                composable(
-                    route = "articles/{feedId}",
-                    arguments = listOf(navArgument("feedId") { type = NavType.LongType })
-                ) { backStackEntry ->
-                    val feedId = backStackEntry.arguments?.getLong("feedId") ?: 0L
-                    ArticleListScreen(
-                        feedId = feedId,
-                        onBackClick = { navController.popBackStack() },
-                        onScrollDirectionChanged = { isScrollingDown ->
-                            bottomBarVisible = !isScrollingDown
-                            topBarVisible = !isScrollingDown
-                        }
-                    )
-                }
-                
-                composable(
-                    route = "articles/group/{groupId}",
-                    arguments = listOf(navArgument("groupId") { type = NavType.LongType })
-                ) { backStackEntry ->
-                    val groupId = backStackEntry.arguments?.getLong("groupId") ?: 0L
-                    ArticleListScreen(
-                        groupId = groupId,
-                        onBackClick = { navController.popBackStack() },
-                        onScrollDirectionChanged = { isScrollingDown ->
-                            bottomBarVisible = !isScrollingDown
-                            topBarVisible = !isScrollingDown
-                        }
-                    )
-                }
-                
-                composable(Screen.Feeds.route) {
-                    Log.d("RssNavigation", "Navigating to Feeds screen - narrow mode, isSidebarMode should be false")
-                    
-                    val feedListViewModel: com.syndicate.rssreader.ui.viewmodel.FeedListViewModel = hiltViewModel()
-                    
-                    FeedListScreen(
-                        onFeedClick = { feedId ->
-                            navController.navigate("articles/$feedId")
-                        },
-                        onScrollDirectionChanged = { isScrollingDown ->
-                            bottomBarVisible = !isScrollingDown
-                            topBarVisible = !isScrollingDown
-                        },
-                        onNavigateToGroupManagement = {
-                            navController.navigate(Screen.GroupManagement.route)
-                        },
-                        onGroupClick = { groupId ->
-                            navController.navigate("articles/group/$groupId")
-                        },
-                        bottomBarVisible = bottomBarVisible,
-                        onDeleteGroup = { deletedGroupId ->
-                            // No special handling needed for narrow screen
-                        },
-                        onAllFeedsClick = {
-                            navController.navigate("articles/all")
-                        }
-                    )
-                }
-                
-                composable(Screen.Settings.route) {
-                    SettingsScreen(themeViewModel = themeViewModel)
-                }
-                
-                composable(Screen.GroupManagement.route) {
-                    GroupManagementScreen(
-                        onBackClick = { navController.popBackStack() }
-                    )
-                }
-            }
-        }
+        // Narrow screen: use animated content instead of navigation
+        NarrowScreenWithAnimation(
+            themeViewModel = themeViewModel
+        )
     }
 }
 
@@ -320,3 +186,153 @@ val bottomNavItems = listOf(
         label = "Settings"
     )
 )
+
+@Composable
+fun NarrowScreenWithAnimation(
+    themeViewModel: com.syndicate.rssreader.ui.viewmodel.ThemeViewModel
+) {
+    var currentScreen by remember { mutableStateOf(Screen.Articles.route) }
+    var selectedArticleId by remember { mutableStateOf<String?>(null) }
+    var selectedFeedId by remember { mutableStateOf<Long?>(null) }
+    var selectedGroupId by remember { mutableStateOf<Long?>(null) }
+    var forceAllArticles by remember { mutableStateOf(false) }
+    var bottomBarVisible by remember { mutableStateOf(true) }
+    var topBarVisible by remember { mutableStateOf(true) }
+    
+    Scaffold(
+        bottomBar = {
+            AnimatedVisibility(
+                visible = bottomBarVisible && selectedArticleId == null,
+                enter = slideInVertically(initialOffsetY = { it }),
+                exit = slideOutVertically(targetOffsetY = { it })
+            ) {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                ) {
+                    bottomNavItems.forEach { item ->
+                        NavigationBarItem(
+                            icon = { 
+                                Icon(
+                                    imageVector = item.icon, 
+                                    contentDescription = item.label
+                                ) 
+                            },
+                            label = { Text(item.label) },
+                            selected = currentScreen == item.route,
+                            onClick = {
+                                if (currentScreen != item.route) {
+                                    currentScreen = item.route
+                                    selectedArticleId = null
+                                    selectedFeedId = null
+                                    selectedGroupId = null
+                                    forceAllArticles = false
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    ) { paddingValues ->
+        val contentState = when {
+            selectedArticleId != null -> "article_detail"
+            else -> currentScreen
+        }
+        
+        AnimatedContent(
+            targetState = contentState,
+            transitionSpec = {
+                when {
+                    targetState == "article_detail" -> {
+                        // Slide in from right when opening article
+                        slideInHorizontally(
+                            initialOffsetX = { fullWidth -> fullWidth }
+                        ) togetherWith slideOutHorizontally(
+                            targetOffsetX = { fullWidth -> -fullWidth }
+                        )
+                    }
+                    initialState == "article_detail" -> {
+                        // Slide in from left when going back from article
+                        slideInHorizontally(
+                            initialOffsetX = { fullWidth -> -fullWidth }
+                        ) togetherWith slideOutHorizontally(
+                            targetOffsetX = { fullWidth -> fullWidth }
+                        )
+                    }
+                    else -> {
+                        // Simple fade for tab switches
+                        fadeIn() togetherWith fadeOut()
+                    }
+                }
+            },
+            modifier = Modifier.padding(top = paddingValues.calculateTopPadding()),
+            label = "narrow_content_transition"
+        ) { state ->
+            when (state) {
+                "article_detail" -> {
+                    selectedArticleId?.let { articleId ->
+                        ArticleDetailScreen(
+                            articleId = articleId,
+                            onBackClick = { selectedArticleId = null }
+                        )
+                    }
+                }
+                Screen.Articles.route -> {
+                    ArticleListScreen(
+                        feedId = selectedFeedId,
+                        groupId = selectedGroupId,
+                        forceAllArticles = forceAllArticles,
+                        onScrollDirectionChanged = { isScrollingDown ->
+                            bottomBarVisible = !isScrollingDown
+                            topBarVisible = !isScrollingDown
+                        },
+                        onArticleClick = { article ->
+                            selectedArticleId = article.id
+                        },
+                        onBackClick = if (selectedFeedId != null || selectedGroupId != null || forceAllArticles) {
+                            {
+                                selectedFeedId = null
+                                selectedGroupId = null
+                                forceAllArticles = false
+                            }
+                        } else {
+                            { /* Do nothing */ }
+                        }
+                    )
+                }
+                Screen.Feeds.route -> {
+                    val feedListViewModel: com.syndicate.rssreader.ui.viewmodel.FeedListViewModel = hiltViewModel()
+                    
+                    FeedListScreen(
+                        onFeedClick = { feedId ->
+                            selectedFeedId = feedId
+                            currentScreen = Screen.Articles.route
+                        },
+                        onScrollDirectionChanged = { isScrollingDown ->
+                            bottomBarVisible = !isScrollingDown
+                            topBarVisible = !isScrollingDown
+                        },
+                        onNavigateToGroupManagement = {
+                            // Could add group management as another animated state
+                        },
+                        onGroupClick = { groupId ->
+                            selectedGroupId = groupId
+                            currentScreen = Screen.Articles.route
+                        },
+                        bottomBarVisible = bottomBarVisible,
+                        onDeleteGroup = { deletedGroupId ->
+                            // No special handling needed
+                        },
+                        onAllFeedsClick = {
+                            forceAllArticles = true
+                            currentScreen = Screen.Articles.route
+                        }
+                    )
+                }
+                Screen.Settings.route -> {
+                    SettingsScreen(themeViewModel = themeViewModel)
+                }
+            }
+        }
+    }
+}
