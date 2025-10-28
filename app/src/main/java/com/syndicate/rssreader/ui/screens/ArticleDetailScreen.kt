@@ -42,6 +42,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.text.HtmlCompat
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.syndicate.rssreader.ui.theme.CormorantGaramond
@@ -79,30 +89,13 @@ fun ArticleDetailScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                windowInsets = if (useSystemBarInsets) {
-                    WindowInsets.systemBars
-                } else {
-                    WindowInsets(0, 0, 0, 0)
-                },
-                title = {
-                    Text(
-                        text = "Article",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = CormorantGaramond,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                actions = {
+            com.syndicate.rssreader.ui.common.AppTopBar(
+                title = "Syndicate",
+                subtitle = article?.feedTitle,
+                showBackButton = true,
+                onBackClick = onBackClick,
+                useSystemBarInsets = useSystemBarInsets,
+                customActions = {
                     article?.let { art ->
                         // Share button
                         IconButton(
@@ -239,14 +232,14 @@ private fun ArticleDetailContent(
 
         // Article content
         article.description?.let { description ->
-            val cleanDescription = parseHtmlText(description).trim()
-            if (cleanDescription.isNotBlank()) {
+            val styledDescription = parseHtmlText(description)
+            if (styledDescription.text.trim().isNotBlank()) {
                 Card(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     SelectionContainer {
                         Text(
-                            text = cleanDescription,
+                            text = styledDescription,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(16.dp),
@@ -279,6 +272,53 @@ private fun formatDate(timestamp: Long): String {
     return dateFormat.format(date)
 }
 
-private fun parseHtmlText(html: String): String {
-    return HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_COMPACT).toString()
+private fun parseHtmlText(html: String): AnnotatedString {
+    // Use Android's built-in HTML parser
+    val spanned = HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY)
+    
+    return buildAnnotatedString {
+        val text = spanned.toString()
+        append(text)
+        
+        // Get all spans and convert them to Compose styles
+        val spans = spanned.getSpans(0, spanned.length, Any::class.java)
+        
+        for (span in spans) {
+            val start = spanned.getSpanStart(span)
+            val end = spanned.getSpanEnd(span)
+            
+            if (start >= 0 && end <= length && start < end) {
+                when (span) {
+                    is android.text.style.StyleSpan -> {
+                        when (span.style) {
+                            android.graphics.Typeface.BOLD -> {
+                                addStyle(SpanStyle(fontWeight = FontWeight.Bold), start, end)
+                            }
+                            android.graphics.Typeface.ITALIC -> {
+                                addStyle(SpanStyle(fontStyle = FontStyle.Italic), start, end)
+                            }
+                            android.graphics.Typeface.BOLD_ITALIC -> {
+                                addStyle(SpanStyle(fontWeight = FontWeight.Bold, fontStyle = FontStyle.Italic), start, end)
+                            }
+                        }
+                    }
+                    is android.text.style.RelativeSizeSpan -> {
+                        val newSize = (span.sizeChange * 16).sp
+                        addStyle(SpanStyle(fontSize = newSize), start, end)
+                    }
+                    is android.text.style.AbsoluteSizeSpan -> {
+                        addStyle(SpanStyle(fontSize = span.size.sp), start, end)
+                    }
+                    is android.text.style.UnderlineSpan -> {
+                        addStyle(SpanStyle(textDecoration = TextDecoration.Underline), start, end)
+                    }
+                    is android.text.style.StrikethroughSpan -> {
+                        addStyle(SpanStyle(textDecoration = TextDecoration.LineThrough), start, end)
+                    }
+                }
+            }
+        }
+    }
 }
+
+

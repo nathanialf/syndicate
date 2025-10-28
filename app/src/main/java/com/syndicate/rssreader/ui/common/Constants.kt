@@ -21,4 +21,7 @@ object LayoutConstants {
     
     // Sidebar width
     val SidebarWidth = 320.dp
+    
+    // Icon sizes
+    val SwipeIconSize = 32.dp
 }

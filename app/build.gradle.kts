@@ -98,6 +98,8 @@ dependencies {
     // Image Loading
     implementation("io.coil-kt:coil-compose:2.7.0")
     
+    // We'll use built-in Android HtmlCompat instead
+    
     // Hilt (DI)
     implementation("com.google.dagger:hilt-android:2.52")
     ksp("com.google.dagger:hilt-compiler:2.52")

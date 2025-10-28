@@ -1,11 +1,13 @@
 package com.syndicate.rssreader.sync
 
 import android.content.Context
+import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.syndicate.rssreader.data.repository.RssRepository
 import com.syndicate.rssreader.notifications.NotificationManager
+import com.syndicate.rssreader.data.local.entities.ArticleEntity
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
@@ -20,10 +22,29 @@ class SyncWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         return try {
-            syncAllFeeds()
+            val feedId = inputData.getLong("feedId", -1L)
+            val groupId = inputData.getLong("groupId", -1L)
+            
+            when {
+                feedId != -1L -> {
+                    Log.d("SyncWorker", "Starting targeted sync for feed: $feedId")
+                    syncSingleFeed(feedId)
+                    Log.d("SyncWorker", "Targeted feed sync completed successfully")
+                }
+                groupId != -1L -> {
+                    Log.d("SyncWorker", "Starting targeted sync for group: $groupId")
+                    syncFeedsInGroup(groupId)
+                    Log.d("SyncWorker", "Targeted group sync completed successfully")
+                }
+                else -> {
+                    Log.d("SyncWorker", "Starting background sync for all feeds")
+                    syncAllFeeds()
+                    Log.d("SyncWorker", "Background sync completed successfully")
+                }
+            }
             Result.success()
         } catch (e: Exception) {
-            // Silently handle errors as per requirements
+            Log.e("SyncWorker", "Background sync failed: ${e.message}", e)
             Result.retry()
         }
     }
@@ -32,16 +53,43 @@ class SyncWorker @AssistedInject constructor(
         // Get all feeds with notifications enabled
         val feeds = repository.getAllFeeds().first()
         val notificationEnabledFeeds = feeds.filter { it.notificationsEnabled }
+        
+        Log.d("SyncWorker", "Found ${feeds.size} total feeds, ${notificationEnabledFeeds.size} with notifications enabled")
 
         for (feed in notificationEnabledFeeds) {
             try {
-                val refreshResult = repository.refreshFeed(feed.id)
-                if (refreshResult.isSuccess) {
-                    // Note: We would need to track which articles are new
-                    // For now, we'll skip showing individual article notifications during sync
-                    // This would need to be enhanced to track new articles properly
+                Log.d("SyncWorker", "Syncing feed: ${feed.title}")
+                val newArticlesResult = repository.refreshFeedAndGetNewArticles(feed.id)
+                if (newArticlesResult.isSuccess) {
+                    val newArticles = newArticlesResult.getOrThrow()
+                    Log.d("SyncWorker", "Found ${newArticles.size} new articles for feed: ${feed.title}")
+                    
+                    // Send notifications for new articles
+                    for (articleEntity in newArticles) {
+                        val article = com.syndicate.rssreader.data.models.Article(
+                            id = articleEntity.id,
+                            feedId = articleEntity.feedId,
+                            feedTitle = feed.title,
+                            feedFaviconUrl = feed.faviconUrl,
+                            title = articleEntity.title,
+                            description = articleEntity.description,
+                            url = articleEntity.url,
+                            author = articleEntity.author,
+                            publishedDate = articleEntity.publishedDate,
+                            thumbnailUrl = articleEntity.thumbnailUrl,
+                            isRead = false, // New articles are unread
+                            readAt = null
+                        )
+                        
+                        Log.d("SyncWorker", "Sending notification for article: ${article.title}")
+                        notificationManager.showFeedNotification(
+                            feedTitle = feed.title,
+                            article = article
+                        )
+                    }
                 }
             } catch (e: Exception) {
+                Log.e("SyncWorker", "Failed to sync feed: ${feed.title} - ${e.message}", e)
                 // Continue with other feeds if one fails
             }
         }
@@ -67,6 +115,104 @@ class SyncWorker @AssistedInject constructor(
             } catch (e: Exception) {
                 // Continue with other groups if one fails
             }
+        }
+    }
+    
+    private suspend fun syncSingleFeed(feedId: Long) {
+        try {
+            val feed = repository.getFeedById(feedId)
+            if (feed == null) {
+                Log.w("SyncWorker", "Feed not found: $feedId")
+                return
+            }
+            
+            Log.d("SyncWorker", "Syncing single feed: ${feed.title}")
+            val newArticlesResult = repository.refreshFeedAndGetNewArticles(feed.id)
+            if (newArticlesResult.isSuccess) {
+                val newArticles = newArticlesResult.getOrThrow()
+                Log.d("SyncWorker", "Found ${newArticles.size} new articles for feed: ${feed.title}")
+                
+                // Only send notifications if the feed has notifications enabled
+                if (feed.notificationsEnabled) {
+                    // Send notifications for new articles
+                    for (articleEntity in newArticles) {
+                        val article = com.syndicate.rssreader.data.models.Article(
+                            id = articleEntity.id,
+                            feedId = articleEntity.feedId,
+                            feedTitle = feed.title,
+                            feedFaviconUrl = feed.faviconUrl,
+                            title = articleEntity.title,
+                            description = articleEntity.description,
+                            url = articleEntity.url,
+                            author = articleEntity.author,
+                            publishedDate = articleEntity.publishedDate,
+                            thumbnailUrl = articleEntity.thumbnailUrl,
+                            isRead = false, // New articles are unread
+                            readAt = null
+                        )
+                        
+                        Log.d("SyncWorker", "Sending notification for article: ${article.title}")
+                        notificationManager.showFeedNotification(
+                            feedTitle = feed.title,
+                            article = article
+                        )
+                    }
+                }
+            } else {
+                Log.e("SyncWorker", "Failed to sync feed: ${feed.title} - ${newArticlesResult.exceptionOrNull()?.message}")
+            }
+        } catch (e: Exception) {
+            Log.e("SyncWorker", "Failed to sync feed: $feedId - ${e.message}", e)
+        }
+    }
+    
+    private suspend fun syncFeedsInGroup(groupId: Long) {
+        try {
+            val feedsInGroup = repository.getFeedsByGroup(groupId).first()
+            Log.d("SyncWorker", "Syncing ${feedsInGroup.size} feeds in group: $groupId")
+            
+            for (feed in feedsInGroup) {
+                try {
+                    Log.d("SyncWorker", "Syncing feed in group: ${feed.title}")
+                    val newArticlesResult = repository.refreshFeedAndGetNewArticles(feed.id)
+                    if (newArticlesResult.isSuccess) {
+                        val newArticles = newArticlesResult.getOrThrow()
+                        Log.d("SyncWorker", "Found ${newArticles.size} new articles for feed: ${feed.title}")
+                        
+                        // Only send notifications if the feed has notifications enabled
+                        if (feed.notificationsEnabled) {
+                            // Send notifications for new articles
+                            for (articleEntity in newArticles) {
+                                val article = com.syndicate.rssreader.data.models.Article(
+                                    id = articleEntity.id,
+                                    feedId = articleEntity.feedId,
+                                    feedTitle = feed.title,
+                                    feedFaviconUrl = feed.faviconUrl,
+                                    title = articleEntity.title,
+                                    description = articleEntity.description,
+                                    url = articleEntity.url,
+                                    author = articleEntity.author,
+                                    publishedDate = articleEntity.publishedDate,
+                                    thumbnailUrl = articleEntity.thumbnailUrl,
+                                    isRead = false, // New articles are unread
+                                    readAt = null
+                                )
+                                
+                                Log.d("SyncWorker", "Sending notification for article: ${article.title}")
+                                notificationManager.showFeedNotification(
+                                    feedTitle = feed.title,
+                                    article = article
+                                )
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("SyncWorker", "Failed to sync feed in group: ${feed.title} - ${e.message}", e)
+                    // Continue with other feeds if one fails
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("SyncWorker", "Failed to sync feeds in group: $groupId - ${e.message}", e)
         }
     }
 }

@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.syndicate.rssreader.ui.common.LayoutConstants
 
 @Composable
 fun SwipeBackground(
@@ -79,7 +80,7 @@ fun SwipeBackground(
                         else -> null
                     },
                     tint = iconColor,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(LayoutConstants.SwipeIconSize)
                 )
             }
         }

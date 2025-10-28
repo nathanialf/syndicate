@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -35,7 +38,12 @@ fun ArticleContentArea(
     themeViewModel: com.syndicate.rssreader.ui.viewmodel.ThemeViewModel? = null,
     isSidebarMode: Boolean = false,
     showTopBar: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // Override parameters for single-pane mode
+    overrideFeedId: Long? = null,
+    overrideGroupId: Long? = null,
+    overrideForceAllArticles: Boolean? = null,
+    onBackClick: (() -> Unit)? = null
 ) {
     val articleViewModel: ArticleListViewModel = hiltViewModel()
     val currentFeed by articleViewModel.currentFeed.collectAsState()
@@ -83,16 +91,22 @@ fun ArticleContentArea(
                     // Dual-pane: fill space without additional padding, but include system bar spacing
                     Box(modifier = Modifier.fillMaxSize()) {
                         val systemBarPadding = LayoutUtils.getSystemBarTopPadding()
+                        val topBarPadding = if (showTopBar) com.syndicate.rssreader.ui.common.LayoutConstants.TopBarHeight else 0.dp
+                        val totalTopPadding = systemBarPadding + topBarPadding
+                        val listState = rememberLazyListState()
+                        val coroutineScope = rememberCoroutineScope()
                         
                         ArticleListScreen(
-                            feedId = navigationState.selectedFeedId,
-                            groupId = navigationState.selectedGroupId,
-                            forceAllArticles = navigationState.forceAllArticles,
+                            feedId = overrideFeedId ?: navigationState.selectedFeedId,
+                            groupId = overrideGroupId ?: navigationState.selectedGroupId,
+                            forceAllArticles = overrideForceAllArticles ?: navigationState.forceAllArticles,
                             onArticleClick = { article ->
                                 navigationState.onArticleSelected(article.id)
                             },
+                            onBackClick = onBackClick ?: { /* Do nothing */ },
                             isSidebarMode = true,
-                            additionalTopPadding = systemBarPadding
+                            additionalTopPadding = totalTopPadding,
+                            externalListState = listState
                         )
                         
                         // Top app bar for dual-pane mode
@@ -115,7 +129,16 @@ fun ArticleContentArea(
                                     onBackClick = { 
                                         if (navigationState.showSettings) navigationState.onShowSettings(false)
                                         if (navigationState.selectedArticleId != null) navigationState.onBackFromArticle()
-                                    }
+                                    },
+                                    onTitleClick = if (!navigationState.showSettings && navigationState.selectedArticleId == null) {
+                                        {
+                                            coroutineScope.launch {
+                                                listState.animateScrollToItem(0)
+                                            }
+                                        }
+                                    } else null,
+                                    showMarkAllAsReadButton = !navigationState.showSettings && navigationState.selectedArticleId == null,
+                                    onMarkAllAsReadClick = { articleViewModel.markAllAsRead() }
                                 )
                             }
                         }
@@ -123,13 +146,13 @@ fun ArticleContentArea(
                 } else {
                     // Single-pane: normal article list
                     ArticleListScreen(
-                        feedId = navigationState.selectedFeedId,
-                        groupId = navigationState.selectedGroupId,
-                        forceAllArticles = navigationState.forceAllArticles,
+                        feedId = overrideFeedId ?: navigationState.selectedFeedId,
+                        groupId = overrideGroupId ?: navigationState.selectedGroupId,
+                        forceAllArticles = overrideForceAllArticles ?: navigationState.forceAllArticles,
                         onArticleClick = { article ->
                             navigationState.onArticleSelected(article.id)
                         },
-                        onBackClick = if (navigationState.selectedFeedId != null || 
+                        onBackClick = onBackClick ?: if (navigationState.selectedFeedId != null || 
                                          navigationState.selectedGroupId != null || 
                                          navigationState.forceAllArticles) {
                             navigationState.onBackFromSelection

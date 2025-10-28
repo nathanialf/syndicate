@@ -45,7 +45,8 @@ fun SwipeableFeedItem(
                 }
                 SwipeToDismissBoxValue.Settled -> false
             }
-        }
+        },
+        positionalThreshold = { totalDistance -> totalDistance * 0.4f }
     )
     
     // Reset swipe state when requested

@@ -17,6 +17,7 @@ fun rememberNavigationState(): NavigationState {
     var selectedArticleId by remember { mutableStateOf<String?>(null) }
     var currentScreen by remember { mutableStateOf("articles") }
     var showSettings by remember { mutableStateOf(false) }
+    var previousScreen by remember { mutableStateOf<String?>(null) }
 
     return NavigationState(
         selectedFeedId = selectedFeedId,
@@ -25,6 +26,7 @@ fun rememberNavigationState(): NavigationState {
         selectedArticleId = selectedArticleId,
         currentScreen = currentScreen,
         showSettings = showSettings,
+        previousScreen = previousScreen,
         onFeedSelected = { feedId ->
             selectedFeedId = feedId
             selectedGroupId = null
@@ -50,14 +52,17 @@ fun rememberNavigationState(): NavigationState {
             selectedArticleId = articleId
         },
         onScreenChanged = { screen ->
-            currentScreen = screen
-            selectedArticleId = null
-            // Don't reset feed/group selection when navigating to articles
-            // Only reset when navigating away from articles
-            if (screen != "articles") {
-                selectedFeedId = null
-                selectedGroupId = null
-                forceAllArticles = false
+            if (currentScreen != screen) {
+                previousScreen = currentScreen
+                currentScreen = screen
+                selectedArticleId = null
+                // Don't reset feed/group selection when navigating to articles
+                // Only reset when navigating away from articles
+                if (screen != "articles") {
+                    selectedFeedId = null
+                    selectedGroupId = null
+                    forceAllArticles = false
+                }
             }
         },
         onShowSettings = { show ->
@@ -68,6 +73,11 @@ fun rememberNavigationState(): NavigationState {
             selectedArticleId = null
         },
         onBackFromSelection = {
+            // Navigate back to the previous screen (feeds) and clear selection
+            if (previousScreen != null) {
+                currentScreen = previousScreen!!
+                previousScreen = null
+            }
             selectedFeedId = null
             selectedGroupId = null
             forceAllArticles = false
@@ -83,6 +93,14 @@ fun rememberNavigationState(): NavigationState {
                 selectedGroupId = null
             }
             showSettings = false
+        },
+        onNavigateToDefault = {
+            // Navigate to default group or all articles if no default group exists
+            selectedFeedId = null
+            selectedGroupId = null
+            forceAllArticles = true // Start with all articles as default
+            showSettings = false
+            selectedArticleId = null
         }
     )
 }
@@ -94,6 +112,7 @@ data class NavigationState(
     val selectedArticleId: String?,
     val currentScreen: String,
     val showSettings: Boolean,
+    val previousScreen: String?,
     val onFeedSelected: (Long) -> Unit,
     val onGroupSelected: (Long) -> Unit,
     val onAllFeedsSelected: () -> Unit,
@@ -103,5 +122,6 @@ data class NavigationState(
     val onBackFromArticle: () -> Unit,
     val onBackFromSelection: () -> Unit,
     val onFeedDeleted: (Long) -> Unit,
-    val onGroupDeleted: (Long) -> Unit
+    val onGroupDeleted: (Long) -> Unit,
+    val onNavigateToDefault: () -> Unit
 )

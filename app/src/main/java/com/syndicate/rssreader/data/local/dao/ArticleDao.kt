@@ -90,6 +90,9 @@ interface ArticleDao {
     
     @Query("SELECT COUNT(*) FROM articles WHERE feed_id = :feedId")
     suspend fun getArticleCountForFeed(feedId: Long): Int
+    
+    @Query("SELECT id FROM articles WHERE feed_id = :feedId")
+    suspend fun getArticleIdsForFeed(feedId: Long): List<String>
 }
 
 data class ArticleWithReadStatus(

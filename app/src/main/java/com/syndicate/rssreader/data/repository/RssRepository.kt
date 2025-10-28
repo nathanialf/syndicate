@@ -204,11 +204,60 @@ class RssRepository @Inject constructor(
             )
             updateFeed(updatedFeed)
             
-            // Parse and insert new articles
-            val articles = rssParser.parseArticles(syndFeed, feedId)
-            articleDao.insertArticles(articles)
+            // Parse articles and only insert new ones to preserve read status
+            val fetchedArticles = rssParser.parseArticles(syndFeed, feedId)
+            val existingArticleIds = articleDao.getArticleIdsForFeed(feedId).toSet()
+            val newArticles = fetchedArticles.filter { it.id !in existingArticleIds }
+            
+            if (newArticles.isNotEmpty()) {
+                articleDao.insertArticles(newArticles)
+            }
             
             Result.success(Unit)
+        } catch (e: Exception) {
+            updateFeedAvailability(feedId, false)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun refreshFeedAndGetNewArticles(feedId: Long): Result<List<com.syndicate.rssreader.data.local.entities.ArticleEntity>> {
+        return try {
+            val feed = getFeedById(feedId) ?: return Result.failure(Exception("Feed not found"))
+            android.util.Log.d("RssRepository", "Refreshing feed: ${feed.title} (${feed.url})")
+            
+            val syndFeedResult = rssFetcher.fetchFeed(feed.url)
+            if (syndFeedResult.isFailure) {
+                android.util.Log.e("RssRepository", "Failed to fetch feed: ${feed.title} - ${syndFeedResult.exceptionOrNull()?.message}")
+                updateFeedAvailability(feedId, false)
+                return Result.failure(syndFeedResult.exceptionOrNull() ?: Exception("Failed to fetch feed"))
+            }
+            
+            val syndFeed = syndFeedResult.getOrThrow()
+            android.util.Log.d("RssRepository", "Successfully fetched feed: ${syndFeed.title} with ${syndFeed.entries?.size ?: 0} total entries")
+            
+            // Update feed info
+            val updatedFeed = feed.copy(
+                title = syndFeed.title ?: feed.title,
+                description = syndFeed.description ?: feed.description,
+                lastFetched = System.currentTimeMillis(),
+                isAvailable = true
+            )
+            updateFeed(updatedFeed)
+            
+            // Parse articles and check which ones are new
+            val fetchedArticles = rssParser.parseArticles(syndFeed, feedId)
+            val existingArticleIds = articleDao.getArticleIdsForFeed(feedId).toSet()
+            
+            val newArticles = fetchedArticles.filter { it.id !in existingArticleIds }
+            android.util.Log.d("RssRepository", "Feed ${feed.title}: Found ${fetchedArticles.size} total articles, ${newArticles.size} are new")
+            
+            // Only insert new articles to preserve read status of existing ones
+            if (newArticles.isNotEmpty()) {
+                articleDao.insertArticles(newArticles)
+                android.util.Log.d("RssRepository", "Inserted ${newArticles.size} new articles for feed: ${feed.title}")
+            }
+            
+            Result.success(newArticles)
         } catch (e: Exception) {
             updateFeedAvailability(feedId, false)
             Result.failure(e)

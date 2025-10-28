@@ -1,11 +1,13 @@
 package com.syndicate.rssreader.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -38,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.text.HtmlCompat
 import coil.compose.AsyncImage
 import com.syndicate.rssreader.data.models.Article
+import com.syndicate.rssreader.ui.common.LayoutConstants
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -64,7 +67,8 @@ fun SwipeableArticleCard(
                 }
                 SwipeToDismissBoxValue.Settled -> false
             }
-        }
+        },
+        positionalThreshold = { totalDistance -> totalDistance * 0.4f }
     )
     
     // Reset swipe state when requested
@@ -210,8 +214,9 @@ private fun ArticleSwipeBackground(
     
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .fillMaxSize()
+            .background(backgroundColor)
+            .padding(horizontal = 24.dp),
         contentAlignment = when (swipeDirection) {
             SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
             SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
@@ -219,22 +224,12 @@ private fun ArticleSwipeBackground(
         }
     ) {
         if (swipeDirection != SwipeToDismissBoxValue.Settled) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = text,
-                    tint = iconColor,
-                    modifier = Modifier.size(24.dp)
-                )
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = iconColor
-                )
-            }
+            Icon(
+                imageVector = icon,
+                contentDescription = text,
+                tint = iconColor,
+                modifier = Modifier.size(LayoutConstants.SwipeIconSize)
+            )
         }
     }
 }

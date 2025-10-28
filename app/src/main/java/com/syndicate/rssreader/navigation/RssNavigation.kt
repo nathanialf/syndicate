@@ -44,6 +44,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
+import androidx.activity.compose.BackHandler
 import com.syndicate.rssreader.ui.components.ArticleContentArea
 import com.syndicate.rssreader.ui.navigation.rememberNavigationState
 import com.syndicate.rssreader.ui.screens.ArticleDetailScreen
@@ -177,6 +178,28 @@ fun NarrowScreenWithAnimation(
 ) {
     val navigationState = rememberNavigationState()
     
+    // Handle system back gesture
+    BackHandler(
+        enabled = navigationState.selectedArticleId != null || 
+                  navigationState.selectedFeedId != null || 
+                  navigationState.selectedGroupId != null || 
+                  navigationState.forceAllArticles ||
+                  navigationState.showSettings ||
+                  navigationState.currentScreen != Screen.Articles.route
+    ) {
+        when {
+            navigationState.showSettings -> navigationState.onShowSettings(false)
+            navigationState.selectedArticleId != null -> navigationState.onBackFromArticle()
+            navigationState.selectedFeedId != null || 
+            navigationState.selectedGroupId != null || 
+            navigationState.forceAllArticles -> navigationState.onBackFromSelection()
+            navigationState.currentScreen != Screen.Articles.route -> {
+                // Navigate back to Articles screen from any other screen
+                navigationState.onScreenChanged(Screen.Articles.route)
+            }
+        }
+    }
+    
     Scaffold(
         bottomBar = {
             if (navigationState.selectedArticleId == null) {
@@ -196,6 +219,13 @@ fun NarrowScreenWithAnimation(
                             onClick = {
                                 if (navigationState.currentScreen != item.route) {
                                     navigationState.onScreenChanged(item.route)
+                                    // Special handling for Articles button - always go to default view
+                                    if (item.route == Screen.Articles.route) {
+                                        navigationState.onNavigateToDefault()
+                                    }
+                                } else if (item.route == Screen.Articles.route) {
+                                    // If already on Articles screen, also reset to default
+                                    navigationState.onNavigateToDefault()
                                 }
                             }
                         )

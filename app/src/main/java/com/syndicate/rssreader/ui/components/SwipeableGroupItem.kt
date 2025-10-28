@@ -40,7 +40,8 @@ fun SwipeableGroupItem(
                 }
                 SwipeToDismissBoxValue.Settled -> false
             }
-        }
+        },
+        positionalThreshold = { totalDistance -> totalDistance * 0.4f }
     )
     
     SwipeToDismissBox(

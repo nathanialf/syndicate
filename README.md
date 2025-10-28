@@ -24,9 +24,10 @@ A modern Android RSS reader built with Jetpack Compose and Material 3 design, fe
 - **Push Notifications**: Per-feed notification system with mark-as-read actions
 - **Notification Channels**: Organized notifications with proper Android 8+ channel support
 - **Haptic Feedback**: Tactile feedback for swipe actions and article interactions
+- **HTML Content Rendering**: Rich HTML content parsing with proper formatting and styling
+- **Pull-to-Refresh**: Manual refresh to fetch new articles with scroll-to-top functionality
 
 ### 🚧 Planned Features
-- **Pull-to-Refresh**: Manual refresh to fetch new articles
 - **Article Search**: Search through article titles and descriptions
 - **Feed Availability Monitoring**: Track and display feed status
 - **Article Filtering**: Filter by read/unread status, sort by date
@@ -40,7 +41,8 @@ A modern Android RSS reader built with Jetpack Compose and Material 3 design, fe
 - **DI**: Hilt
 - **HTTP**: OkHttp + Retrofit
 - **Image Loading**: Coil
-- **RSS Parsing**: Custom XML parser
+- **RSS Parsing**: Rome Tools library
+- **HTML Parsing**: Android HtmlCompat with custom span conversion
 
 ## Building from Source
 

@@ -11,11 +11,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -24,6 +27,8 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -59,7 +64,6 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArticleListScreen(
     feedId: Long? = null,
@@ -68,57 +72,92 @@ fun ArticleListScreen(
     onBackClick: () -> Unit = {},
     onArticleClick: (com.syndicate.rssreader.data.models.Article) -> Unit = {},
     isSidebarMode: Boolean = false,
-    additionalTopPadding: androidx.compose.ui.unit.Dp = 0.dp
+    additionalTopPadding: androidx.compose.ui.unit.Dp = 0.dp,
+    externalListState: LazyListState? = null
 ) {
     val viewModel: ArticleListViewModel = hiltViewModel()
     val articles by viewModel.articles.collectAsState()
     val currentFeed by viewModel.currentFeed.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val shouldScrollToTop by viewModel.shouldScrollToTop.collectAsState()
     val showFilter by viewModel.showFilter.collectAsState()
-    
-    val listState = rememberLazyListState()
-    
+
+    val listState = externalListState ?: rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
     LaunchedEffect(feedId, groupId, forceAllArticles) {
         when {
-            feedId != null -> {
-                // Explicitly selected feed
-                viewModel.setFeedId(feedId)
-            }
-            groupId != null -> {
-                // Explicitly selected group
-                viewModel.setGroupId(groupId)
-            }
+            feedId != null -> viewModel.setFeedId(feedId)
+            groupId != null -> viewModel.setGroupId(groupId)
             forceAllArticles -> {
-                // Explicitly show all articles
                 viewModel.setFeedId(null)
+                viewModel.setGroupId(null)
             }
             else -> {
-                // Only use default group for initial load when no explicit selection
-                // This prevents overriding explicit selections with default behavior
-                val defaultGroup = viewModel.getDefaultGroup()
-                if (defaultGroup != null) {
-                    viewModel.setGroupId(defaultGroup.id)
-                } else {
-                    viewModel.setFeedId(null) // Show all articles
-                }
+                viewModel.setFeedId(null)
+                viewModel.setGroupId(null)
             }
         }
     }
     
-    if (isSidebarMode) {
-        // Sidebar content without Scaffold
-        
+    // Handle scroll to top after refresh
+    LaunchedEffect(shouldScrollToTop) {
+        if (shouldScrollToTop) {
+            listState.animateScrollToItem(0)
+            viewModel.onScrollToTopHandled()
+        }
+    }
+
+    if (!isSidebarMode) {
+        Scaffold(
+            topBar = {
+                AppTopBar(
+                    title = "Syndicate",
+                    subtitle = currentFeed?.title ?: "All Articles",
+                    showBackButton = feedId != null || groupId != null || forceAllArticles,
+                    onBackClick = onBackClick,
+                    showMarkAllAsReadButton = true,
+                    onMarkAllAsReadClick = { viewModel.markAllAsRead() },
+                    onTitleClick = {
+                        coroutineScope.launch {
+                            listState.animateScrollToItem(0)
+                        }
+                    }
+                )
+            }
+        ) { paddingValues ->
+            ArticleListContent(
+                articles = articles,
+                currentFeed = currentFeed,
+                isLoading = isLoading,
+                isRefreshing = isRefreshing,
+                feedId = feedId,
+                showFilter = showFilter,
+                onFilterChange = viewModel::setShowFilter,
+                onArticleClick = onArticleClick,
+                onToggleReadState = { article ->
+                    if (article.isRead) {
+                        viewModel.markAsUnread(article.id)
+                    } else {
+                        viewModel.markAsRead(article.id)
+                    }
+                },
+                listState = listState,
+                paddingValues = paddingValues,
+                onRefresh = { viewModel.refreshFeeds() }
+            )
+        }
+    } else {
         ArticleListContent(
             articles = articles,
             currentFeed = currentFeed,
             isLoading = isLoading,
+            isRefreshing = isRefreshing,
             feedId = feedId,
             showFilter = showFilter,
             onFilterChange = viewModel::setShowFilter,
-            onArticleClick = { article ->
-                viewModel.markAsRead(article.id)
-                onArticleClick(article)
-            },
+            onArticleClick = onArticleClick,
             onToggleReadState = { article ->
                 if (article.isRead) {
                     viewModel.markAsUnread(article.id)
@@ -128,79 +167,40 @@ fun ArticleListScreen(
             },
             listState = listState,
             paddingValues = androidx.compose.foundation.layout.PaddingValues(
-                start = LayoutConstants.StandardPadding,
-                end = LayoutConstants.StandardPadding,
-                bottom = LayoutConstants.StandardPadding * 2,
-                top = LayoutConstants.ContentTopPadding + additionalTopPadding
-            )
+                top = additionalTopPadding
+            ),
+            onRefresh = { viewModel.refreshFeeds() }
         )
-    } else {
-        // Full screen with Scaffold
-        Scaffold(
-            topBar = {
-                AppTopBar(
-                    title = "Syndicate",
-                    subtitle = when {
-                        feedId != null -> currentFeed?.title ?: "Feed Articles"
-                        groupId != null -> currentFeed?.title ?: "Group Articles"
-                        else -> currentFeed?.title ?: "All Articles"
-                    },
-                    showBackButton = feedId != null || groupId != null,
-                    onBackClick = onBackClick
-                )
-            },
-            containerColor = MaterialTheme.colorScheme.background
-        ) { paddingValues ->
-            val contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                top = LayoutConstants.ContentTopPadding,
-                bottom = LayoutConstants.StandardPadding * 2,
-                start = 0.dp,
-                end = 0.dp
-            )
-            ArticleListContent(
-                articles = articles,
-                currentFeed = currentFeed,
-                isLoading = isLoading,
-                feedId = feedId,
-                showFilter = showFilter,
-                onFilterChange = viewModel::setShowFilter,
-                onArticleClick = { article ->
-                    viewModel.markAsRead(article.id)
-                    onArticleClick(article)
-                },
-                onToggleReadState = { article ->
-                    if (article.isRead) {
-                        viewModel.markAsUnread(article.id)
-                    } else {
-                        viewModel.markAsRead(article.id)
-                    }
-                },
-                listState = listState,
-                paddingValues = contentPadding
-            )
-        }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ArticleListContent(
     articles: List<com.syndicate.rssreader.data.models.Article>,
     currentFeed: com.syndicate.rssreader.data.models.Feed?,
     isLoading: Boolean,
+    isRefreshing: Boolean,
     feedId: Long?,
     showFilter: ArticleShowFilter,
     onFilterChange: (ArticleShowFilter) -> Unit,
     onArticleClick: (com.syndicate.rssreader.data.models.Article) -> Unit,
     onToggleReadState: (com.syndicate.rssreader.data.models.Article) -> Unit,
     listState: LazyListState,
-    paddingValues: androidx.compose.foundation.layout.PaddingValues
+    paddingValues: androidx.compose.foundation.layout.PaddingValues,
+    onRefresh: () -> Unit = {}
 ) {
     
-    Column(
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
     ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
         // Filter chips
         androidx.compose.foundation.layout.Row(
             modifier = Modifier
@@ -284,16 +284,6 @@ private fun ArticleListContent(
                 }
             }
         }
-    }
-    
-    if (isLoading) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
         }
     }
 }

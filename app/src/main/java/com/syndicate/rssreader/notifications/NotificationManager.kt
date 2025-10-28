@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.syndicate.rssreader.R
@@ -62,9 +63,17 @@ class NotificationManager @Inject constructor(
     }
     
     fun showFeedNotification(feedTitle: String, article: Article) {
+        Log.d("NotificationManager", "Attempting to show notification for: $feedTitle - ${article.title}")
+        
         // Check global notification setting
         val globalEnabled = runBlocking { notificationPreferences.notificationsEnabled.first() }
-        if (!globalEnabled || !notificationManager.areNotificationsEnabled()) return
+        Log.d("NotificationManager", "Global notifications enabled: $globalEnabled")
+        Log.d("NotificationManager", "System notifications enabled: ${notificationManager.areNotificationsEnabled()}")
+        
+        if (!globalEnabled || !notificationManager.areNotificationsEnabled()) {
+            Log.w("NotificationManager", "Notifications disabled - global: $globalEnabled, system: ${notificationManager.areNotificationsEnabled()}")
+            return
+        }
         
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -107,7 +116,9 @@ class NotificationManager @Inject constructor(
             .build()
         
         val notificationId = FEED_NOTIFICATION_BASE_ID + article.feedId.toInt()
+        Log.d("NotificationManager", "Posting notification with ID: $notificationId")
         notificationManager.notify(notificationId, notification)
+        Log.d("NotificationManager", "Notification posted successfully")
     }
     
     fun showGroupNotification(groupName: String, groupId: Long, articleCount: Int, sampleArticle: Article? = null) {
