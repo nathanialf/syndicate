@@ -44,10 +44,14 @@ class NotificationActionReceiver : BroadcastReceiver() {
     private fun markArticleAsRead(articleId: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                // Get the article to find its feedId
+                val article = repository.getArticleById(articleId)
                 repository.markAsRead(articleId)
-                // We need to get the feedId to dismiss the notification
-                // Since we don't have a direct method, we'll just mark as read
-                // The notification will be updated on next sync or manually dismissed
+                
+                // Dismiss the notification for this feed
+                article?.let {
+                    notificationManager.dismissFeedNotification(it.feedId)
+                }
             } catch (e: Exception) {
                 // Silently handle error as per requirements
             }

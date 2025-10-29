@@ -27,6 +27,9 @@ A modern Android RSS reader built with Jetpack Compose and Material 3 design, fe
 - **Haptic Feedback**: Tactile feedback for swipe actions and article interactions
 - **HTML Content Rendering**: Rich HTML content parsing with proper formatting and styling
 - **Pull-to-Refresh**: Manual refresh to fetch new articles with scroll-to-top functionality
+- **Feed Addition Confirmation**: Success notifications with feed titles when adding new feeds
+- **Auto-dismissing Dialogs**: Improved UX with automatic dialog closure after successful actions
+- **Smart Notification Dismissal**: Notifications automatically clear when articles are marked as read
 
 ### 🚧 Planned Features
 - **Article Search**: Search through article titles and descriptions
@@ -53,7 +56,7 @@ A modern Android RSS reader built with Jetpack Compose and Material 3 design, fe
 
 ## Usage
 
-1. **Adding Feeds**: Tap the + button to add RSS feeds by URL or import from OPML files
+1. **Adding Feeds**: Tap the + button to add RSS feeds by URL or import from OPML files (with confirmation notifications)
 2. **Feed Organization**: Swipe feeds to delete or organize into custom groups
 3. **Group Management**: Create, edit, and delete feed groups for better organization
 4. **OPML Import**: Import feed subscriptions with intelligent duplicate detection

@@ -101,7 +101,7 @@ class NotificationManager @Inject constructor(
         )
         
         val notification = NotificationCompat.Builder(context, FEED_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_rss_feed)
+            .setSmallIcon(R.drawable.ic_notification_news)
             .setContentTitle(feedTitle)
             .setContentText(article.title)
             .setStyle(NotificationCompat.BigTextStyle().bigText(article.title))
@@ -153,7 +153,7 @@ class NotificationManager @Inject constructor(
         val notification = if (articleCount == 1 && sampleArticle != null) {
             // Single article notification
             NotificationCompat.Builder(context, GROUP_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_rss_feed)
+                .setSmallIcon(R.drawable.ic_notification_news)
                 .setContentTitle(groupName)
                 .setContentText(sampleArticle.title)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(sampleArticle.title))
@@ -169,7 +169,7 @@ class NotificationManager @Inject constructor(
         } else {
             // Multiple articles notification
             NotificationCompat.Builder(context, GROUP_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_rss_feed)
+                .setSmallIcon(R.drawable.ic_notification_news)
                 .setContentTitle(groupName)
                 .setContentText("$articleCount new articles")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)

@@ -26,7 +26,9 @@ import com.syndicate.rssreader.ui.viewmodel.ArticleListViewModel
 @Composable
 fun TwoPaneArticlesScreen(
     themeViewModel: com.syndicate.rssreader.ui.viewmodel.ThemeViewModel? = null,
-    onNavigateToGroupManagement: () -> Unit = {}
+    onNavigateToGroupManagement: () -> Unit = {},
+    notificationData: com.syndicate.rssreader.ui.NotificationData? = null,
+    onNotificationHandled: () -> Unit = {}
 ) {
     val navigationState = rememberNavigationState()
     val articleViewModel: ArticleListViewModel = hiltViewModel()
@@ -50,6 +52,24 @@ fun TwoPaneArticlesScreen(
             navigationState.selectedGroupId != null -> articleViewModel.setGroupId(navigationState.selectedGroupId)
             navigationState.forceAllArticles -> articleViewModel.setFeedId(null)
             else -> articleViewModel.setFeedId(null)
+        }
+    }
+    
+    // Handle notification data
+    LaunchedEffect(notificationData) {
+        notificationData?.let { data ->
+            when (data) {
+                is com.syndicate.rssreader.ui.NotificationData.Article -> {
+                    // Navigate to the specific feed and article
+                    navigationState.onFeedSelected(data.feedId)
+                    navigationState.onArticleSelected(data.articleId)
+                }
+                is com.syndicate.rssreader.ui.NotificationData.Group -> {
+                    // Navigate to the specific group
+                    navigationState.onGroupSelected(data.groupId)
+                }
+            }
+            onNotificationHandled()
         }
     }
     

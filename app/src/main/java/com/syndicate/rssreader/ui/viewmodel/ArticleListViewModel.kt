@@ -145,9 +145,18 @@ class ArticleListViewModel @Inject constructor(
     
     fun markAllAsRead() {
         viewModelScope.launch {
-            articles.value.forEach { article ->
-                if (!article.isRead) {
-                    repository.markAsRead(article.id, true)
+            when {
+                _feedId.value != null -> {
+                    // Mark all articles in the current feed as read
+                    repository.markAllAsReadForFeed(_feedId.value!!)
+                }
+                _groupId.value != null -> {
+                    // Mark all articles in the current group as read
+                    repository.markAllAsReadForGroup(_groupId.value!!)
+                }
+                else -> {
+                    // Mark all articles as read
+                    repository.markAllAsRead()
                 }
             }
         }

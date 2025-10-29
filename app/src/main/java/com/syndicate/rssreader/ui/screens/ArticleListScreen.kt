@@ -231,38 +231,44 @@ private fun ArticleListContent(
         
         // Articles list
         if (articles.isEmpty() && !isLoading) {
-            Box(
+            // Use LazyColumn for empty state to enable pull-to-refresh
+            LazyColumn(
+                state = listState,
                 modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Article,
-                        contentDescription = null,
-                        modifier = Modifier.padding(16.dp),
-                        tint = MaterialTheme.colorScheme.outline
-                    )
-                    Text(
-                        text = when (showFilter) {
-                            ArticleShowFilter.UNREAD -> "No unread articles"
-                            ArticleShowFilter.READ -> "No read articles"
-                            ArticleShowFilter.ALL -> if (feedId != null) "No articles in this feed" else "No articles yet"
-                        },
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = when (showFilter) {
-                            ArticleShowFilter.UNREAD -> "All articles have been read"
-                            ArticleShowFilter.READ -> "No articles have been read yet"
-                            ArticleShowFilter.ALL -> if (feedId != null) "This feed doesn't have any articles yet" else "Add some feeds to see articles here"
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
+                item {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Article,
+                            contentDescription = null,
+                            modifier = Modifier.padding(16.dp),
+                            tint = MaterialTheme.colorScheme.outline
+                        )
+                        Text(
+                            text = when (showFilter) {
+                                ArticleShowFilter.UNREAD -> "No unread articles"
+                                ArticleShowFilter.READ -> "No read articles"
+                                ArticleShowFilter.ALL -> if (feedId != null) "No articles in this feed" else "No articles yet"
+                            },
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = when (showFilter) {
+                                ArticleShowFilter.UNREAD -> "All articles have been read"
+                                ArticleShowFilter.READ -> "No articles have been read yet"
+                                ArticleShowFilter.ALL -> if (feedId != null) "This feed doesn't have any articles yet" else "Add some feeds to see articles here"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
                 }
             }
         } else {

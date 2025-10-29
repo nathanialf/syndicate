@@ -28,27 +28,26 @@ interface ReadStatusDao {
     suspend fun deleteReadStatus(articleId: String)
     
     @Query("""
-        UPDATE read_status SET is_read = 1, read_at = :readAt 
-        WHERE article_id IN (
-            SELECT a.id FROM articles a 
-            INNER JOIN feeds f ON a.feed_id = f.id 
-            WHERE f.id = :feedId
-        )
+        INSERT OR REPLACE INTO read_status (article_id, is_read, read_at)
+        SELECT a.id, 1, :readAt FROM articles a 
+        INNER JOIN feeds f ON a.feed_id = f.id 
+        WHERE f.id = :feedId
     """)
     suspend fun markAllAsReadForFeed(feedId: Long, readAt: Long)
     
     @Query("""
-        UPDATE read_status SET is_read = 1, read_at = :readAt 
-        WHERE article_id IN (
-            SELECT a.id FROM articles a 
-            INNER JOIN feeds f ON a.feed_id = f.id 
-            INNER JOIN feed_group_cross_ref fgcr ON f.id = fgcr.feed_id 
-            WHERE fgcr.group_id = :groupId
-        )
+        INSERT OR REPLACE INTO read_status (article_id, is_read, read_at)
+        SELECT a.id, 1, :readAt FROM articles a 
+        INNER JOIN feeds f ON a.feed_id = f.id 
+        INNER JOIN feed_group_cross_ref fgcr ON f.id = fgcr.feed_id 
+        WHERE fgcr.group_id = :groupId
     """)
     suspend fun markAllAsReadForGroup(groupId: Long, readAt: Long)
     
-    @Query("UPDATE read_status SET is_read = 1, read_at = :readAt")
+    @Query("""
+        INSERT OR REPLACE INTO read_status (article_id, is_read, read_at)
+        SELECT a.id, 1, :readAt FROM articles a
+    """)
     suspend fun markAllAsRead(readAt: Long)
     
     @Query("""

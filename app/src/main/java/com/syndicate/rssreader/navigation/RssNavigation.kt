@@ -57,7 +57,9 @@ import com.syndicate.rssreader.ui.screens.TwoPaneArticlesScreen
 @Composable
 fun RssNavigation(
     navController: NavHostController = rememberNavController(),
-    themeViewModel: com.syndicate.rssreader.ui.viewmodel.ThemeViewModel
+    themeViewModel: com.syndicate.rssreader.ui.viewmodel.ThemeViewModel,
+    notificationData: com.syndicate.rssreader.ui.NotificationData? = null,
+    onNotificationHandled: () -> Unit = {}
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -81,7 +83,9 @@ fun RssNavigation(
                     themeViewModel = themeViewModel,
                     onNavigateToGroupManagement = {
                         navController.navigate(Screen.GroupManagement.route)
-                    }
+                    },
+                    notificationData = notificationData,
+                    onNotificationHandled = onNotificationHandled
                 )
             }
             
@@ -136,7 +140,9 @@ fun RssNavigation(
         Log.d("RssNavigation", "Using NARROW SCREEN layout with bottom navigation")
         // Narrow screen: use animated content instead of navigation
         NarrowScreenWithAnimation(
-            themeViewModel = themeViewModel
+            themeViewModel = themeViewModel,
+            notificationData = notificationData,
+            onNotificationHandled = onNotificationHandled
         )
     }
 }
@@ -174,7 +180,9 @@ val bottomNavItems = listOf(
 
 @Composable
 fun NarrowScreenWithAnimation(
-    themeViewModel: com.syndicate.rssreader.ui.viewmodel.ThemeViewModel
+    themeViewModel: com.syndicate.rssreader.ui.viewmodel.ThemeViewModel,
+    notificationData: com.syndicate.rssreader.ui.NotificationData? = null,
+    onNotificationHandled: () -> Unit = {}
 ) {
     val navigationState = rememberNavigationState()
     
@@ -197,6 +205,26 @@ fun NarrowScreenWithAnimation(
                 // Navigate back to Articles screen from any other screen
                 navigationState.onScreenChanged(Screen.Articles.route)
             }
+        }
+    }
+    
+    // Handle notification data
+    LaunchedEffect(notificationData) {
+        notificationData?.let { data ->
+            when (data) {
+                is com.syndicate.rssreader.ui.NotificationData.Article -> {
+                    // Navigate to the specific feed and article
+                    navigationState.onFeedSelected(data.feedId)
+                    navigationState.onArticleSelected(data.articleId)
+                    navigationState.onScreenChanged(Screen.Articles.route)
+                }
+                is com.syndicate.rssreader.ui.NotificationData.Group -> {
+                    // Navigate to the specific group
+                    navigationState.onGroupSelected(data.groupId)
+                    navigationState.onScreenChanged(Screen.Articles.route)
+                }
+            }
+            onNotificationHandled()
         }
     }
     

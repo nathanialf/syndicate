@@ -39,6 +39,9 @@ class FeedListViewModel @Inject constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
     
+    private val _successMessage = MutableStateFlow<String?>(null)
+    val successMessage: StateFlow<String?> = _successMessage.asStateFlow()
+    
     private val _showAddFeedDialog = MutableStateFlow(false)
     val showAddFeedDialog: StateFlow<Boolean> = _showAddFeedDialog.asStateFlow()
     
@@ -137,10 +140,22 @@ class FeedListViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
+            _successMessage.value = null
             
             val result = repository.addFeedFromUrl(url.trim())
             
             if (result.isSuccess) {
+                // Get the feed that was just added to show its title
+                val feedId = result.getOrThrow()
+                try {
+                    val addedFeed = repository.getFeedById(feedId)
+                    val message = "Successfully added: ${addedFeed?.title ?: "Feed"}"
+                    android.util.Log.d("FeedListViewModel", "Setting success message: $message")
+                    _successMessage.value = message
+                } catch (e: Exception) {
+                    android.util.Log.d("FeedListViewModel", "Setting fallback success message")
+                    _successMessage.value = "Feed added successfully"
+                }
                 _showAddFeedDialog.value = false
             } else {
                 _errorMessage.value = result.exceptionOrNull()?.message ?: "Failed to add feed"
@@ -152,6 +167,10 @@ class FeedListViewModel @Inject constructor(
     
     fun clearError() {
         _errorMessage.value = null
+    }
+    
+    fun clearSuccess() {
+        _successMessage.value = null
     }
     
     fun addGroup(name: String) {

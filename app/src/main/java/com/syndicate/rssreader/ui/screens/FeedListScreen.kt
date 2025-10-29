@@ -137,6 +137,7 @@ fun FeedListScreen(
     val groups by viewModel.groups.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
+    val successMessage by viewModel.successMessage.collectAsState()
     val showAddFeedDialog by viewModel.showAddFeedDialog.collectAsState()
     val showAddGroupDialog by viewModel.showAddGroupDialog.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -171,6 +172,14 @@ fun FeedListScreen(
         errorMessage?.let {
             snackbarHostState.showSnackbar(it)
             viewModel.clearError()
+        }
+    }
+    
+    LaunchedEffect(successMessage) {
+        successMessage?.let {
+            Log.d("FeedListScreen", "Showing success snackbar: $it")
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearSuccess()
         }
     }
 
@@ -227,33 +236,105 @@ fun FeedListScreen(
                     .align(Alignment.BottomEnd)
                     .padding(end = 16.dp, bottom = 80.dp) // Consistent height with single pane
             )
+            
+            // Snackbar for sidebar mode
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 16.dp)
+            ) { snackbarData ->
+                androidx.compose.material3.Snackbar(
+                    snackbarData = snackbarData,
+                    containerColor = MaterialTheme.colorScheme.inverseSurface,
+                    contentColor = MaterialTheme.colorScheme.inverseOnSurface
+                )
+            }
         }
     } else {
-        // Full screen with Scaffold
-        Scaffold(
-            modifier = modifier,
-            topBar = {
-                AppTopBar(
-                    title = "Syndicate", 
-                    subtitle = "Feeds",
-                    useSystemBarInsets = useSystemBarInsets
-                )
-            },
-            snackbarHost = {
-                SnackbarHost(
-                    hostState = snackbarHostState
-                )
-            },
-            containerColor = MaterialTheme.colorScheme.background
-        ) { paddingValues ->
-            Box(modifier = Modifier.fillMaxSize()) {
-                val contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                    top = paddingValues.calculateTopPadding(),
-                    bottom = 16.dp,
-                    start = 0.dp,
-                    end = 0.dp
-                )
-                
+        // Check if we need our own Scaffold (standalone) or if we're in navigation
+        if (useSystemBarInsets) {
+            // Standalone mode - use our own Scaffold
+            Scaffold(
+                modifier = modifier,
+                topBar = {
+                    AppTopBar(
+                        title = "Syndicate", 
+                        subtitle = "Feeds",
+                        useSystemBarInsets = useSystemBarInsets
+                    )
+                },
+                snackbarHost = {
+                    SnackbarHost(
+                        hostState = snackbarHostState
+                    ) { snackbarData ->
+                        androidx.compose.material3.Snackbar(
+                            snackbarData = snackbarData,
+                            containerColor = MaterialTheme.colorScheme.inverseSurface,
+                            contentColor = MaterialTheme.colorScheme.inverseOnSurface
+                        )
+                    }
+                },
+                containerColor = MaterialTheme.colorScheme.background
+            ) { paddingValues ->
+                Box(modifier = Modifier.fillMaxSize()) {
+                    val contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        top = paddingValues.calculateTopPadding(),
+                        bottom = 16.dp,
+                        start = 0.dp,
+                        end = 0.dp
+                    )
+                    
+                    FeedListContent(
+                        feeds = feeds,
+                        groups = groups,
+                        isLoading = isLoading,
+                        onFeedClick = onFeedClick,
+                        onDeleteFeed = { feedId ->
+                            viewModel.showDeleteFeedDialog(feedId)
+                        },
+                        onNotificationToggle = { feedId -> viewModel.toggleFeedNotifications(feedId) },
+                        onGroupClick = onGroupClick,
+                        onDeleteGroup = { groupId ->
+                            viewModel.showDeleteGroupDialog(groupId)
+                        },
+                        onEditGroup = { groupId ->
+                            viewModel.showEditGroupDialog(groupId)
+                        },
+                        resetSwipeState = resetSwipeState,
+                        listState = listState,
+                        paddingValues = contentPadding,
+                        selectedFeedId = selectedFeedId,
+                        selectedGroupId = selectedGroupId,
+                        onAllFeedsClick = onAllFeedsClick,
+                        isSidebarMode = isSidebarMode
+                    )
+                    
+                    // FAB for standalone mode
+                    ExpandableFabMenu(
+                        expanded = fabExpanded,
+                        onToggle = { fabExpanded = !fabExpanded },
+                        onAddFeed = { 
+                            fabExpanded = false
+                            viewModel.showAddFeedDialog() 
+                        },
+                        onImportFeed = {
+                            fabExpanded = false
+                            opmlImportViewModel.showFileDialog()
+                        },
+                        onAddGroup = {
+                            fabExpanded = false
+                            viewModel.showAddGroupDialog()
+                        },
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(end = 16.dp, bottom = 120.dp)
+                    )
+                }
+            }
+        } else {
+            // Navigation mode - no Scaffold, just content with external snackbar
+            Box(modifier = modifier.fillMaxSize()) {
                 FeedListContent(
                     feeds = feeds,
                     groups = groups,
@@ -272,14 +353,14 @@ fun FeedListScreen(
                     },
                     resetSwipeState = resetSwipeState,
                     listState = listState,
-                    paddingValues = contentPadding,
+                    paddingValues = androidx.compose.foundation.layout.PaddingValues(16.dp),
                     selectedFeedId = selectedFeedId,
                     selectedGroupId = selectedGroupId,
                     onAllFeedsClick = onAllFeedsClick,
                     isSidebarMode = isSidebarMode
                 )
                 
-                // FAB for single pane mode
+                // FAB for navigation mode
                 ExpandableFabMenu(
                     expanded = fabExpanded,
                     onToggle = { fabExpanded = !fabExpanded },
@@ -297,8 +378,22 @@ fun FeedListScreen(
                     },
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(end = 16.dp, bottom = 120.dp) // Higher up above bottom nav
+                        .padding(end = 16.dp, bottom = 80.dp) // Account for bottom nav
                 )
+                
+                // External snackbar for navigation mode
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 100.dp) // Above bottom navigation
+                ) { snackbarData ->
+                    androidx.compose.material3.Snackbar(
+                        snackbarData = snackbarData,
+                        containerColor = MaterialTheme.colorScheme.inverseSurface,
+                        contentColor = MaterialTheme.colorScheme.inverseOnSurface
+                    )
+                }
             }
         }
     }
