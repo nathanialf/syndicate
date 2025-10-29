@@ -18,6 +18,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.platform.LocalContext
 import android.content.Intent
 import android.net.Uri
+import android.provider.Settings
+import androidx.core.app.NotificationManagerCompat
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -62,6 +64,7 @@ fun SettingsScreen(
     val exportState by settingsViewModel.exportState.collectAsState()
     val notificationsEnabled by settingsViewModel.notificationsEnabled.collectAsState()
     val context = LocalContext.current
+    val notificationManager = NotificationManagerCompat.from(context)
     
     // Clear export state after showing success/error for 3 seconds
     LaunchedEffect(exportState) {
@@ -108,7 +111,15 @@ fun SettingsScreen(
                     icon = Icons.Default.Notifications,
                     checked = notificationsEnabled,
                     onCheckedChange = { enabled ->
-                        settingsViewModel.toggleNotifications(enabled)
+                        if (enabled && !notificationManager.areNotificationsEnabled()) {
+                            // Show dialog to prompt user to enable system notifications
+                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = Uri.fromParts("package", context.packageName, null)
+                            }
+                            context.startActivity(intent)
+                        } else {
+                            settingsViewModel.toggleNotifications(enabled)
+                        }
                     }
                 )
             }

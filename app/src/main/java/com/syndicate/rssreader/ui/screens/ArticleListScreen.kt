@@ -3,8 +3,10 @@ package com.syndicate.rssreader.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,7 +26,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -145,7 +146,8 @@ fun ArticleListScreen(
                 },
                 listState = listState,
                 paddingValues = paddingValues,
-                onRefresh = { viewModel.refreshFeeds() }
+                onRefresh = { viewModel.refreshFeeds() },
+                isSidebarMode = isSidebarMode
             )
         }
     } else {
@@ -169,7 +171,8 @@ fun ArticleListScreen(
             paddingValues = androidx.compose.foundation.layout.PaddingValues(
                 top = additionalTopPadding
             ),
-            onRefresh = { viewModel.refreshFeeds() }
+            onRefresh = { viewModel.refreshFeeds() },
+            isSidebarMode = isSidebarMode
         )
     }
 }
@@ -188,7 +191,8 @@ private fun ArticleListContent(
     onToggleReadState: (com.syndicate.rssreader.data.models.Article) -> Unit,
     listState: LazyListState,
     paddingValues: androidx.compose.foundation.layout.PaddingValues,
-    onRefresh: () -> Unit = {}
+    onRefresh: () -> Unit = {},
+    isSidebarMode: Boolean = false
 ) {
     
     PullToRefreshBox(
@@ -281,6 +285,13 @@ private fun ArticleListContent(
                         onToggleReadState = onToggleReadState,
                         modifier = Modifier.fillMaxWidth()
                     )
+                }
+                
+                // Empty spacer item at the end (only in single pane mode)
+                if (!isSidebarMode) {
+                    item {
+                        Spacer(modifier = Modifier.height(160.dp))
+                    }
                 }
             }
         }

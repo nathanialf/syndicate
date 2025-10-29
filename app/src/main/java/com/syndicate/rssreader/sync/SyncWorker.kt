@@ -50,13 +50,12 @@ class SyncWorker @AssistedInject constructor(
     }
 
     private suspend fun syncAllFeeds() {
-        // Get all feeds with notifications enabled
+        // Get ALL feeds - sync regardless of notification settings
         val feeds = repository.getAllFeeds().first()
-        val notificationEnabledFeeds = feeds.filter { it.notificationsEnabled }
         
-        Log.d("SyncWorker", "Found ${feeds.size} total feeds, ${notificationEnabledFeeds.size} with notifications enabled")
+        Log.d("SyncWorker", "Found ${feeds.size} total feeds to sync")
 
-        for (feed in notificationEnabledFeeds) {
+        for (feed in feeds) {
             try {
                 Log.d("SyncWorker", "Syncing feed: ${feed.title}")
                 val newArticlesResult = repository.refreshFeedAndGetNewArticles(feed.id)
@@ -64,28 +63,33 @@ class SyncWorker @AssistedInject constructor(
                     val newArticles = newArticlesResult.getOrThrow()
                     Log.d("SyncWorker", "Found ${newArticles.size} new articles for feed: ${feed.title}")
                     
-                    // Send notifications for new articles
-                    for (articleEntity in newArticles) {
-                        val article = com.syndicate.rssreader.data.models.Article(
-                            id = articleEntity.id,
-                            feedId = articleEntity.feedId,
-                            feedTitle = feed.title,
-                            feedFaviconUrl = feed.faviconUrl,
-                            title = articleEntity.title,
-                            description = articleEntity.description,
-                            url = articleEntity.url,
-                            author = articleEntity.author,
-                            publishedDate = articleEntity.publishedDate,
-                            thumbnailUrl = articleEntity.thumbnailUrl,
-                            isRead = false, // New articles are unread
-                            readAt = null
-                        )
-                        
-                        Log.d("SyncWorker", "Sending notification for article: ${article.title}")
-                        notificationManager.showFeedNotification(
-                            feedTitle = feed.title,
-                            article = article
-                        )
+                    // Send notifications for new articles ONLY if notifications are enabled for this feed
+                    if (feed.notificationsEnabled && newArticles.isNotEmpty()) {
+                        Log.d("SyncWorker", "Feed has notifications enabled, sending ${newArticles.size} notifications")
+                        for (articleEntity in newArticles) {
+                            val article = com.syndicate.rssreader.data.models.Article(
+                                id = articleEntity.id,
+                                feedId = articleEntity.feedId,
+                                feedTitle = feed.title,
+                                feedFaviconUrl = feed.faviconUrl,
+                                title = articleEntity.title,
+                                description = articleEntity.description,
+                                url = articleEntity.url,
+                                author = articleEntity.author,
+                                publishedDate = articleEntity.publishedDate,
+                                thumbnailUrl = articleEntity.thumbnailUrl,
+                                isRead = false, // New articles are unread
+                                readAt = null
+                            )
+                            
+                            Log.d("SyncWorker", "Sending notification for article: ${article.title}")
+                            notificationManager.showFeedNotification(
+                                feedTitle = feed.title,
+                                article = article
+                            )
+                        }
+                    } else if (newArticles.isNotEmpty()) {
+                        Log.d("SyncWorker", "Feed has notifications disabled, skipping ${newArticles.size} notifications")
                     }
                 }
             } catch (e: Exception) {

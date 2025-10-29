@@ -582,6 +582,13 @@ private fun FeedListContent(
                     resetSwipe = resetSwipeState
                 )
             }
+            
+            // Empty spacer item at the end (only in single pane mode)
+            if (!isSidebarMode) {
+                item {
+                    Spacer(modifier = Modifier.height(160.dp))
+                }
+            }
         }
     }
     

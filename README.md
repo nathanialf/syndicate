@@ -21,8 +21,9 @@ A modern Android RSS reader built with Jetpack Compose and Material 3 design, fe
 - **Read/Unread Status**: Mark articles as read/unread with swipe gestures and visual indicators
 - **Article Detail Screen**: In-app article viewer with share and browser open actions
 - **Background Sync**: Periodic article fetching with WorkManager for battery optimization
-- **Push Notifications**: Per-feed notification system with mark-as-read actions
+- **Push Notifications**: Per-feed notification system with mark-as-read actions and system permission prompts
 - **Notification Channels**: Organized notifications with proper Android 8+ channel support
+- **Enhanced UI/UX**: Feed descriptions with smart truncation, improved scrolling with spacers
 - **Haptic Feedback**: Tactile feedback for swipe actions and article interactions
 - **HTML Content Rendering**: Rich HTML content parsing with proper formatting and styling
 - **Pull-to-Refresh**: Manual refresh to fetch new articles with scroll-to-top functionality

@@ -37,7 +37,11 @@ fun FeedListItem(
         supportingContent = feed.description?.takeIf { it != feed.title && it.isNotBlank() }?.let { description ->
             {
                 Text(
-                    text = description,
+                    text = if (description.length > 80) {
+                        description.take(80) + "..."
+                    } else {
+                        description
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (isSelected) {
                         MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
