@@ -29,25 +29,31 @@ fun SwipeableFeedItem(
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val swipeState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { dismissValue ->
-            when (dismissValue) {
-                SwipeToDismissBoxValue.StartToEnd -> {
+        positionalThreshold = { totalDistance -> totalDistance * 0.4f }
+    )
+    
+    // Handle swipe actions
+    LaunchedEffect(swipeState.currentValue) {
+        when (swipeState.currentValue) {
+            SwipeToDismissBoxValue.StartToEnd -> {
+                if (swipeState.targetValue != SwipeToDismissBoxValue.Settled) {
                     // Delete action (swipe right) - don't dismiss yet, wait for confirmation
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                     onDeleteFeed(feed.id)
-                    false // Don't dismiss, wait for dialog result
+                    swipeState.snapTo(SwipeToDismissBoxValue.Settled)
                 }
-                SwipeToDismissBoxValue.EndToStart -> {
+            }
+            SwipeToDismissBoxValue.EndToStart -> {
+                if (swipeState.targetValue != SwipeToDismissBoxValue.Settled) {
                     // Notification toggle action (swipe left)
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                     onNotificationToggle(feed.id)
-                    false // Don't dismiss, just trigger action
+                    swipeState.snapTo(SwipeToDismissBoxValue.Settled)
                 }
-                SwipeToDismissBoxValue.Settled -> false
             }
-        },
-        positionalThreshold = { totalDistance -> totalDistance * 0.4f }
-    )
+            SwipeToDismissBoxValue.Settled -> { /* No action needed */ }
+        }
+    }
     
     // Reset swipe state when requested
     LaunchedEffect(resetSwipe) {

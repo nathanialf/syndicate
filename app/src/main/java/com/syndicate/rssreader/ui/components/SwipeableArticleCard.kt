@@ -57,19 +57,23 @@ fun SwipeableArticleCard(
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val swipeState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { dismissValue ->
-            when (dismissValue) {
-                SwipeToDismissBoxValue.StartToEnd, SwipeToDismissBoxValue.EndToStart -> {
+        positionalThreshold = { totalDistance -> totalDistance * 0.4f }
+    )
+    
+    // Handle swipe actions
+    LaunchedEffect(swipeState.currentValue) {
+        when (swipeState.currentValue) {
+            SwipeToDismissBoxValue.StartToEnd, SwipeToDismissBoxValue.EndToStart -> {
+                if (swipeState.targetValue != SwipeToDismissBoxValue.Settled) {
                     // Toggle read state on swipe in either direction
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                     onToggleReadState(article)
-                    false // Don't dismiss, just trigger action
+                    swipeState.snapTo(SwipeToDismissBoxValue.Settled)
                 }
-                SwipeToDismissBoxValue.Settled -> false
             }
-        },
-        positionalThreshold = { totalDistance -> totalDistance * 0.4f }
-    )
+            SwipeToDismissBoxValue.Settled -> { /* No action needed */ }
+        }
+    }
     
     // Reset swipe state when requested
     LaunchedEffect(resetSwipe) {

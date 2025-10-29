@@ -70,8 +70,7 @@ import android.net.Uri
 fun ArticleDetailScreen(
     articleId: String,
     onBackClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    useSystemBarInsets: Boolean = true
+    modifier: Modifier = Modifier
 ) {
     val viewModel: ArticleDetailViewModel = hiltViewModel()
     val article by viewModel.article.collectAsState()
@@ -89,13 +88,19 @@ fun ArticleDetailScreen(
 
     Scaffold(
         topBar = {
-            com.syndicate.rssreader.ui.common.AppTopBar(
-                title = "Syndicate",
-                subtitle = article?.feedTitle,
-                showBackButton = true,
-                onBackClick = onBackClick,
-                useSystemBarInsets = useSystemBarInsets,
-                customActions = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(text = article?.feedTitle ?: "Article")
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                },
+                actions = {
                     article?.let { art ->
                         // Share button
                         IconButton(
@@ -128,7 +133,8 @@ fun ArticleDetailScreen(
                             )
                         }
                     }
-                }
+                },
+                windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
             )
         }
     ) { paddingValues ->

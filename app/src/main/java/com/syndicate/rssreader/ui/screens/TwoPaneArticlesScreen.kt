@@ -26,7 +26,6 @@ import com.syndicate.rssreader.ui.viewmodel.ArticleListViewModel
 @Composable
 fun TwoPaneArticlesScreen(
     themeViewModel: com.syndicate.rssreader.ui.viewmodel.ThemeViewModel? = null,
-    onNavigateToGroupManagement: () -> Unit = {},
     notificationData: com.syndicate.rssreader.ui.NotificationData? = null,
     onNotificationHandled: () -> Unit = {}
 ) {
@@ -96,7 +95,7 @@ fun TwoPaneArticlesScreen(
                     onDeleteFeed = navigationState.onFeedDeleted,
                     onGroupClick = navigationState.onGroupSelected,
                     onDeleteGroup = navigationState.onGroupDeleted,
-                    onNavigateToGroupManagement = onNavigateToGroupManagement
+                    // Group management removed
                 )
             }
         }

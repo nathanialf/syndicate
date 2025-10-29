@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -20,28 +19,24 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.sp
-import com.syndicate.rssreader.ui.theme.CormorantGaramond
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppTopBar(
     title: String,
-    subtitle: String? = null,
     showBackButton: Boolean = false,
     onBackClick: () -> Unit = {},
     showSettingsButton: Boolean = false,
     onSettingsClick: () -> Unit = {},
-    useSystemBarInsets: Boolean = false,
     onTitleClick: (() -> Unit)? = null,
     showMarkAllAsReadButton: Boolean = false,
     onMarkAllAsReadClick: () -> Unit = {},
     customActions: (@Composable () -> Unit)? = null
 ) {
     CenterAlignedTopAppBar(
-        title = { 
+        title = {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = if (onTitleClick != null) {
@@ -54,28 +49,16 @@ fun AppTopBar(
                 }
             ) {
                 Text(
-                    text = "Syndicate",
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontFamily = CormorantGaramond,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    ),
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center
                 )
-                if (subtitle != null) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
             }
         },
-        navigationIcon = if (showBackButton) {
-            {
+        navigationIcon = {
+            if (showBackButton) {
                 IconButton(onClick = onBackClick) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -83,8 +66,6 @@ fun AppTopBar(
                     )
                 }
             }
-        } else {
-            {}
         },
         actions = {
             customActions?.invoke()
@@ -105,10 +86,6 @@ fun AppTopBar(
                 }
             }
         },
-        windowInsets = if (useSystemBarInsets) {
-            androidx.compose.foundation.layout.WindowInsets.systemBars
-        } else {
-            androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
-        }
+        windowInsets = WindowInsets.systemBars
     )
 }

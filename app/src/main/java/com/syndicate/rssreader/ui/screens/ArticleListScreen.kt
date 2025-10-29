@@ -1,5 +1,7 @@
 package com.syndicate.rssreader.ui.screens
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,8 +26,10 @@ import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -54,7 +58,6 @@ import androidx.compose.ui.unit.sp
 import androidx.core.text.HtmlCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.syndicate.rssreader.R
-import com.syndicate.rssreader.ui.common.AppTopBar
 import com.syndicate.rssreader.ui.common.LayoutConstants
 import com.syndicate.rssreader.ui.components.SwipeableArticleCard
 import com.syndicate.rssreader.ui.theme.CormorantGaramond
@@ -65,6 +68,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArticleListScreen(
     feedId: Long? = null,
@@ -113,18 +117,39 @@ fun ArticleListScreen(
     if (!isSidebarMode) {
         Scaffold(
             topBar = {
-                AppTopBar(
-                    title = "Syndicate",
-                    subtitle = currentFeed?.title ?: "All Articles",
-                    showBackButton = feedId != null || groupId != null || forceAllArticles,
-                    onBackClick = onBackClick,
-                    showMarkAllAsReadButton = true,
-                    onMarkAllAsReadClick = { viewModel.markAllAsRead() },
-                    onTitleClick = {
-                        coroutineScope.launch {
-                            listState.animateScrollToItem(0)
+                CenterAlignedTopAppBar(
+                    title = {
+                        Text(
+                            text = currentFeed?.title ?: "All Articles",
+                            modifier = Modifier.clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }
+                            ) {
+                                coroutineScope.launch {
+                                    listState.animateScrollToItem(0)
+                                }
+                            }
+                        )
+                    },
+                    navigationIcon = {
+                        if (feedId != null || groupId != null || forceAllArticles) {
+                            IconButton(onClick = onBackClick) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back"
+                                )
+                            }
                         }
-                    }
+                    },
+                    actions = {
+                        IconButton(onClick = { viewModel.markAllAsRead() }) {
+                            Icon(
+                                imageVector = Icons.Default.DoneAll,
+                                contentDescription = "Mark all as read"
+                            )
+                        }
+                    },
+                    windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
                 )
             }
         ) { paddingValues ->
@@ -205,28 +230,33 @@ private fun ArticleListContent(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-        // Filter chips
-        androidx.compose.foundation.layout.Row(
+        // Segmented buttons for filtering
+        SingleChoiceSegmentedButtonRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            FilterChip(
+            SegmentedButton(
+                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3),
                 onClick = { onFilterChange(ArticleShowFilter.UNREAD) },
-                label = { Text("Unread") },
                 selected = showFilter == ArticleShowFilter.UNREAD
-            )
-            FilterChip(
+            ) {
+                Text("Unread")
+            }
+            SegmentedButton(
+                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3),
                 onClick = { onFilterChange(ArticleShowFilter.ALL) },
-                label = { Text("All") },
                 selected = showFilter == ArticleShowFilter.ALL
-            )
-            FilterChip(
+            ) {
+                Text("All")
+            }
+            SegmentedButton(
+                shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3),
                 onClick = { onFilterChange(ArticleShowFilter.READ) },
-                label = { Text("Read") },
                 selected = showFilter == ArticleShowFilter.READ
-            )
+            ) {
+                Text("Read")
+            }
         }
         
         // Articles list

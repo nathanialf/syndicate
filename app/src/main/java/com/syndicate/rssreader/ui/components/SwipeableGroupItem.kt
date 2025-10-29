@@ -24,25 +24,31 @@ fun SwipeableGroupItem(
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val swipeState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { dismissValue ->
-            when (dismissValue) {
-                SwipeToDismissBoxValue.StartToEnd -> {
+        positionalThreshold = { totalDistance -> totalDistance * 0.4f }
+    )
+    
+    // Handle swipe actions
+    LaunchedEffect(swipeState.currentValue) {
+        when (swipeState.currentValue) {
+            SwipeToDismissBoxValue.StartToEnd -> {
+                if (swipeState.targetValue != SwipeToDismissBoxValue.Settled) {
                     // Delete action (swipe right) - don't dismiss yet, wait for confirmation
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                     onDeleteGroup(group.id)
-                    false // Don't dismiss, wait for dialog result
+                    swipeState.snapTo(SwipeToDismissBoxValue.Settled)
                 }
-                SwipeToDismissBoxValue.EndToStart -> {
+            }
+            SwipeToDismissBoxValue.EndToStart -> {
+                if (swipeState.targetValue != SwipeToDismissBoxValue.Settled) {
                     // Edit action (swipe left) - don't dismiss yet, wait for action completion
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                     onEditGroup(group.id)
-                    false // Don't dismiss, wait for edit dialog result
+                    swipeState.snapTo(SwipeToDismissBoxValue.Settled)
                 }
-                SwipeToDismissBoxValue.Settled -> false
             }
-        },
-        positionalThreshold = { totalDistance -> totalDistance * 0.4f }
-    )
+            SwipeToDismissBoxValue.Settled -> { /* No action needed */ }
+        }
+    }
     
     SwipeToDismissBox(
         state = swipeState,

@@ -50,7 +50,6 @@ import com.syndicate.rssreader.ui.navigation.rememberNavigationState
 import com.syndicate.rssreader.ui.screens.ArticleDetailScreen
 import com.syndicate.rssreader.ui.screens.ArticleListScreen
 import com.syndicate.rssreader.ui.screens.FeedListScreen
-import com.syndicate.rssreader.ui.screens.GroupManagementScreen
 import com.syndicate.rssreader.ui.screens.SettingsScreen
 import com.syndicate.rssreader.ui.screens.TwoPaneArticlesScreen
 
@@ -81,9 +80,6 @@ fun RssNavigation(
             composable(Screen.Articles.route) {
                 TwoPaneArticlesScreen(
                     themeViewModel = themeViewModel,
-                    onNavigateToGroupManagement = {
-                        navController.navigate(Screen.GroupManagement.route)
-                    },
                     notificationData = notificationData,
                     onNotificationHandled = onNotificationHandled
                 )
@@ -95,10 +91,7 @@ fun RssNavigation(
             ) { 
                 // Redirect to main articles view in wide screen mode
                 TwoPaneArticlesScreen(
-                    themeViewModel = themeViewModel,
-                    onNavigateToGroupManagement = {
-                        navController.navigate(Screen.GroupManagement.route)
-                    }
+                    themeViewModel = themeViewModel
                 )
             }
             
@@ -108,20 +101,14 @@ fun RssNavigation(
             ) { 
                 // Redirect to main articles view in wide screen mode
                 TwoPaneArticlesScreen(
-                    themeViewModel = themeViewModel,
-                    onNavigateToGroupManagement = {
-                        navController.navigate(Screen.GroupManagement.route)
-                    }
+                    themeViewModel = themeViewModel
                 )
             }
             
             composable(Screen.Feeds.route) {
                 // Redirect to main articles view in wide screen mode
                 TwoPaneArticlesScreen(
-                    themeViewModel = themeViewModel,
-                    onNavigateToGroupManagement = {
-                        navController.navigate(Screen.GroupManagement.route)
-                    }
+                    themeViewModel = themeViewModel
                 )
             }
             
@@ -129,11 +116,6 @@ fun RssNavigation(
                 SettingsScreen(themeViewModel = themeViewModel)
             }
             
-            composable(Screen.GroupManagement.route) {
-                GroupManagementScreen(
-                    onBackClick = { navController.popBackStack() }
-                )
-            }
             
         }
     } else {
@@ -151,7 +133,6 @@ sealed class Screen(val route: String) {
     object Articles : Screen("articles")
     object Feeds : Screen("feeds")
     object Settings : Screen("settings")
-    object GroupManagement : Screen("group_management")
 }
 
 data class BottomNavItem(
@@ -278,9 +259,6 @@ fun NarrowScreenWithAnimation(
                         navigationState.onFeedSelected(feedId)
                         navigationState.onScreenChanged(Screen.Articles.route)
                     },
-                    onNavigateToGroupManagement = {
-                        // Could add group management as another animated state
-                    },
                     onGroupClick = { groupId ->
                         navigationState.onGroupSelected(groupId)
                         navigationState.onScreenChanged(Screen.Articles.route)
@@ -290,7 +268,6 @@ fun NarrowScreenWithAnimation(
                         navigationState.onAllFeedsSelected()
                         navigationState.onScreenChanged(Screen.Articles.route)
                     },
-                    useSystemBarInsets = false,
                     modifier = Modifier.padding(top = paddingValues.calculateTopPadding())
                 )
             }

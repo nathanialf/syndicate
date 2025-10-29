@@ -110,7 +110,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.hilt.navigation.compose.hiltViewModel
 import android.util.Log
-import com.syndicate.rssreader.ui.common.AppTopBar
 import com.syndicate.rssreader.ui.common.LayoutConstants
 import com.syndicate.rssreader.ui.common.LayoutUtils
 import com.syndicate.rssreader.ui.theme.CormorantGaramond
@@ -120,7 +119,6 @@ import com.syndicate.rssreader.ui.viewmodel.FeedListViewModel
 @Composable
 fun FeedListScreen(
     onFeedClick: (Long) -> Unit,
-    onNavigateToGroupManagement: () -> Unit,
     isSidebarMode: Boolean = false,
     selectedFeedId: Long? = null,
     selectedGroupId: Long? = null,
@@ -128,7 +126,6 @@ fun FeedListScreen(
     onDeleteFeed: (Long) -> Unit = {},
     onGroupClick: (Long) -> Unit = {},
     onDeleteGroup: (Long) -> Unit = {},
-    useSystemBarInsets: Boolean = true,
     modifier: Modifier = Modifier,
     viewModel: FeedListViewModel = hiltViewModel(),
     opmlImportViewModel: com.syndicate.rssreader.ui.viewmodel.OpmlImportViewModel = hiltViewModel()
@@ -252,16 +249,15 @@ fun FeedListScreen(
             }
         }
     } else {
-        // Check if we need our own Scaffold (standalone) or if we're in navigation
-        if (useSystemBarInsets) {
-            // Standalone mode - use our own Scaffold
+        // Non-sidebar mode - use our own Scaffold with TopAppBar
             Scaffold(
                 modifier = modifier,
                 topBar = {
-                    AppTopBar(
-                        title = "Syndicate", 
-                        subtitle = "Feeds",
-                        useSystemBarInsets = useSystemBarInsets
+                    CenterAlignedTopAppBar(
+                        title = {
+                            Text(text = "Feeds")
+                        },
+                        windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
                     )
                 },
                 snackbarHost = {
@@ -332,8 +328,10 @@ fun FeedListScreen(
                     )
                 }
             }
-        } else {
-            // Navigation mode - no Scaffold, just content with external snackbar
+        }
+        
+        // Navigation mode - no Scaffold, just content with external snackbar
+        if (!isSidebarMode) {
             Box(modifier = modifier.fillMaxSize()) {
                 FeedListContent(
                     feeds = feeds,
@@ -396,7 +394,6 @@ fun FeedListScreen(
                 }
             }
         }
-    }
 
     // Dialogs
     if (showAddFeedDialog) {

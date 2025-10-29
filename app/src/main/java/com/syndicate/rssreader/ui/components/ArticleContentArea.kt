@@ -1,18 +1,27 @@
 package com.syndicate.rssreader.ui.components
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -21,7 +30,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.systemBars
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.syndicate.rssreader.ui.common.Animations
-import com.syndicate.rssreader.ui.common.LayoutUtils
 import com.syndicate.rssreader.ui.navigation.NavigationState
 import com.syndicate.rssreader.ui.screens.ArticleDetailScreen
 import com.syndicate.rssreader.ui.screens.ArticleListScreen
@@ -32,6 +40,7 @@ import com.syndicate.rssreader.ui.viewmodel.ArticleListViewModel
  * Reusable article content area that handles article list, article detail, and settings views
  * Can be used in both single-pane and dual-pane layouts with consistent behavior
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArticleContentArea(
     navigationState: NavigationState,
@@ -66,11 +75,8 @@ fun ArticleContentArea(
             "settings" -> {
                 if (themeViewModel != null) {
                     if (isSidebarMode) {
-                        // Dual-pane: add system bar padding
-                        Column {
-                            LayoutUtils.SystemBarTopSpacer()
-                            SettingsScreen(themeViewModel = themeViewModel)
-                        }
+                        // Dual-pane: AppTopBar handles system bar padding automatically
+                        SettingsScreen(themeViewModel = themeViewModel)
                     } else {
                         // Single-pane: settings screen handles its own padding
                         SettingsScreen(themeViewModel = themeViewModel)
@@ -81,8 +87,7 @@ fun ArticleContentArea(
                 navigationState.selectedArticleId?.let { articleId ->
                     ArticleDetailScreen(
                         articleId = articleId,
-                        onBackClick = navigationState.onBackFromArticle,
-                        useSystemBarInsets = isSidebarMode
+                        onBackClick = navigationState.onBackFromArticle
                     )
                 }
             }
@@ -90,7 +95,8 @@ fun ArticleContentArea(
                 if (isSidebarMode) {
                     // Dual-pane: fill space without additional padding, but include system bar spacing
                     Box(modifier = Modifier.fillMaxSize()) {
-                        val systemBarPadding = LayoutUtils.getSystemBarTopPadding()
+                        // Calculate padding for system bars and top bar
+                        val systemBarPadding = androidx.compose.foundation.layout.WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
                         val topBarPadding = if (showTopBar) com.syndicate.rssreader.ui.common.LayoutConstants.TopBarHeight else 0.dp
                         val totalTopPadding = systemBarPadding + topBarPadding
                         val listState = rememberLazyListState()
@@ -114,31 +120,69 @@ fun ArticleContentArea(
                             Box(
                                 modifier = Modifier
                                     .align(Alignment.TopCenter)
-                                    .padding(top = LayoutUtils.getSystemBarTopPadding())
+                                    .padding(top = androidx.compose.foundation.layout.WindowInsets.systemBars.asPaddingValues().calculateTopPadding())
                             ) {
-                                com.syndicate.rssreader.ui.common.AppTopBar(
-                                    title = "Syndicate",
-                                    subtitle = when {
-                                        navigationState.showSettings -> "Settings"
-                                        navigationState.selectedArticleId != null -> "Article"
-                                        else -> currentFeed?.title ?: "All Articles"
+                                androidx.compose.material3.CenterAlignedTopAppBar(
+                                    title = {
+                                        val titleText = when {
+                                            navigationState.showSettings -> "Settings"
+                                            navigationState.selectedArticleId != null -> "Article"
+                                            else -> currentFeed?.title ?: "All Articles"
+                                        }
+                                        androidx.compose.material3.Text(
+                                            text = titleText,
+                                            modifier = if (!navigationState.showSettings && navigationState.selectedArticleId == null) {
+                                                Modifier.clickable(
+                                                    indication = null,
+                                                    interactionSource = remember { MutableInteractionSource() }
+                                                ) {
+                                                    coroutineScope.launch {
+                                                        listState.animateScrollToItem(0)
+                                                    }
+                                                }
+                                            } else {
+                                                Modifier
+                                            }
+                                        )
                                     },
-                                    showSettingsButton = !navigationState.showSettings && navigationState.selectedArticleId == null,
-                                    onSettingsClick = { navigationState.onShowSettings(true) },
-                                    showBackButton = navigationState.showSettings || navigationState.selectedArticleId != null,
-                                    onBackClick = { 
-                                        if (navigationState.showSettings) navigationState.onShowSettings(false)
-                                        if (navigationState.selectedArticleId != null) navigationState.onBackFromArticle()
-                                    },
-                                    onTitleClick = if (!navigationState.showSettings && navigationState.selectedArticleId == null) {
-                                        {
-                                            coroutineScope.launch {
-                                                listState.animateScrollToItem(0)
+                                    navigationIcon = {
+                                        if (navigationState.showSettings || navigationState.selectedArticleId != null) {
+                                            androidx.compose.material3.IconButton(
+                                                onClick = { 
+                                                    if (navigationState.showSettings) navigationState.onShowSettings(false)
+                                                    if (navigationState.selectedArticleId != null) navigationState.onBackFromArticle()
+                                                }
+                                            ) {
+                                                androidx.compose.material3.Icon(
+                                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                                    contentDescription = "Back"
+                                                )
                                             }
                                         }
-                                    } else null,
-                                    showMarkAllAsReadButton = !navigationState.showSettings && navigationState.selectedArticleId == null,
-                                    onMarkAllAsReadClick = { articleViewModel.markAllAsRead() }
+                                    },
+                                    actions = {
+                                        if (!navigationState.showSettings && navigationState.selectedArticleId == null) {
+                                            // Mark all as read button
+                                            androidx.compose.material3.IconButton(
+                                                onClick = { articleViewModel.markAllAsRead() }
+                                            ) {
+                                                androidx.compose.material3.Icon(
+                                                    imageVector = Icons.Default.DoneAll,
+                                                    contentDescription = "Mark all as read"
+                                                )
+                                            }
+                                            // Settings button
+                                            androidx.compose.material3.IconButton(
+                                                onClick = { navigationState.onShowSettings(true) }
+                                            ) {
+                                                androidx.compose.material3.Icon(
+                                                    imageVector = Icons.Default.Settings,
+                                                    contentDescription = "Settings"
+                                                )
+                                            }
+                                        }
+                                    },
+                                    windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
                                 )
                             }
                         }
