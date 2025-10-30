@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -92,6 +94,9 @@ fun ArticleDetailScreen(
         onBackClick()
     }
 
+    val configuration = LocalConfiguration.current
+    val isSidebarMode = configuration.screenWidthDp >= 600
+    
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -147,7 +152,11 @@ fun ArticleDetailScreen(
                         }
                     }
                 },
-                windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
+                windowInsets = if (isSidebarMode) {
+                    androidx.compose.foundation.layout.WindowInsets.systemBars
+                } else {
+                    androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
+                }
             )
         }
     ) { paddingValues ->
