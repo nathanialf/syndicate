@@ -18,6 +18,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.RssFeed
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -28,6 +29,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -97,7 +101,8 @@ fun SwipeableArticleCard(
                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                 onArticleClick(article) 
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = androidx.compose.material3.CardDefaults.cardColors()
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -157,16 +162,23 @@ fun SwipeableArticleCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Feed favicon if available
-                    article.feedFaviconUrl?.let { faviconUrl ->
-                        AsyncImage(
-                            model = faviconUrl,
-                            contentDescription = "Feed icon",
-                            modifier = Modifier
-                                .size(16.dp)
-                                .clip(RoundedCornerShape(2.dp))
-                        )
-                    }
+                    // Use the reusable FaviconIcon with a mock feed object
+                    FaviconIcon(
+                        feed = com.syndicate.rssreader.data.models.Feed(
+                            id = 0,
+                            url = "",
+                            title = "",
+                            description = null,
+                            siteUrl = null,
+                            faviconUrl = article.feedFaviconUrl,
+                            lastFetched = null,
+                            isAvailable = true,
+                            createdAt = 0L
+                        ),
+                        isSelected = false,
+                        isAvailable = true,
+                        size = 16.dp
+                    )
                     
                     Text(
                         text = buildString {

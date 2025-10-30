@@ -20,6 +20,17 @@ class FeedListViewModel @Inject constructor(
     private val repository: RssRepository
 ) : ViewModel() {
     
+    init {
+        // Update favicon URLs for existing feeds on first load
+        viewModelScope.launch {
+            try {
+                repository.updateFeedFaviconUrls()
+            } catch (e: Exception) {
+                // Silently handle favicon update errors
+            }
+        }
+    }
+    
     val feeds: StateFlow<List<Feed>> = repository.getAllFeeds().stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),

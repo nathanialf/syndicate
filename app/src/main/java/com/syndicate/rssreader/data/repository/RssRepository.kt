@@ -199,6 +199,8 @@ class RssRepository @Inject constructor(
             val updatedFeed = feed.copy(
                 title = syndFeed.title ?: feed.title,
                 description = syndFeed.description ?: feed.description,
+                siteUrl = syndFeed.link ?: feed.siteUrl,
+                faviconUrl = rssParser.generateFaviconUrl(syndFeed.link, feed.url) ?: feed.faviconUrl,
                 lastFetched = System.currentTimeMillis(),
                 isAvailable = true
             )
@@ -239,6 +241,8 @@ class RssRepository @Inject constructor(
             val updatedFeed = feed.copy(
                 title = syndFeed.title ?: feed.title,
                 description = syndFeed.description ?: feed.description,
+                siteUrl = syndFeed.link ?: feed.siteUrl,
+                faviconUrl = rssParser.generateFaviconUrl(syndFeed.link, feed.url) ?: feed.faviconUrl,
                 lastFetched = System.currentTimeMillis(),
                 isAvailable = true
             )
@@ -332,6 +336,18 @@ class RssRepository @Inject constructor(
     
     suspend fun updateFeedNotifications(feedId: Long, enabled: Boolean) {
         feedDao.updateFeedNotifications(feedId, enabled)
+    }
+    
+    suspend fun updateFeedFaviconUrls() {
+        val allFeeds = feedDao.getAllFeedsList()
+        allFeeds.forEach { feedEntity ->
+            val feed = feedEntity.toDomain()
+            val faviconUrl = rssParser.generateFaviconUrl(feed.siteUrl, feed.url)
+            if (faviconUrl != null && faviconUrl != feed.faviconUrl) {
+                val updatedFeed = feed.copy(faviconUrl = faviconUrl)
+                updateFeed(updatedFeed)
+            }
+        }
     }
     
     suspend fun updateGroupNotifications(groupId: Long, enabled: Boolean) {

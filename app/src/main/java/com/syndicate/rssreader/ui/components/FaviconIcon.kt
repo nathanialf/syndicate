@@ -18,7 +18,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import androidx.compose.ui.platform.LocalContext
 import com.syndicate.rssreader.data.models.Feed
 
 @Composable
@@ -26,8 +29,11 @@ fun FaviconIcon(
     feed: Feed,
     isSelected: Boolean,
     isAvailable: Boolean,
+    size: androidx.compose.ui.unit.Dp = 40.dp,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    
     val iconTint = if (isSelected) {
         MaterialTheme.colorScheme.onSecondaryContainer
     } else if (isAvailable) {
@@ -38,26 +44,24 @@ fun FaviconIcon(
 
     var imageLoadSuccess by remember { mutableStateOf(true) }
     
-    // Generate favicon URL from siteUrl if faviconUrl is not available
-    val effectiveFaviconUrl = feed.faviconUrl ?: run {
-        val baseUrl = feed.siteUrl ?: run {
-            // Extract domain from RSS feed URL as fallback
-            try {
-                val feedUrl = java.net.URL(feed.url)
-                "${feedUrl.protocol}://${feedUrl.host}"
-            } catch (e: Exception) {
-                null
-            }
+    // Pre-build image request to reduce overhead during scroll
+    val imageRequest = remember(feed.faviconUrl) {
+        feed.faviconUrl?.let { url ->
+            ImageRequest.Builder(context)
+                .data(url)
+                .crossfade(false) // Disable crossfade for better scroll performance
+                .allowHardware(true) // Use hardware bitmaps for better performance
+                .memoryCacheKey(url) // Explicit cache key
+                .build()
         }
-        baseUrl?.let { "$it/favicon.ico" }
     }
 
     Box(
         modifier = modifier
-            .size(40.dp)
+            .size(size)
             .clip(CircleShape)
             .let { baseModifier ->
-                if (!effectiveFaviconUrl.isNullOrBlank() && imageLoadSuccess) {
+                if (!feed.faviconUrl.isNullOrBlank() && imageLoadSuccess) {
                     baseModifier // No background for favicons
                 } else {
                     baseModifier.background(
@@ -71,13 +75,14 @@ fun FaviconIcon(
             },
         contentAlignment = Alignment.Center
     ) {
-        if (!effectiveFaviconUrl.isNullOrBlank() && imageLoadSuccess) {
+        if (!feed.faviconUrl.isNullOrBlank() && imageLoadSuccess && imageRequest != null) {
             AsyncImage(
-                model = effectiveFaviconUrl,
+                model = imageRequest,
                 contentDescription = null,
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(size)
                     .clip(CircleShape)
+                    .background(androidx.compose.ui.graphics.Color.White, CircleShape) // White background for transparency
                     .border(
                         width = 0.5.dp,
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
@@ -92,7 +97,7 @@ fun FaviconIcon(
                 imageVector = Icons.Default.RssFeed,
                 contentDescription = null,
                 tint = iconTint,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(size / 2)
             )
         }
     }

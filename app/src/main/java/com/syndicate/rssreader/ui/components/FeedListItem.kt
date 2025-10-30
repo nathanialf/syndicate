@@ -10,6 +10,8 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.syndicate.rssreader.data.models.Feed
@@ -22,32 +24,49 @@ fun FeedListItem(
     isSidebarMode: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    // Pre-calculate expensive values to avoid recomputation during scroll
+    val truncatedDescription = remember(feed.description) {
+        feed.description?.takeIf { it != feed.title && it.isNotBlank() }?.let { description ->
+            if (description.length > 80) {
+                description.take(80) + "..."
+            } else {
+                description
+            }
+        }
+    }
+    
+    val headlineColor = if (isSelected) {
+        MaterialTheme.colorScheme.onSecondaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+    
+    val supportingColor = if (isSelected) {
+        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    
+    val containerColor = if (isSelected) {
+        MaterialTheme.colorScheme.secondaryContainer
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+    
     ListItem(
         headlineContent = {
             Text(
                 text = feed.title,
                 style = MaterialTheme.typography.titleMedium,
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.onSecondaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                }
+                color = headlineColor
             )
         },
-        supportingContent = feed.description?.takeIf { it != feed.title && it.isNotBlank() }?.let { description ->
+        supportingContent = truncatedDescription?.let { description ->
             {
                 Text(
-                    text = if (description.length > 80) {
-                        description.take(80) + "..."
-                    } else {
-                        description
-                    },
+                    text = description,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (isSelected) {
-                        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
+                    color = supportingColor
                 )
             }
         },
@@ -69,11 +88,7 @@ fun FeedListItem(
             }
         } else null,
         colors = androidx.compose.material3.ListItemDefaults.colors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
+            containerColor = containerColor
         ),
         modifier = modifier
             .clickable { onFeedClick(feed.id) }

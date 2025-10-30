@@ -1,10 +1,12 @@
 package com.syndicate.rssreader.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.hilt.navigation.compose.hiltViewModel
 
 /**
  * Shared navigation state for article and feed selection across both narrow and wide screen layouts
@@ -18,6 +20,23 @@ fun rememberNavigationState(): NavigationState {
     var currentScreen by remember { mutableStateOf("articles") }
     var showSettings by remember { mutableStateOf(false) }
     var previousScreen by remember { mutableStateOf<String?>(null) }
+    
+    // Get FeedListViewModel to access default group
+    val feedListViewModel: com.syndicate.rssreader.ui.viewmodel.FeedListViewModel = hiltViewModel()
+    
+    // Load default group on startup if no specific selection
+    LaunchedEffect(Unit) {
+        if (selectedFeedId == null && selectedGroupId == null && !forceAllArticles) {
+            val defaultGroup = feedListViewModel.getDefaultGroup()
+            android.util.Log.d("NavigationState", "Default group found: ${defaultGroup?.name} (id: ${defaultGroup?.id})")
+            if (defaultGroup != null) {
+                selectedGroupId = defaultGroup.id
+                android.util.Log.d("NavigationState", "Auto-selected default group: ${defaultGroup.id}")
+            } else {
+                android.util.Log.d("NavigationState", "No default group found")
+            }
+        }
+    }
 
     return NavigationState(
         selectedFeedId = selectedFeedId,

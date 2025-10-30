@@ -180,220 +180,92 @@ fun FeedListScreen(
         }
     }
 
-    if (isSidebarMode) {
-        // Sidebar content without Scaffold
-        Box(modifier = Modifier.fillMaxSize()) {
-            FeedListContent(
-                    feeds = feeds,
-                    groups = groups,
-                    isLoading = isLoading,
-                    onFeedClick = onFeedClick,
-                    onDeleteFeed = { feedId ->
-                        viewModel.showDeleteFeedDialog(feedId)
-                    },
-                    onNotificationToggle = { feedId -> viewModel.toggleFeedNotifications(feedId) },
-                    onGroupClick = onGroupClick,
-                    onDeleteGroup = { groupId ->
-                        viewModel.showDeleteGroupDialog(groupId)
-                    },
-                    onEditGroup = { groupId ->
-                        viewModel.showEditGroupDialog(groupId)
-                    },
-                    resetSwipeState = resetSwipeState,
-                    listState = listState,
-                    paddingValues = androidx.compose.foundation.layout.PaddingValues(
-                        start = 0.dp,
-                        end = 0.dp,
-                        top = 0.dp,
-                        bottom = 16.dp
-                    ),
-                    selectedFeedId = selectedFeedId,
-                    selectedGroupId = selectedGroupId,
-                    onAllFeedsClick = onAllFeedsClick,
-                    isSidebarMode = isSidebarMode
+    // Unified layout for both modes - no TopAppBar
+    Box(modifier = modifier.fillMaxSize()) {
+        FeedListContent(
+            feeds = feeds,
+            groups = groups,
+            isLoading = isLoading,
+            onFeedClick = onFeedClick,
+            onDeleteFeed = { feedId ->
+                viewModel.showDeleteFeedDialog(feedId)
+            },
+            onNotificationToggle = { feedId -> viewModel.toggleFeedNotifications(feedId) },
+            onGroupClick = onGroupClick,
+            onDeleteGroup = { groupId ->
+                viewModel.showDeleteGroupDialog(groupId)
+            },
+            onEditGroup = { groupId ->
+                viewModel.showEditGroupDialog(groupId)
+            },
+            resetSwipeState = resetSwipeState,
+            listState = listState,
+            paddingValues = if (isSidebarMode) {
+                androidx.compose.foundation.layout.PaddingValues(
+                    start = 0.dp,
+                    end = 0.dp,
+                    top = 0.dp,
+                    bottom = 16.dp
                 )
-            
-            // FAB for sidebar mode
-            ExpandableFabMenu(
-                expanded = fabExpanded,
-                onToggle = { fabExpanded = !fabExpanded },
-                onAddFeed = { 
-                    fabExpanded = false
-                    viewModel.showAddFeedDialog() 
-                },
-                onImportFeed = {
-                    fabExpanded = false
-                    opmlImportViewModel.showFileDialog()
-                },
-                onAddGroup = {
-                    fabExpanded = false
-                    viewModel.showAddGroupDialog()
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 16.dp, bottom = 80.dp) // Consistent height with single pane
-            )
-            
-            // Snackbar for sidebar mode
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 16.dp)
-            ) { snackbarData ->
-                androidx.compose.material3.Snackbar(
-                    snackbarData = snackbarData,
-                    containerColor = MaterialTheme.colorScheme.inverseSurface,
-                    contentColor = MaterialTheme.colorScheme.inverseOnSurface
-                )
-            }
-        }
-    } else {
-        // Non-sidebar mode - use our own Scaffold with TopAppBar
-            Scaffold(
-                modifier = modifier,
-                topBar = {
-                    CenterAlignedTopAppBar(
-                        title = {
-                            Text(text = "Feeds")
-                        },
-                        windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
-                    )
-                },
-                snackbarHost = {
-                    SnackbarHost(
-                        hostState = snackbarHostState
-                    ) { snackbarData ->
-                        androidx.compose.material3.Snackbar(
-                            snackbarData = snackbarData,
-                            containerColor = MaterialTheme.colorScheme.inverseSurface,
-                            contentColor = MaterialTheme.colorScheme.inverseOnSurface
-                        )
-                    }
-                },
-                containerColor = MaterialTheme.colorScheme.background
-            ) { paddingValues ->
-                Box(modifier = Modifier.fillMaxSize()) {
-                    val contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                        top = paddingValues.calculateTopPadding(),
-                        bottom = 16.dp,
-                        start = 0.dp,
-                        end = 0.dp
-                    )
-                    
-                    FeedListContent(
-                        feeds = feeds,
-                        groups = groups,
-                        isLoading = isLoading,
-                        onFeedClick = onFeedClick,
-                        onDeleteFeed = { feedId ->
-                            viewModel.showDeleteFeedDialog(feedId)
-                        },
-                        onNotificationToggle = { feedId -> viewModel.toggleFeedNotifications(feedId) },
-                        onGroupClick = onGroupClick,
-                        onDeleteGroup = { groupId ->
-                            viewModel.showDeleteGroupDialog(groupId)
-                        },
-                        onEditGroup = { groupId ->
-                            viewModel.showEditGroupDialog(groupId)
-                        },
-                        resetSwipeState = resetSwipeState,
-                        listState = listState,
-                        paddingValues = contentPadding,
-                        selectedFeedId = selectedFeedId,
-                        selectedGroupId = selectedGroupId,
-                        onAllFeedsClick = onAllFeedsClick,
-                        isSidebarMode = isSidebarMode
-                    )
-                    
-                    // FAB for standalone mode
-                    ExpandableFabMenu(
-                        expanded = fabExpanded,
-                        onToggle = { fabExpanded = !fabExpanded },
-                        onAddFeed = { 
-                            fabExpanded = false
-                            viewModel.showAddFeedDialog() 
-                        },
-                        onImportFeed = {
-                            fabExpanded = false
-                            opmlImportViewModel.showFileDialog()
-                        },
-                        onAddGroup = {
-                            fabExpanded = false
-                            viewModel.showAddGroupDialog()
-                        },
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(end = 16.dp, bottom = 120.dp)
-                    )
-                }
-            }
-        }
+            } else {
+                androidx.compose.foundation.layout.PaddingValues(16.dp)
+            },
+            selectedFeedId = selectedFeedId,
+            selectedGroupId = selectedGroupId,
+            onAllFeedsClick = onAllFeedsClick,
+            isSidebarMode = isSidebarMode
+        )
         
-        // Navigation mode - no Scaffold, just content with external snackbar
-        if (!isSidebarMode) {
-            Box(modifier = modifier.fillMaxSize()) {
-                FeedListContent(
-                    feeds = feeds,
-                    groups = groups,
-                    isLoading = isLoading,
-                    onFeedClick = onFeedClick,
-                    onDeleteFeed = { feedId ->
-                        viewModel.showDeleteFeedDialog(feedId)
-                    },
-                    onNotificationToggle = { feedId -> viewModel.toggleFeedNotifications(feedId) },
-                    onGroupClick = onGroupClick,
-                    onDeleteGroup = { groupId ->
-                        viewModel.showDeleteGroupDialog(groupId)
-                    },
-                    onEditGroup = { groupId ->
-                        viewModel.showEditGroupDialog(groupId)
-                    },
-                    resetSwipeState = resetSwipeState,
-                    listState = listState,
-                    paddingValues = androidx.compose.foundation.layout.PaddingValues(16.dp),
-                    selectedFeedId = selectedFeedId,
-                    selectedGroupId = selectedGroupId,
-                    onAllFeedsClick = onAllFeedsClick,
-                    isSidebarMode = isSidebarMode
+        // FAB
+        ExpandableFabMenu(
+            expanded = fabExpanded,
+            onToggle = { fabExpanded = !fabExpanded },
+            onAddFeed = { 
+                fabExpanded = false
+                viewModel.showAddFeedDialog() 
+            },
+            onImportFeed = {
+                fabExpanded = false
+                opmlImportViewModel.showFileDialog()
+            },
+            onAddGroup = {
+                fabExpanded = false
+                viewModel.showAddGroupDialog()
+            },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(
+                    end = 16.dp,
+                    bottom = if (isSidebarMode) {
+                        80.dp // Sidebar mode: higher up for better positioning
+                    } else {
+                        // Single pane mode: account for bottom navigation + extra height
+                        WindowInsets.systemBars.asPaddingValues().calculateBottomPadding() + 120.dp
+                    }
                 )
-                
-                // FAB for navigation mode
-                ExpandableFabMenu(
-                    expanded = fabExpanded,
-                    onToggle = { fabExpanded = !fabExpanded },
-                    onAddFeed = { 
-                        fabExpanded = false
-                        viewModel.showAddFeedDialog() 
-                    },
-                    onImportFeed = {
-                        fabExpanded = false
-                        opmlImportViewModel.showFileDialog()
-                    },
-                    onAddGroup = {
-                        fabExpanded = false
-                        viewModel.showAddGroupDialog()
-                    },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 16.dp, bottom = 80.dp) // Account for bottom nav
+        )
+        
+        // Snackbar
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(
+                    bottom = if (isSidebarMode) {
+                        16.dp // Sidebar mode: just standard padding
+                    } else {
+                        // Single pane mode: account for bottom navigation
+                        WindowInsets.systemBars.asPaddingValues().calculateBottomPadding() + 72.dp
+                    }
                 )
-                
-                // External snackbar for navigation mode
-                SnackbarHost(
-                    hostState = snackbarHostState,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 100.dp) // Above bottom navigation
-                ) { snackbarData ->
-                    androidx.compose.material3.Snackbar(
-                        snackbarData = snackbarData,
-                        containerColor = MaterialTheme.colorScheme.inverseSurface,
-                        contentColor = MaterialTheme.colorScheme.inverseOnSurface
-                    )
-                }
-            }
+        ) { snackbarData ->
+            androidx.compose.material3.Snackbar(
+                snackbarData = snackbarData,
+                containerColor = MaterialTheme.colorScheme.inverseSurface,
+                contentColor = MaterialTheme.colorScheme.inverseOnSurface
+            )
         }
+    }
 
     // Dialogs
     if (showAddFeedDialog) {
@@ -594,7 +466,10 @@ private fun FeedListContent(
                 .padding(paddingValues)
         ) {
             // Add "All Articles" option - always shown
-            item {
+            item(
+                key = "all_articles",
+                contentType = "header"
+            ) {
                 // Only highlight All Articles in sidebar mode when explicitly selected (not via default group)
                 val isAllArticlesSelected = isSidebarMode && selectedFeedId == null && selectedGroupId == null
                 
@@ -651,7 +526,11 @@ private fun FeedListContent(
             
             
             // Add groups at the top
-            items(groups, key = { "group_${it.id}" }) { group ->
+            items(
+                items = groups, 
+                key = { "group_${it.id}" },
+                contentType = { "group" }
+            ) { group ->
                 SwipeableGroupItem(
                     group = group,
                     onGroupClick = onGroupClick,
@@ -663,7 +542,11 @@ private fun FeedListContent(
             }
             
             
-            items(feeds, key = { "feed_${it.id}" }) { feed ->
+            items(
+                items = feeds, 
+                key = { "feed_${it.id}" },
+                contentType = { "feed" }
+            ) { feed ->
                 SwipeableFeedItem(
                     feed = feed,
                     isSelected = selectedFeedId == feed.id,
@@ -677,7 +560,10 @@ private fun FeedListContent(
             
             // Empty spacer item at the end (only in single pane mode)
             if (!isSidebarMode) {
-                item {
+                item(
+                    key = "bottom_spacer",
+                    contentType = "spacer"
+                ) {
                     Spacer(modifier = Modifier.height(160.dp))
                 }
             }

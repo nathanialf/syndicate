@@ -15,6 +15,9 @@ interface FeedDao {
     @Query("SELECT * FROM feeds ORDER BY title ASC")
     fun getAllFeeds(): Flow<List<FeedEntity>>
     
+    @Query("SELECT * FROM feeds ORDER BY title ASC")
+    suspend fun getAllFeedsList(): List<FeedEntity>
+    
     @Query("SELECT * FROM feeds WHERE id = :feedId")
     suspend fun getFeedById(feedId: Long): FeedEntity?
     

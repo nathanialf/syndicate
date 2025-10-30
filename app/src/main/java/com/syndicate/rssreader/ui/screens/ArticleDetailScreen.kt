@@ -1,5 +1,6 @@
 package com.syndicate.rssreader.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material.icons.filled.RssFeed
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -32,6 +34,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +59,7 @@ import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.syndicate.rssreader.ui.components.FaviconIcon
 import com.syndicate.rssreader.ui.theme.CormorantGaramond
 import com.syndicate.rssreader.ui.viewmodel.ArticleDetailViewModel
 import androidx.compose.foundation.layout.WindowInsets
@@ -209,16 +215,23 @@ private fun ArticleDetailContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Feed favicon if available
-            article.feedFaviconUrl?.let { faviconUrl ->
-                AsyncImage(
-                    model = faviconUrl,
-                    contentDescription = "Feed icon",
-                    modifier = Modifier
-                        .size(20.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                )
-            }
+            // Use the reusable FaviconIcon with a mock feed object
+            FaviconIcon(
+                feed = com.syndicate.rssreader.data.models.Feed(
+                    id = 0,
+                    url = "",
+                    title = "",
+                    description = null,
+                    siteUrl = null,
+                    faviconUrl = article.feedFaviconUrl,
+                    lastFetched = null,
+                    isAvailable = true,
+                    createdAt = 0L
+                ),
+                isSelected = false,
+                isAvailable = true,
+                size = 20.dp
+            )
 
             Text(
                 text = buildString {

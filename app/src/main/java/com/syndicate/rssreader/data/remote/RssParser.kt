@@ -16,10 +16,23 @@ class RssParser @Inject constructor() {
             title = syndFeed.title ?: "Unknown Feed",
             description = syndFeed.description,
             siteUrl = syndFeed.link,
-            faviconUrl = null, // Will be fetched separately if needed
+            faviconUrl = generateFaviconUrl(syndFeed.link, feedUrl),
             lastFetched = System.currentTimeMillis(),
             isAvailable = true
         )
+    }
+    
+    fun generateFaviconUrl(siteUrl: String?, feedUrl: String): String? {
+        val baseUrl = siteUrl ?: run {
+            // Extract domain from RSS feed URL as fallback
+            try {
+                val url = java.net.URL(feedUrl)
+                "${url.protocol}://${url.host}"
+            } catch (e: Exception) {
+                null
+            }
+        }
+        return baseUrl?.let { "$it/favicon.ico" }
     }
     
     fun parseArticles(syndFeed: SyndFeed, feedId: Long): List<ArticleEntity> {

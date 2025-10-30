@@ -82,14 +82,7 @@ fun SettingsScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text(
-                        text = "Settings",
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            fontFamily = CormorantGaramond,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 22.sp
-                        )
-                    )
+                    Text(text = "Settings")
                 },
                 windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
             )
