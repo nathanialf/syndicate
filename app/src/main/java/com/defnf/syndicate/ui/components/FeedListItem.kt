@@ -50,7 +50,7 @@ fun FeedListItem(
     val containerColor = if (isSelected) {
         MaterialTheme.colorScheme.secondaryContainer
     } else {
-        MaterialTheme.colorScheme.surface
+        MaterialTheme.colorScheme.surfaceContainer // Same as default card color
     }
     
     ListItem(

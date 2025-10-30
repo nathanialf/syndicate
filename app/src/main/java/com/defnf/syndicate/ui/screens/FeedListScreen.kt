@@ -6,6 +6,9 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.draw.clip
 import com.defnf.syndicate.ui.dialogs.AddFeedDialog
@@ -202,10 +205,10 @@ fun FeedListScreen(
             listState = listState,
             paddingValues = if (isSidebarMode) {
                 androidx.compose.foundation.layout.PaddingValues(
-                    start = 0.dp,
-                    end = 0.dp,
+                    start = 16.dp,
+                    end = 16.dp,
                     top = 0.dp,
-                    bottom = 16.dp
+                    bottom = 0.dp
                 )
             } else {
                 androidx.compose.foundation.layout.PaddingValues(16.dp)
@@ -465,107 +468,90 @@ private fun FeedListContent(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Add "All Articles" option - always shown
+            // Group 1: All Articles (independent)
             item(
-                key = "all_articles",
-                contentType = "header"
+                key = "all_articles_group",
+                contentType = "card_group"
             ) {
-                // Only highlight All Articles in sidebar mode when explicitly selected (not via default group)
-                val isAllArticlesSelected = isSidebarMode && selectedFeedId == null && selectedGroupId == null
-                
-                ListItem(
-                    headlineContent = {
-                        Text(
-                            text = "All Articles",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = if (isAllArticlesSelected) {
-                                MaterialTheme.colorScheme.onSecondaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            }
+                GroupedCard(
+                    isFirstInGroup = true,
+                    isLastInGroup = true,
+                    content = {
+                        AllArticlesItem(
+                            isSelected = isSidebarMode && selectedFeedId == null && selectedGroupId == null,
+                            onAllFeedsClick = onAllFeedsClick
                         )
-                    },
-                    leadingContent = {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (isAllArticlesSelected) {
-                                        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f)
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
-                                    }
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.RssFeed,
-                                contentDescription = null,
-                                tint = if (isAllArticlesSelected) {
-                                    MaterialTheme.colorScheme.onSecondaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                                modifier = Modifier.size(20.dp)
+                    }
+                )
+            }
+            
+            // Spacer between groups
+            item(key = "spacer_1") {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+            
+            // Group 2: Feed Groups
+            if (groups.isNotEmpty()) {
+                items(
+                    items = groups.withIndex().toList(),
+                    key = { "group_${it.value.id}" },
+                    contentType = { "group" }
+                ) { (index, group) ->
+                    GroupedCard(
+                        isFirstInGroup = index == 0,
+                        isLastInGroup = index == groups.size - 1,
+                        content = {
+                            SwipeableGroupItem(
+                                group = group,
+                                onGroupClick = onGroupClick,
+                                onDeleteGroup = onDeleteGroup,
+                                onEditGroup = onEditGroup,
+                                isSidebarMode = isSidebarMode,
+                                isSelected = selectedGroupId == group.id
                             )
                         }
-                    },
-                    colors = androidx.compose.material3.ListItemDefaults.colors(
-                        containerColor = if (isAllArticlesSelected) {
-                            MaterialTheme.colorScheme.secondaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        }
-                    ),
-                    modifier = Modifier
-                        .clickable { onAllFeedsClick() }
-                        .fillMaxWidth()
-                )
-            }
-            
-            
-            // Add groups at the top
-            items(
-                items = groups, 
-                key = { "group_${it.id}" },
-                contentType = { "group" }
-            ) { group ->
-                SwipeableGroupItem(
-                    group = group,
-                    onGroupClick = onGroupClick,
-                    onDeleteGroup = onDeleteGroup,
-                    onEditGroup = onEditGroup,
-                    isSidebarMode = isSidebarMode,
-                    isSelected = selectedGroupId == group.id
-                )
-            }
-            
-            
-            items(
-                items = feeds, 
-                key = { "feed_${it.id}" },
-                contentType = { "feed" }
-            ) { feed ->
-                SwipeableFeedItem(
-                    feed = feed,
-                    isSelected = selectedFeedId == feed.id,
-                    onFeedClick = onFeedClick,
-                    onDeleteFeed = onDeleteFeed,
-                    onNotificationToggle = onNotificationToggle,
-                    isSidebarMode = isSidebarMode,
-                    resetSwipe = resetSwipeState
-                )
-            }
-            
-            // Empty spacer item at the end (only in single pane mode)
-            if (!isSidebarMode) {
-                item(
-                    key = "bottom_spacer",
-                    contentType = "spacer"
-                ) {
-                    Spacer(modifier = Modifier.height(160.dp))
+                    )
                 }
+            }
+            
+            // Spacer between groups
+            if (groups.isNotEmpty()) {
+                item(key = "spacer_2") {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+            
+            // Group 3: Individual Feeds
+            if (feeds.isNotEmpty()) {
+                items(
+                    items = feeds.withIndex().toList(),
+                    key = { "feed_${it.value.id}" },
+                    contentType = { "feed" }
+                ) { (index, feed) ->
+                    GroupedCard(
+                        isFirstInGroup = index == 0,
+                        isLastInGroup = index == feeds.size - 1,
+                        content = {
+                            SwipeableFeedItem(
+                                feed = feed,
+                                isSelected = selectedFeedId == feed.id,
+                                onFeedClick = onFeedClick,
+                                onDeleteFeed = onDeleteFeed,
+                                onNotificationToggle = onNotificationToggle,
+                                isSidebarMode = isSidebarMode,
+                                resetSwipe = resetSwipeState
+                            )
+                        }
+                    )
+                }
+            }
+            
+            // Empty spacer item at the end
+            item(
+                key = "bottom_spacer",
+                contentType = "spacer"
+            ) {
+                Spacer(modifier = Modifier.height(160.dp))
             }
         }
     }
@@ -580,4 +566,99 @@ private fun FeedListContent(
             CircularProgressIndicator()
         }
     }
+}
+
+/**
+ * A card container that handles grouped card styling similar to Android Settings.
+ * Cards within a group have connecting corners - top card has rounded top corners only,
+ * bottom card has rounded bottom corners only, middle cards have square corners.
+ */
+@Composable
+private fun GroupedCard(
+    isFirstInGroup: Boolean,
+    isLastInGroup: Boolean,
+    content: @Composable () -> Unit
+) {
+    val shape = when {
+        isFirstInGroup && isLastInGroup -> RoundedCornerShape(12.dp) // Single card in group
+        isFirstInGroup -> RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
+        isLastInGroup -> RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 12.dp, bottomEnd = 12.dp)
+        else -> RoundedCornerShape(4.dp) // Middle cards have rounded corners
+    }
+    
+    val topPadding = if (isFirstInGroup) 0.dp else 2.dp // Gap between connected cards
+    
+    Card(
+        shape = shape,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer // Match the list item colors
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp // No elevation
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = topPadding)
+    ) {
+        content()
+    }
+}
+
+/**
+ * The "All Articles" list item extracted as a separate composable for use in grouped cards
+ */
+@Composable
+private fun AllArticlesItem(
+    isSelected: Boolean,
+    onAllFeedsClick: () -> Unit
+) {
+    ListItem(
+        headlineContent = {
+            Text(
+                text = "All Articles",
+                style = MaterialTheme.typography.titleMedium,
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.onSecondaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                }
+            )
+        },
+        leadingContent = {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (isSelected) {
+                            MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f)
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
+                        }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.RssFeed,
+                    contentDescription = null,
+                    tint = if (isSelected) {
+                        MaterialTheme.colorScheme.onSecondaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        },
+        colors = androidx.compose.material3.ListItemDefaults.colors(
+            containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceContainer // Same as default card color
+            }
+        ),
+        modifier = Modifier
+            .clickable { onAllFeedsClick() }
+            .fillMaxWidth()
+    )
 }
