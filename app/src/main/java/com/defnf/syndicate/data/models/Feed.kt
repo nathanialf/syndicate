@@ -1,0 +1,29 @@
+package com.defnf.syndicate.data.models
+
+import com.defnf.syndicate.data.local.entities.FeedEntity
+
+data class Feed(
+    val id: Long,
+    val url: String,
+    val title: String,
+    val description: String?,
+    val siteUrl: String?,
+    val faviconUrl: String?,
+    val lastFetched: Long?,
+    val isAvailable: Boolean,
+    val notificationsEnabled: Boolean = false,
+    val createdAt: Long
+) {
+    fun toEntity(): FeedEntity = FeedEntity(
+        id = id,
+        url = url,
+        title = title,
+        description = description,
+        siteUrl = siteUrl,
+        faviconUrl = faviconUrl,
+        lastFetched = lastFetched,
+        isAvailable = isAvailable,
+        notificationsEnabled = notificationsEnabled,
+        createdAt = createdAt
+    )
+}

@@ -30,6 +30,8 @@ A modern Android RSS reader built with Jetpack Compose and Material 3 design, fe
 - **Feed Addition Confirmation**: Success notifications with feed titles when adding new feeds
 - **Auto-dismissing Dialogs**: Improved UX with automatic dialog closure after successful actions
 - **Smart Notification Dismissal**: Notifications automatically clear when articles are marked as read
+- **Scroll-to-Top FAB**: Floating action button for quick navigation to top of article lists
+- **Intelligent Notification Filtering**: Notifications only sent during background sync, not manual refresh or startup
 
 ### 🚧 Planned Features
 - **Article Search**: Search through article titles and descriptions

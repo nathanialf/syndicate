@@ -8,11 +8,11 @@ plugins {
 }
 
 android {
-    namespace = "com.syndicate.rssreader"
+    namespace = "com.defnf.syndicate"
     compileSdk = 35
     
     defaultConfig {
-        applicationId = "com.syndicate.rssreader"
+        applicationId = "com.defnf.syndicate"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
