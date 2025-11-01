@@ -47,7 +47,7 @@ class RssParser @Inject constructor() {
             id = entry.uri ?: entry.link ?: "${feedId}_${entry.title?.hashCode()}",
             feedId = feedId,
             title = entry.title ?: "Untitled",
-            description = entry.description?.value,
+            description = getArticleContent(entry),
             url = articleUrl,
             author = entry.author,
             publishedDate = entry.publishedDate?.time,
@@ -74,6 +74,18 @@ class RssParser @Inject constructor() {
         } catch (e: Exception) {
             return url // Return original if URL parsing fails
         }
+    }
+    
+    private fun getArticleContent(entry: SyndEntry): String? {
+        // Priority: 1. Content field (full content), 2. Description (summary)
+        // Check if there's actual content in the contents field
+        val content = entry.contents.firstOrNull()?.value
+        if (!content.isNullOrBlank() && content != entry.description?.value) {
+            return content
+        }
+        
+        // Fall back to description if no separate content or if content is same as description
+        return entry.description?.value
     }
     
     private fun extractThumbnailUrl(entry: SyndEntry): String? {

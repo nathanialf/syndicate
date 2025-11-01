@@ -25,7 +25,13 @@ A modern Android RSS reader built with Jetpack Compose and Material 3 design, fe
 - **Notification Channels**: Organized notifications with proper Android 8+ channel support
 - **Enhanced UI/UX**: Feed descriptions with smart truncation, improved scrolling with spacers
 - **Haptic Feedback**: Tactile feedback for swipe actions and article interactions
-- **HTML Content Rendering**: Rich HTML content parsing with proper formatting and styling
+- **Enhanced HTML Content Parsing**: Rich HTML content rendering with support for:
+  - Unordered lists with proper bullet formatting
+  - Images displayed inline with fallback handling
+  - Code blocks with monospace formatting and syntax highlighting
+  - YouTube embeds with high-quality thumbnails and click-to-open functionality
+  - Hyperlinks with modern clickable annotations
+  - Proper content order preservation to prevent duplication
 - **Pull-to-Refresh**: Manual refresh to fetch new articles with scroll-to-top functionality
 - **Feed Addition Confirmation**: Success notifications with feed titles when adding new feeds
 - **Auto-dismissing Dialogs**: Improved UX with automatic dialog closure after successful actions
