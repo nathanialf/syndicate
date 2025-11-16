@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -50,7 +52,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.defnf.syndicate.data.models.ThemeMode
-import com.defnf.syndicate.ui.theme.CormorantGaramond
 import com.defnf.syndicate.ui.viewmodel.ThemeViewModel
 import com.defnf.syndicate.ui.viewmodel.SettingsViewModel
 import com.defnf.syndicate.ui.viewmodel.ExportState
@@ -60,7 +61,8 @@ import com.defnf.syndicate.ui.viewmodel.ExportState
 fun SettingsScreen(
     themeViewModel: ThemeViewModel,
     modifier: Modifier = Modifier,
-    settingsViewModel: SettingsViewModel = hiltViewModel()
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
+    isSidebarMode: Boolean = false
 ) {
     val currentThemeMode by themeViewModel.themeMode.collectAsState()
     val exportState by settingsViewModel.exportState.collectAsState()
@@ -95,7 +97,11 @@ fun SettingsScreen(
                 title = {
                     Text(text = "Settings")
                 },
-                windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
+                windowInsets = if (isSidebarMode) {
+                    WindowInsets.systemBars
+                } else {
+                    WindowInsets(0, 0, 0, 0)
+                }
             )
         }
     ) { paddingValues ->

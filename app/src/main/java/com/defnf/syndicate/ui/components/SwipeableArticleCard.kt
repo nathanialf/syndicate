@@ -223,6 +223,7 @@ private fun ArticleSwipeBackground(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .clip(RoundedCornerShape(12.dp))
             .background(backgroundColor)
             .padding(horizontal = 24.dp),
         contentAlignment = when (swipeDirection) {

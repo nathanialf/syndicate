@@ -67,7 +67,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.defnf.syndicate.R
 import com.defnf.syndicate.ui.common.LayoutConstants
 import com.defnf.syndicate.ui.components.SwipeableArticleCard
-import com.defnf.syndicate.ui.theme.CormorantGaramond
 import com.defnf.syndicate.ui.viewmodel.ArticleListViewModel
 import com.defnf.syndicate.ui.viewmodel.ArticleShowFilter
 import java.text.SimpleDateFormat

@@ -113,7 +113,7 @@ fun RssNavigation(
             }
             
             composable(Screen.Settings.route) {
-                SettingsScreen(themeViewModel = themeViewModel)
+                SettingsScreen(themeViewModel = themeViewModel, isSidebarMode = true)
             }
             
             
@@ -274,7 +274,8 @@ fun NarrowScreenWithAnimation(
             Screen.Settings.route -> {
                 SettingsScreen(
                     themeViewModel = themeViewModel,
-                    modifier = Modifier.padding(top = paddingValues.calculateTopPadding())
+                    modifier = Modifier.padding(top = paddingValues.calculateTopPadding()),
+                    isSidebarMode = false
                 )
             }
         }

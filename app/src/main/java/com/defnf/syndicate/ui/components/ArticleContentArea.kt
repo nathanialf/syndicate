@@ -74,20 +74,18 @@ fun ArticleContentArea(
         when (state) {
             "settings" -> {
                 if (themeViewModel != null) {
-                    if (isSidebarMode) {
-                        // Dual-pane: AppTopBar handles system bar padding automatically
-                        SettingsScreen(themeViewModel = themeViewModel)
-                    } else {
-                        // Single-pane: settings screen handles its own padding
-                        SettingsScreen(themeViewModel = themeViewModel)
-                    }
+                    SettingsScreen(
+                        themeViewModel = themeViewModel,
+                        isSidebarMode = isSidebarMode
+                    )
                 }
             }
             "article_detail" -> {
                 navigationState.selectedArticleId?.let { articleId ->
                     ArticleDetailScreen(
                         articleId = articleId,
-                        onBackClick = navigationState.onBackFromArticle
+                        onBackClick = navigationState.onBackFromArticle,
+                        isSidebarMode = isSidebarMode
                     )
                 }
             }

@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -66,7 +65,6 @@ import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.defnf.syndicate.ui.components.FaviconIcon
-import com.defnf.syndicate.ui.theme.CormorantGaramond
 import com.defnf.syndicate.ui.viewmodel.ArticleDetailViewModel
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.systemBars
@@ -82,7 +80,8 @@ import android.net.Uri
 fun ArticleDetailScreen(
     articleId: String,
     onBackClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isSidebarMode: Boolean = false
 ) {
     val viewModel: ArticleDetailViewModel = hiltViewModel()
     val article by viewModel.article.collectAsState()
@@ -98,8 +97,6 @@ fun ArticleDetailScreen(
         onBackClick()
     }
 
-    val configuration = LocalConfiguration.current
-    val isSidebarMode = configuration.screenWidthDp >= 600
     
     Scaffold(
         topBar = {

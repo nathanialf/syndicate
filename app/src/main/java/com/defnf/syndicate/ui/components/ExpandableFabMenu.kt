@@ -83,10 +83,10 @@ fun ExpandableFabMenu(
                     onClick = onAddGroup
                 )
                 
-                // Import Feed
+                // Import Feeds
                 FabMenuItem(
                     icon = Icons.Default.Download,
-                    label = "Import Feed",
+                    label = "Import Feeds",
                     onClick = onImportFeed
                 )
                 

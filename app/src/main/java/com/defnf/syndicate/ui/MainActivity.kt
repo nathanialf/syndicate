@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,6 +31,8 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val intentKey: MutableState<Int> = mutableStateOf(0)
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
@@ -47,9 +50,10 @@ class MainActivity : ComponentActivity() {
             
             // Handle notification intents
             var notificationData by remember { mutableStateOf<NotificationData?>(null) }
+            val currentIntentKey by intentKey
             
-            LaunchedEffect(intent) {
-                notificationData = extractNotificationData(intent)
+            LaunchedEffect(currentIntentKey) {
+                notificationData = extractNotificationData(this@MainActivity.intent)
             }
             
             SyndicateTheme(darkTheme = isDarkTheme) {
@@ -70,6 +74,8 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        // Trigger re-evaluation of notification data
+        intentKey.value = intentKey.value + 1
     }
     
     private fun extractNotificationData(intent: Intent): NotificationData? {

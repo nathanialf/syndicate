@@ -115,7 +115,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import android.util.Log
 import com.defnf.syndicate.ui.common.LayoutConstants
 import com.defnf.syndicate.ui.common.LayoutUtils
-import com.defnf.syndicate.ui.theme.CormorantGaramond
 import com.defnf.syndicate.ui.viewmodel.FeedListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
