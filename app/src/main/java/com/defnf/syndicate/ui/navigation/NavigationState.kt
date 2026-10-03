@@ -96,6 +96,11 @@ class NavigationState internal constructor(
         selectedArticleId = articleId
     }
 
+    fun openFeedFromNotification(feedId: Long) {
+        select(feedId = feedId)
+        returnToFeedsOnBack = false
+    }
+
     fun openGroupFromNotification(groupId: Long) {
         select(groupId = groupId)
         returnToFeedsOnBack = false

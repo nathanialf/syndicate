@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.defnf.syndicate.data.models.ThemeMode
 import com.defnf.syndicate.navigation.RssNavigation
+import com.defnf.syndicate.notifications.NotificationIntents
 import com.defnf.syndicate.ui.theme.SyndicateTheme
 import com.defnf.syndicate.ui.viewmodel.ThemeViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -30,9 +31,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         
         // Only read the launch intent on a fresh start; after a configuration change or process
-        // restore the navigation state is restored instead of re-opening the notification target
-        if (savedInstanceState == null) {
-            pendingNotification = extractNotificationData(intent)
+        // restore the navigation state is restored instead of re-opening the notification target.
+        // Relaunching from Recents redelivers the original intent, which must not reopen it either.
+        val launchedFromHistory = (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
+        if (savedInstanceState == null && !launchedFromHistory) {
+            pendingNotification = NotificationIntents.parse(intent)
         }
         
         enableEdgeToEdge()
@@ -65,28 +68,12 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        pendingNotification = extractNotificationData(intent)
-    }
-    
-    private fun extractNotificationData(intent: Intent): NotificationData? {
-        return when {
-            intent.hasExtra("articleId") && intent.hasExtra("feedId") -> {
-                NotificationData.Article(
-                    articleId = intent.getStringExtra("articleId")!!,
-                    feedId = intent.getLongExtra("feedId", -1)
-                )
-            }
-            intent.hasExtra("groupId") -> {
-                NotificationData.Group(
-                    groupId = intent.getLongExtra("groupId", -1)
-                )
-            }
-            else -> null
-        }
+        NotificationIntents.parse(intent)?.let { pendingNotification = it }
     }
 }
 
 sealed class NotificationData {
     data class Article(val articleId: String, val feedId: Long) : NotificationData()
+    data class Feed(val feedId: Long) : NotificationData()
     data class Group(val groupId: Long) : NotificationData()
 }

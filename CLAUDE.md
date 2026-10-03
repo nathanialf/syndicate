@@ -57,7 +57,7 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 
 #### Background Processing
 - **Sync**: WorkManager for periodic RSS feed updates (`SyncWorker`, `SyncScheduler`)
-- **Notifications**: Per-feed notification system with proper channel management
+- **Notifications**: `NotificationManager` posts one notification per new article, bundled per feed under a summary, plus group notifications. Tap/action intents come from `NotificationIntents`, which gives each target a unique data URI (PendingIntents ignore extras when matching). `RssRepository` dismisses notifications when articles are marked read
 
 ### Data Models
 - `Feed`: RSS feed with metadata, availability status, notification preferences

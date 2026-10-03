@@ -39,6 +39,7 @@ fun RssNavigation(
         notificationData?.let { data ->
             when (data) {
                 is NotificationData.Article -> navigationState.openArticleFromNotification(data.feedId, data.articleId)
+                is NotificationData.Feed -> navigationState.openFeedFromNotification(data.feedId)
                 is NotificationData.Group -> navigationState.openGroupFromNotification(data.groupId)
             }
             onNotificationHandled()

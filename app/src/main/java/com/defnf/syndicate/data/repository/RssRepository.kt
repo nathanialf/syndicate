@@ -24,6 +24,7 @@ import com.defnf.syndicate.data.models.OpmlFeed
 import com.defnf.syndicate.data.remote.RssFetcher
 import com.defnf.syndicate.data.remote.RssParser
 import com.defnf.syndicate.data.remote.OpmlParser
+import com.defnf.syndicate.notifications.NotificationManager
 import java.io.InputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -42,7 +43,8 @@ class RssRepository @Inject constructor(
     private val readStatusDao: ReadStatusDao,
     private val rssFetcher: RssFetcher,
     private val rssParser: RssParser,
-    private val opmlParser: OpmlParser
+    private val opmlParser: OpmlParser,
+    private val notificationManager: NotificationManager
 ) {
     
     fun getAllFeeds(): Flow<List<Feed>> = 
@@ -78,8 +80,10 @@ class RssRepository @Inject constructor(
     suspend fun updateGroup(group: Group) = 
         groupDao.updateGroup(group.toEntity())
     
-    suspend fun deleteFeed(feed: Feed) = 
+    suspend fun deleteFeed(feed: Feed) {
         feedDao.deleteFeed(feed.toEntity())
+        notificationManager.dismissFeedNotifications(feed.id)
+    }
     
     suspend fun deleteGroup(group: Group) = 
         groupDao.deleteGroup(group.toEntity())
@@ -111,21 +115,32 @@ class RssRepository @Inject constructor(
             .flowOn(Dispatchers.Default)
     }
     
+    // Marking articles as read (in the app or from a notification action) clears their notifications
+    
     suspend fun markAsRead(articleId: String, isRead: Boolean = true) {
         val timestamp = if (isRead) System.currentTimeMillis() else null
         readStatusDao.setReadStatus(articleId, isRead, timestamp)
+        if (isRead) {
+            notificationManager.dismissArticleNotification(articleId)
+        }
     }
     
     suspend fun markAllAsReadForFeed(feedId: Long) {
         readStatusDao.markAllAsReadForFeed(feedId, System.currentTimeMillis())
+        notificationManager.dismissFeedNotifications(feedId)
     }
     
     suspend fun markAllAsReadForGroup(groupId: Long) {
         readStatusDao.markAllAsReadForGroup(groupId, System.currentTimeMillis())
+        notificationManager.dismissGroupNotification(groupId)
+        feedDao.getFeedsForGroup(groupId).forEach { feed ->
+            notificationManager.dismissFeedNotifications(feed.id)
+        }
     }
     
     suspend fun markAllAsRead() {
         readStatusDao.markAllAsRead(System.currentTimeMillis())
+        notificationManager.dismissAllNotifications()
     }
     
     suspend fun getArticleById(articleId: String): Article? {
@@ -312,6 +327,7 @@ class RssRepository @Inject constructor(
         
         // Delete the group
         groupDao.deleteGroupById(groupId)
+        notificationManager.dismissGroupNotification(groupId)
         
         // If the deleted group was default, clear all defaults (revert to "All Feeds")
         if (wasDefault) {
