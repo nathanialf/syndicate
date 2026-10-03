@@ -124,3 +124,6 @@ google-services.json
 # Local sync scripts
 sync-to-local.ps1
 sync-to-local.bat
+
+# Release signing credentials (passwords + keystore path), never commit
+keystore.properties
