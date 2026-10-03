@@ -27,26 +27,30 @@ interface ReadStatusDao {
     @Query("DELETE FROM read_status WHERE article_id = :articleId")
     suspend fun deleteReadStatus(articleId: String)
     
+    // The mark-all queries only write rows for articles that are still unread, so already read
+    // articles keep their original read time and large databases don't rewrite every row
     @Query("""
         INSERT OR REPLACE INTO read_status (article_id, is_read, read_at)
-        SELECT a.id, 1, :readAt FROM articles a 
-        INNER JOIN feeds f ON a.feed_id = f.id 
-        WHERE f.id = :feedId
+        SELECT a.id, 1, :readAt FROM articles a
+        LEFT JOIN read_status rs ON a.id = rs.article_id
+        WHERE a.feed_id = :feedId AND COALESCE(rs.is_read, 0) = 0
     """)
     suspend fun markAllAsReadForFeed(feedId: Long, readAt: Long)
     
     @Query("""
         INSERT OR REPLACE INTO read_status (article_id, is_read, read_at)
-        SELECT a.id, 1, :readAt FROM articles a 
-        INNER JOIN feeds f ON a.feed_id = f.id 
-        INNER JOIN feed_group_cross_ref fgcr ON f.id = fgcr.feed_id 
-        WHERE fgcr.group_id = :groupId
+        SELECT a.id, 1, :readAt FROM articles a
+        INNER JOIN feed_group_cross_ref fgcr ON a.feed_id = fgcr.feed_id
+        LEFT JOIN read_status rs ON a.id = rs.article_id
+        WHERE fgcr.group_id = :groupId AND COALESCE(rs.is_read, 0) = 0
     """)
     suspend fun markAllAsReadForGroup(groupId: Long, readAt: Long)
     
     @Query("""
         INSERT OR REPLACE INTO read_status (article_id, is_read, read_at)
         SELECT a.id, 1, :readAt FROM articles a
+        LEFT JOIN read_status rs ON a.id = rs.article_id
+        WHERE COALESCE(rs.is_read, 0) = 0
     """)
     suspend fun markAllAsRead(readAt: Long)
     

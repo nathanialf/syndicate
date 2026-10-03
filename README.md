@@ -1,12 +1,12 @@
 # Syndicate RSS Reader
 
-A modern Android RSS reader built with Jetpack Compose and Material 3 design, featuring a responsive two-pane layout for tablets and wide screens.
+A modern Android RSS reader built with Jetpack Compose and Material 3 design, featuring an adaptive layout for phones, foldables, tablets and resizable windows.
 
 ## Features
 
 ### ✅ Implemented
 - **Modern Material 3 Design**: Clean, intuitive interface following Material Design guidelines
-- **Responsive Layout**: Two-pane layout for tablets, single-pane for phones
+- **Adaptive Layout**: Bottom navigation on phones, navigation rail on medium-width windows, two-pane (feeds + content) on expanded widths and three-pane (feeds + list + article) on large screens; state is preserved across rotation, folding and window resizing
 - **Feed Management**: Add, organize, and delete RSS feeds with swipe gestures
 - **Feed Groups/Folders**: Organize feeds into custom groups with full CRUD operations
 - **Favicon Support**: Automatic favicon loading for visual feed identification
@@ -21,7 +21,7 @@ A modern Android RSS reader built with Jetpack Compose and Material 3 design, fe
 - **Read/Unread Status**: Mark articles as read/unread with swipe gestures and visual indicators
 - **Article Detail Screen**: In-app article viewer with share and browser open actions
 - **Background Sync**: Periodic article fetching with WorkManager for battery optimization
-- **Push Notifications**: Per-feed notification system with mark-as-read actions and system permission prompts
+- **Push Notifications**: One notification per new article (opens that article), bundled per feed under a summary that opens the feed; group notifications open the group. Mark-as-read actions and system permission prompts
 - **Notification Channels**: Organized notifications with proper Android 8+ channel support
 - **Enhanced UI/UX**: Feed descriptions with smart truncation, improved scrolling with spacers
 - **Haptic Feedback**: Tactile feedback for swipe actions and article interactions

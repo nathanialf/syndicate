@@ -1,9 +1,15 @@
 package com.defnf.syndicate.data.repository
 
+import androidx.room.withTransaction
+import com.defnf.syndicate.data.local.RssDatabase
 import com.defnf.syndicate.data.local.dao.ArticleDao
+import com.defnf.syndicate.data.local.dao.READ_STATE_ANY
+import com.defnf.syndicate.data.local.dao.READ_STATE_READ
+import com.defnf.syndicate.data.local.dao.READ_STATE_UNREAD
 import com.defnf.syndicate.data.local.dao.FeedDao
 import com.defnf.syndicate.data.local.dao.GroupDao
 import com.defnf.syndicate.data.local.dao.ReadStatusDao
+import com.defnf.syndicate.data.local.entities.ArticleEntity
 import com.defnf.syndicate.data.local.entities.FeedEntity
 import com.defnf.syndicate.data.local.entities.FeedGroupCrossRef
 import com.defnf.syndicate.data.local.entities.GroupEntity
@@ -18,21 +24,27 @@ import com.defnf.syndicate.data.models.OpmlFeed
 import com.defnf.syndicate.data.remote.RssFetcher
 import com.defnf.syndicate.data.remote.RssParser
 import com.defnf.syndicate.data.remote.OpmlParser
+import com.defnf.syndicate.notifications.NotificationManager
 import java.io.InputStream
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class RssRepository @Inject constructor(
+    private val database: RssDatabase,
     private val feedDao: FeedDao,
     private val groupDao: GroupDao,
     private val articleDao: ArticleDao,
     private val readStatusDao: ReadStatusDao,
     private val rssFetcher: RssFetcher,
     private val rssParser: RssParser,
-    private val opmlParser: OpmlParser
+    private val opmlParser: OpmlParser,
+    private val notificationManager: NotificationManager
 ) {
     
     fun getAllFeeds(): Flow<List<Feed>> = 
@@ -68,8 +80,10 @@ class RssRepository @Inject constructor(
     suspend fun updateGroup(group: Group) = 
         groupDao.updateGroup(group.toEntity())
     
-    suspend fun deleteFeed(feed: Feed) = 
+    suspend fun deleteFeed(feed: Feed) {
         feedDao.deleteFeed(feed.toEntity())
+        notificationManager.dismissFeedNotifications(feed.id)
+    }
     
     suspend fun deleteGroup(group: Group) = 
         groupDao.deleteGroup(group.toEntity())
@@ -81,50 +95,52 @@ class RssRepository @Inject constructor(
         feedDao.updateFeedAvailability(feedId, isAvailable)
     
     fun getArticles(filter: ArticleFilter): Flow<List<Article>> {
-        return when {
-            filter.searchQuery != null -> {
-                articleDao.searchArticles(filter.searchQuery).map { entities ->
-                    entities.map { it.toDomain() }
-                }
-            }
-            filter.feedId != null -> {
-                articleDao.getArticlesByFeed(filter.feedId).map { entities ->
-                    entities.map { it.toDomain() }
-                }
-            }
-            filter.groupId != null -> {
-                articleDao.getArticlesByGroup(filter.groupId).map { entities ->
-                    entities.map { it.toDomain() }
-                }
-            }
-            filter.unreadOnly -> {
-                articleDao.getUnreadArticles().map { entities ->
-                    entities.map { it.toDomain() }
-                }
-            }
-            else -> {
-                articleDao.getAllArticles().map { entities ->
-                    entities.map { it.toDomain() }
-                }
-            }
+        // Read/unread filtering happens in SQL so only the rows being shown are loaded
+        val readState = when {
+            filter.unreadOnly -> READ_STATE_UNREAD
+            filter.readOnly -> READ_STATE_READ
+            else -> READ_STATE_ANY
         }
+        val articles = when {
+            filter.searchQuery != null -> articleDao.searchArticles(filter.searchQuery, readState)
+            filter.feedId != null -> articleDao.getArticlesByFeed(filter.feedId, readState)
+            filter.groupId != null -> articleDao.getArticlesByGroup(filter.groupId, readState)
+            else -> articleDao.getAllArticles(readState)
+        }
+        return articles
+            // Room re-runs the query on any write to these tables; skip identical results
+            .distinctUntilChanged()
+            .map { entities -> entities.map { it.toDomain() } }
+            // Keep mapping large lists off the main thread
+            .flowOn(Dispatchers.Default)
     }
+    
+    // Marking articles as read (in the app or from a notification action) clears their notifications
     
     suspend fun markAsRead(articleId: String, isRead: Boolean = true) {
         val timestamp = if (isRead) System.currentTimeMillis() else null
         readStatusDao.setReadStatus(articleId, isRead, timestamp)
+        if (isRead) {
+            notificationManager.dismissArticleNotification(articleId)
+        }
     }
     
     suspend fun markAllAsReadForFeed(feedId: Long) {
         readStatusDao.markAllAsReadForFeed(feedId, System.currentTimeMillis())
+        notificationManager.dismissFeedNotifications(feedId)
     }
     
     suspend fun markAllAsReadForGroup(groupId: Long) {
         readStatusDao.markAllAsReadForGroup(groupId, System.currentTimeMillis())
+        notificationManager.dismissGroupNotification(groupId)
+        feedDao.getFeedsForGroup(groupId).forEach { feed ->
+            notificationManager.dismissFeedNotifications(feed.id)
+        }
     }
     
     suspend fun markAllAsRead() {
         readStatusDao.markAllAsRead(System.currentTimeMillis())
+        notificationManager.dismissAllNotifications()
     }
     
     suspend fun getArticleById(articleId: String): Article? {
@@ -204,16 +220,8 @@ class RssRepository @Inject constructor(
                 lastFetched = System.currentTimeMillis(),
                 isAvailable = true
             )
-            updateFeed(updatedFeed)
-            
-            // Parse articles and only insert new ones to preserve read status
             val fetchedArticles = rssParser.parseArticles(syndFeed, feedId, feed.url)
-            val existingArticleIds = articleDao.getArticleIdsForFeed(feedId).toSet()
-            val newArticles = fetchedArticles.filter { it.id !in existingArticleIds }
-            
-            if (newArticles.isNotEmpty()) {
-                articleDao.insertArticles(newArticles)
-            }
+            saveRefreshedFeed(updatedFeed, fetchedArticles)
             
             Result.success(Unit)
         } catch (e: Exception) {
@@ -222,7 +230,7 @@ class RssRepository @Inject constructor(
         }
     }
     
-    suspend fun refreshFeedAndGetNewArticles(feedId: Long): Result<List<com.defnf.syndicate.data.local.entities.ArticleEntity>> {
+    suspend fun refreshFeedAndGetNewArticles(feedId: Long): Result<List<ArticleEntity>> {
         return try {
             val feed = getFeedById(feedId) ?: return Result.failure(Exception("Feed not found"))
             android.util.Log.d("RssRepository", "Refreshing feed: ${feed.title} (${feed.url})")
@@ -246,25 +254,33 @@ class RssRepository @Inject constructor(
                 lastFetched = System.currentTimeMillis(),
                 isAvailable = true
             )
-            updateFeed(updatedFeed)
-            
-            // Parse articles and check which ones are new
             val fetchedArticles = rssParser.parseArticles(syndFeed, feedId, feed.url)
-            val existingArticleIds = articleDao.getArticleIdsForFeed(feedId).toSet()
-            
-            val newArticles = fetchedArticles.filter { it.id !in existingArticleIds }
+            val newArticles = saveRefreshedFeed(updatedFeed, fetchedArticles)
             android.util.Log.d("RssRepository", "Feed ${feed.title}: Found ${fetchedArticles.size} total articles, ${newArticles.size} are new")
-            
-            // Only insert new articles to preserve read status of existing ones
-            if (newArticles.isNotEmpty()) {
-                articleDao.insertArticles(newArticles)
-                android.util.Log.d("RssRepository", "Inserted ${newArticles.size} new articles for feed: ${feed.title}")
-            }
             
             Result.success(newArticles)
         } catch (e: Exception) {
             updateFeedAvailability(feedId, false)
             Result.failure(e)
+        }
+    }
+    
+    /**
+     * Stores refreshed feed metadata and any new articles in a single transaction.
+     * Existing articles are left untouched (preserving read status) without loading every stored
+     * article id for the feed, so refresh cost stays proportional to the fetched entries.
+     * Returns the articles that were newly inserted.
+     */
+    private suspend fun saveRefreshedFeed(
+        updatedFeed: Feed,
+        fetchedArticles: List<ArticleEntity>
+    ): List<ArticleEntity> = database.withTransaction {
+        updateFeed(updatedFeed)
+        if (fetchedArticles.isEmpty()) {
+            emptyList()
+        } else {
+            val rowIds = articleDao.insertArticles(fetchedArticles)
+            fetchedArticles.filterIndexed { index, _ -> rowIds[index] != -1L }
         }
     }
     
@@ -311,6 +327,7 @@ class RssRepository @Inject constructor(
         
         // Delete the group
         groupDao.deleteGroupById(groupId)
+        notificationManager.dismissGroupNotification(groupId)
         
         // If the deleted group was default, clear all defaults (revert to "All Feeds")
         if (wasDefault) {

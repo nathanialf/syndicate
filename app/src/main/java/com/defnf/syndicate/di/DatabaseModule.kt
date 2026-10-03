@@ -1,7 +1,6 @@
 package com.defnf.syndicate.di
 
 import android.content.Context
-import androidx.room.Room
 import com.defnf.syndicate.data.local.RssDatabase
 import com.defnf.syndicate.data.local.dao.ArticleDao
 import com.defnf.syndicate.data.local.dao.FeedDao
@@ -22,11 +21,7 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): RssDatabase {
-        return Room.databaseBuilder(
-            context,
-            RssDatabase::class.java,
-            "rss_database"
-        ).build()
+        return RssDatabase.getDatabase(context)
     }
     
     @Provides

@@ -47,7 +47,7 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 - **Models**: Domain models (`Feed`, `Article`, `Group`) with entity conversion methods
 
 #### UI Layer (`ui/`)
-- **Navigation**: Single activity with Compose Navigation
+- **Navigation**: Single activity; `RssNavigation` picks an adaptive layout and drives it from `NavigationState` (`ui/navigation/`)
 - **Screens**: Feature-based screen organization (feedmanagement, articlelist, etc.)
 - **Components**: Reusable UI components in `components/`
 - **Theme**: Material 3 theming with dark/light/system modes
@@ -57,7 +57,7 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 
 #### Background Processing
 - **Sync**: WorkManager for periodic RSS feed updates (`SyncWorker`, `SyncScheduler`)
-- **Notifications**: Per-feed notification system with proper channel management
+- **Notifications**: `NotificationManager` posts one notification per new article, bundled per feed under a summary, plus group notifications. Tap/action intents come from `NotificationIntents`, which gives each target a unique data URI (PendingIntents ignore extras when matching). `RssRepository` dismisses notifications when articles are marked read
 
 ### Data Models
 - `Feed`: RSS feed with metadata, availability status, notification preferences
@@ -70,7 +70,12 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 - **Background Sync**: Battery-optimized periodic updates with new article notifications  
 - **Read Status**: Separate tracking system preserving state across feed refreshes
 - **Feed Groups**: Hierarchical organization with cross-reference tables
-- **Responsive Layout**: Two-pane design for tablets using Material 3 window size classes
+- **Adaptive Layout**: Layout chosen from the window width using Material 3 window size class breakpoints (`AppLayoutType`):
+  - Compact (< 600dp): single pane + bottom navigation bar
+  - Medium (600-839dp): single pane + navigation rail
+  - Expanded (840-1199dp): feeds sidebar + content pane (`TwoPaneLayout`)
+  - Large (>= 1200dp): feeds sidebar + article list + article detail (`ThreePaneLayout`)
+  - A single `NavigationState` is hoisted in `RssNavigation` above the layout switch and saved with `rememberSaveable`, so selection survives rotation, fold/unfold and window resizing. The activity handles size-related config changes itself.
 
 ## Important Notes
 
@@ -80,7 +85,9 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 - Room compiler arguments: incremental=false, expandProjection=true
 
 ### Database
-- Room database with migrations handled automatically
+- Room database (version 3); schema changes need a `Migration` added in `RssDatabase` (`exportSchema = false`, so no auto-migrations)
+- Article list queries filter read/unread state in SQL and select a truncated `description` preview; use `getArticleById` for full content
+- Article inserts use `OnConflictStrategy.IGNORE` (never REPLACE, which would cascade-delete read status); a refresh is one transaction
 - Separate read status tracking to preserve user reading progress
 - Group management supports default group selection with transactions
 

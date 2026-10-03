@@ -5,36 +5,38 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.toArgb
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.defnf.syndicate.data.models.ThemeMode
 import com.defnf.syndicate.navigation.RssNavigation
+import com.defnf.syndicate.notifications.NotificationIntents
 import com.defnf.syndicate.ui.theme.SyndicateTheme
 import com.defnf.syndicate.ui.viewmodel.ThemeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val intentKey: MutableState<Int> = mutableStateOf(0)
+    // Notification deep link waiting to be handled by the UI
+    private var pendingNotification by mutableStateOf<NotificationData?>(null)
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Only read the launch intent on a fresh start; after a configuration change or process
+        // restore the navigation state is restored instead of re-opening the notification target.
+        // Relaunching from Recents redelivers the original intent, which must not reopen it either.
+        val launchedFromHistory = (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
+        if (savedInstanceState == null && !launchedFromHistory) {
+            pendingNotification = NotificationIntents.parse(intent)
+        }
         
         enableEdgeToEdge()
         setContent {
@@ -48,14 +50,6 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme
             }
             
-            // Handle notification intents
-            var notificationData by remember { mutableStateOf<NotificationData?>(null) }
-            val currentIntentKey by intentKey
-            
-            LaunchedEffect(currentIntentKey) {
-                notificationData = extractNotificationData(this@MainActivity.intent)
-            }
-            
             SyndicateTheme(darkTheme = isDarkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -63,8 +57,8 @@ class MainActivity : ComponentActivity() {
                 ) {
                     RssNavigation(
                         themeViewModel = themeViewModel,
-                        notificationData = notificationData,
-                        onNotificationHandled = { notificationData = null }
+                        notificationData = pendingNotification,
+                        onNotificationHandled = { pendingNotification = null }
                     )
                 }
             }
@@ -74,29 +68,12 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        // Trigger re-evaluation of notification data
-        intentKey.value = intentKey.value + 1
-    }
-    
-    private fun extractNotificationData(intent: Intent): NotificationData? {
-        return when {
-            intent.hasExtra("articleId") && intent.hasExtra("feedId") -> {
-                NotificationData.Article(
-                    articleId = intent.getStringExtra("articleId")!!,
-                    feedId = intent.getLongExtra("feedId", -1)
-                )
-            }
-            intent.hasExtra("groupId") -> {
-                NotificationData.Group(
-                    groupId = intent.getLongExtra("groupId", -1)
-                )
-            }
-            else -> null
-        }
+        NotificationIntents.parse(intent)?.let { pendingNotification = it }
     }
 }
 
 sealed class NotificationData {
     data class Article(val articleId: String, val feedId: Long) : NotificationData()
+    data class Feed(val feedId: Long) : NotificationData()
     data class Group(val groupId: Long) : NotificationData()
 }

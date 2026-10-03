@@ -83,6 +83,7 @@ fun ArticleListScreen(
     onBackClick: () -> Unit = {},
     onArticleClick: (com.defnf.syndicate.data.models.Article) -> Unit = {},
     isSidebarMode: Boolean = false,
+    hasBottomNavigation: Boolean = true,
     additionalTopPadding: androidx.compose.ui.unit.Dp = 0.dp,
     externalListState: LazyListState? = null
 ) {
@@ -175,7 +176,8 @@ fun ArticleListScreen(
                             }
                         },
                         shape = CircleShape,
-                        modifier = Modifier.padding(bottom = 80.dp)
+                        // Keep clear of the bottom navigation bar drawn over this screen
+                        modifier = Modifier.padding(bottom = if (hasBottomNavigation) 80.dp else 0.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.KeyboardArrowUp,
