@@ -16,11 +16,14 @@ object LayoutConstants {
     // Content top padding - matches what Scaffold.calculateTopPadding() provides
     val ContentTopPadding = TopBarHeight // 64dp - space for top bar only
     
-    // Screen width breakpoint
-    val WideScreenBreakpoint = 600.dp
+    // Window width breakpoints (Material 3 window size classes)
+    val MediumWidthBreakpoint = 600.dp
+    val ExpandedWidthBreakpoint = 840.dp
+    val LargeWidthBreakpoint = 1200.dp
     
-    // Sidebar width
+    // Pane widths for multi-pane layouts
     val SidebarWidth = 320.dp
+    val ArticleListPaneWidth = 400.dp
     
     // Icon sizes
     val SwipeIconSize = 32.dp

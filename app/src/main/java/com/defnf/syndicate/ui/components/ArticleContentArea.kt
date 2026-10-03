@@ -4,65 +4,57 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.systemBars
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.defnf.syndicate.ui.common.Animations
+import com.defnf.syndicate.ui.common.LayoutConstants
 import com.defnf.syndicate.ui.navigation.NavigationState
+import com.defnf.syndicate.ui.navigation.TopLevelDestination
 import com.defnf.syndicate.ui.screens.ArticleDetailScreen
 import com.defnf.syndicate.ui.screens.ArticleListScreen
 import com.defnf.syndicate.ui.screens.SettingsScreen
 import com.defnf.syndicate.ui.viewmodel.ArticleListViewModel
+import kotlinx.coroutines.launch
 
 /**
- * Reusable article content area that handles article list, article detail, and settings views
- * Can be used in both single-pane and dual-pane layouts with consistent behavior
+ * Reusable article content area that switches between article list, article detail and settings.
+ * Used by the single-pane layouts and by the content pane of the two-pane layout.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArticleContentArea(
     navigationState: NavigationState,
     themeViewModel: com.defnf.syndicate.ui.viewmodel.ThemeViewModel? = null,
     isSidebarMode: Boolean = false,
-    showTopBar: Boolean = true,
-    modifier: Modifier = Modifier,
-    // Override parameters for single-pane mode
-    overrideFeedId: Long? = null,
-    overrideGroupId: Long? = null,
-    overrideForceAllArticles: Boolean? = null,
-    onBackClick: (() -> Unit)? = null
+    hasBottomNavigation: Boolean = true,
+    modifier: Modifier = Modifier
 ) {
-    val articleViewModel: ArticleListViewModel = hiltViewModel()
-    val currentFeed by articleViewModel.currentFeed.collectAsState()
-    
     val contentState = when {
         navigationState.showSettings && themeViewModel != null -> "settings"
         navigationState.selectedArticleId != null -> "article_detail"
         else -> "articles"
     }
-    
+
     AnimatedContent(
         targetState = contentState,
         transitionSpec = {
@@ -76,7 +68,8 @@ fun ArticleContentArea(
                 if (themeViewModel != null) {
                     SettingsScreen(
                         themeViewModel = themeViewModel,
-                        isSidebarMode = isSidebarMode
+                        isSidebarMode = isSidebarMode,
+                        onBackClick = { navigationState.navigateTo(TopLevelDestination.ARTICLES) }
                     )
                 }
             }
@@ -84,126 +77,99 @@ fun ArticleContentArea(
                 navigationState.selectedArticleId?.let { articleId ->
                     ArticleDetailScreen(
                         articleId = articleId,
-                        onBackClick = navigationState.onBackFromArticle,
+                        onBackClick = navigationState::closeArticle,
                         isSidebarMode = isSidebarMode
                     )
                 }
             }
             else -> {
                 if (isSidebarMode) {
-                    // Dual-pane: fill space without additional padding, but include system bar spacing
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        // Calculate padding for system bars and top bar
-                        val systemBarPadding = androidx.compose.foundation.layout.WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
-                        val topBarPadding = if (showTopBar) com.defnf.syndicate.ui.common.LayoutConstants.TopBarHeight else 0.dp
-                        val totalTopPadding = systemBarPadding + topBarPadding
-                        val listState = rememberLazyListState()
-                        val coroutineScope = rememberCoroutineScope()
-                        
-                        ArticleListScreen(
-                            feedId = overrideFeedId ?: navigationState.selectedFeedId,
-                            groupId = overrideGroupId ?: navigationState.selectedGroupId,
-                            forceAllArticles = overrideForceAllArticles ?: navigationState.forceAllArticles,
-                            onArticleClick = { article ->
-                                navigationState.onArticleSelected(article.id)
-                            },
-                            onBackClick = onBackClick ?: { /* Do nothing */ },
-                            isSidebarMode = true,
-                            additionalTopPadding = totalTopPadding,
-                            externalListState = listState
-                        )
-                        
-                        // Top app bar for dual-pane mode
-                        if (showTopBar) {
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.TopCenter)
-                                    .padding(top = androidx.compose.foundation.layout.WindowInsets.systemBars.asPaddingValues().calculateTopPadding())
-                            ) {
-                                androidx.compose.material3.CenterAlignedTopAppBar(
-                                    title = {
-                                        val titleText = when {
-                                            navigationState.showSettings -> "Settings"
-                                            navigationState.selectedArticleId != null -> "Article"
-                                            else -> currentFeed?.title ?: "All Articles"
-                                        }
-                                        androidx.compose.material3.Text(
-                                            text = titleText,
-                                            modifier = if (!navigationState.showSettings && navigationState.selectedArticleId == null) {
-                                                Modifier.clickable(
-                                                    indication = null,
-                                                    interactionSource = remember { MutableInteractionSource() }
-                                                ) {
-                                                    coroutineScope.launch {
-                                                        listState.animateScrollToItem(0)
-                                                    }
-                                                }
-                                            } else {
-                                                Modifier
-                                            }
-                                        )
-                                    },
-                                    navigationIcon = {
-                                        if (navigationState.showSettings || navigationState.selectedArticleId != null) {
-                                            androidx.compose.material3.IconButton(
-                                                onClick = { 
-                                                    if (navigationState.showSettings) navigationState.onShowSettings(false)
-                                                    if (navigationState.selectedArticleId != null) navigationState.onBackFromArticle()
-                                                }
-                                            ) {
-                                                androidx.compose.material3.Icon(
-                                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                                    contentDescription = "Back"
-                                                )
-                                            }
-                                        }
-                                    },
-                                    actions = {
-                                        if (!navigationState.showSettings && navigationState.selectedArticleId == null) {
-                                            // Mark all as read button
-                                            androidx.compose.material3.IconButton(
-                                                onClick = { articleViewModel.markAllAsRead() }
-                                            ) {
-                                                androidx.compose.material3.Icon(
-                                                    imageVector = Icons.Default.DoneAll,
-                                                    contentDescription = "Mark all as read"
-                                                )
-                                            }
-                                            // Settings button
-                                            androidx.compose.material3.IconButton(
-                                                onClick = { navigationState.onShowSettings(true) }
-                                            ) {
-                                                androidx.compose.material3.Icon(
-                                                    imageVector = Icons.Default.Settings,
-                                                    contentDescription = "Settings"
-                                                )
-                                            }
-                                        }
-                                    },
-                                    windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
-                                )
-                            }
-                        }
-                    }
+                    // Multi-pane: list with its own top bar (title, mark all as read, settings)
+                    ArticleListPane(navigationState = navigationState)
                 } else {
                     // Single-pane: normal article list
                     ArticleListScreen(
-                        feedId = overrideFeedId ?: navigationState.selectedFeedId,
-                        groupId = overrideGroupId ?: navigationState.selectedGroupId,
-                        forceAllArticles = overrideForceAllArticles ?: navigationState.forceAllArticles,
+                        feedId = navigationState.selectedFeedId,
+                        groupId = navigationState.selectedGroupId,
+                        forceAllArticles = navigationState.forceAllArticles,
                         onArticleClick = { article ->
-                            navigationState.onArticleSelected(article.id)
+                            navigationState.openArticle(article.id)
                         },
-                        onBackClick = onBackClick ?: if (navigationState.selectedFeedId != null || 
-                                         navigationState.selectedGroupId != null || 
-                                         navigationState.forceAllArticles) {
-                            navigationState.onBackFromSelection
-                        } else {
-                            { /* Do nothing */ }
-                        }
+                        onBackClick = navigationState::backFromSelection,
+                        hasBottomNavigation = hasBottomNavigation
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * Article list pane for multi-pane layouts. Draws its own top app bar below the status bar
+ * with the feed title (tap to scroll to top), mark all as read and settings actions.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ArticleListPane(
+    navigationState: NavigationState,
+    modifier: Modifier = Modifier
+) {
+    val articleViewModel: ArticleListViewModel = hiltViewModel()
+    val currentFeed by articleViewModel.currentFeed.collectAsState()
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    val systemBarTopPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
+
+    Box(modifier = modifier.fillMaxSize()) {
+        ArticleListScreen(
+            feedId = navigationState.selectedFeedId,
+            groupId = navigationState.selectedGroupId,
+            forceAllArticles = navigationState.forceAllArticles,
+            onArticleClick = { article ->
+                navigationState.openArticle(article.id)
+            },
+            isSidebarMode = true,
+            additionalTopPadding = systemBarTopPadding + LayoutConstants.TopBarHeight,
+            externalListState = listState
+        )
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = systemBarTopPadding)
+        ) {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = currentFeed?.title ?: "All Articles",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) {
+                            coroutineScope.launch {
+                                listState.animateScrollToItem(0)
+                            }
+                        }
+                    )
+                },
+                actions = {
+                    IconButton(onClick = { articleViewModel.markAllAsRead() }) {
+                        Icon(
+                            imageVector = Icons.Default.DoneAll,
+                            contentDescription = "Mark all as read"
+                        )
+                    }
+                    IconButton(onClick = { navigationState.navigateTo(TopLevelDestination.SETTINGS) }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings"
+                        )
+                    }
+                },
+                windowInsets = WindowInsets(0, 0, 0, 0)
+            )
         }
     }
 }

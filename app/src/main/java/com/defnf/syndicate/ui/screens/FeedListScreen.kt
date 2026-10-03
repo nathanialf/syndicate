@@ -122,6 +122,7 @@ import com.defnf.syndicate.ui.viewmodel.FeedListViewModel
 fun FeedListScreen(
     onFeedClick: (Long) -> Unit,
     isSidebarMode: Boolean = false,
+    hasBottomNavigation: Boolean = !isSidebarMode,
     selectedFeedId: Long? = null,
     selectedGroupId: Long? = null,
     onAllFeedsClick: () -> Unit = {},
@@ -238,11 +239,12 @@ fun FeedListScreen(
                 .align(Alignment.BottomEnd)
                 .padding(
                     end = 16.dp,
-                    bottom = if (isSidebarMode) {
-                        80.dp // Sidebar mode: higher up for better positioning
-                    } else {
+                    bottom = when {
+                        isSidebarMode -> 80.dp // Sidebar mode: higher up for better positioning
                         // Single pane mode: account for bottom navigation + extra height
-                        WindowInsets.systemBars.asPaddingValues().calculateBottomPadding() + 120.dp
+                        hasBottomNavigation -> WindowInsets.systemBars.asPaddingValues().calculateBottomPadding() + 120.dp
+                        // Navigation rail mode: only the system navigation bar is below the content
+                        else -> WindowInsets.systemBars.asPaddingValues().calculateBottomPadding() + LayoutConstants.FabBottomPadding
                     }
                 )
         )
@@ -253,11 +255,12 @@ fun FeedListScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(
-                    bottom = if (isSidebarMode) {
-                        16.dp // Sidebar mode: just standard padding
-                    } else {
+                    bottom = when {
+                        isSidebarMode -> 16.dp // Sidebar mode: just standard padding
                         // Single pane mode: account for bottom navigation
-                        WindowInsets.systemBars.asPaddingValues().calculateBottomPadding() + 72.dp
+                        hasBottomNavigation -> WindowInsets.systemBars.asPaddingValues().calculateBottomPadding() + 72.dp
+                        // Navigation rail mode: only the system navigation bar is below the content
+                        else -> WindowInsets.systemBars.asPaddingValues().calculateBottomPadding() + 16.dp
                     }
                 )
         ) { snackbarData ->

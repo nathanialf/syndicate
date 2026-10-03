@@ -5,21 +5,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.toArgb
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -31,10 +23,17 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val intentKey: MutableState<Int> = mutableStateOf(0)
+    // Notification deep link waiting to be handled by the UI
+    private var pendingNotification by mutableStateOf<NotificationData?>(null)
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Only read the launch intent on a fresh start; after a configuration change or process
+        // restore the navigation state is restored instead of re-opening the notification target
+        if (savedInstanceState == null) {
+            pendingNotification = extractNotificationData(intent)
+        }
         
         enableEdgeToEdge()
         setContent {
@@ -48,14 +47,6 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme
             }
             
-            // Handle notification intents
-            var notificationData by remember { mutableStateOf<NotificationData?>(null) }
-            val currentIntentKey by intentKey
-            
-            LaunchedEffect(currentIntentKey) {
-                notificationData = extractNotificationData(this@MainActivity.intent)
-            }
-            
             SyndicateTheme(darkTheme = isDarkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -63,8 +54,8 @@ class MainActivity : ComponentActivity() {
                 ) {
                     RssNavigation(
                         themeViewModel = themeViewModel,
-                        notificationData = notificationData,
-                        onNotificationHandled = { notificationData = null }
+                        notificationData = pendingNotification,
+                        onNotificationHandled = { pendingNotification = null }
                     )
                 }
             }
@@ -74,8 +65,7 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        // Trigger re-evaluation of notification data
-        intentKey.value = intentKey.value + 1
+        pendingNotification = extractNotificationData(intent)
     }
     
     private fun extractNotificationData(intent: Intent): NotificationData? {

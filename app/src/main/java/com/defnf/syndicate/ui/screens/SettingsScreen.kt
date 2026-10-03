@@ -62,7 +62,8 @@ fun SettingsScreen(
     themeViewModel: ThemeViewModel,
     modifier: Modifier = Modifier,
     settingsViewModel: SettingsViewModel = hiltViewModel(),
-    isSidebarMode: Boolean = false
+    isSidebarMode: Boolean = false,
+    onBackClick: (() -> Unit)? = null
 ) {
     val currentThemeMode by themeViewModel.themeMode.collectAsState()
     val exportState by settingsViewModel.exportState.collectAsState()
@@ -96,6 +97,16 @@ fun SettingsScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(text = "Settings")
+                },
+                navigationIcon = {
+                    if (onBackClick != null) {
+                        IconButton(onClick = onBackClick) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
+                    }
                 },
                 windowInsets = if (isSidebarMode) {
                     WindowInsets.systemBars
