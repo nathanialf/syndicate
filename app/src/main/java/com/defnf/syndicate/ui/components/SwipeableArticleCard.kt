@@ -267,7 +267,8 @@ private fun RichContentPreview(
     maxLines: Int,
     modifier: Modifier = Modifier
 ) {
-    val contentElements = parseHtmlToElements(html)
+    // Parse once per description instead of on every recomposition while scrolling
+    val contentElements = remember(html) { parseHtmlToElements(html) }
     
     if (contentElements.isNotEmpty()) {
         Column(

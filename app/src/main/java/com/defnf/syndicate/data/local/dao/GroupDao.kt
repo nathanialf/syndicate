@@ -66,8 +66,7 @@ interface GroupDao {
     
     @Query("""
         SELECT COUNT(*) FROM articles a
-        INNER JOIN feeds f ON a.feed_id = f.id
-        INNER JOIN feed_group_cross_ref fgcr ON f.id = fgcr.feed_id
+        INNER JOIN feed_group_cross_ref fgcr ON a.feed_id = fgcr.feed_id
         LEFT JOIN read_status rs ON a.id = rs.article_id
         WHERE fgcr.group_id = :groupId AND COALESCE(rs.is_read, 0) = 0
     """)

@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -42,22 +42,13 @@ class ArticleListViewModel @Inject constructor(
             repository.getArticles(
                 ArticleFilter(
                     feedId = feedId,
-                    unreadOnly = when (showFilter) {
-                        ArticleShowFilter.ALL -> false
-                        ArticleShowFilter.UNREAD -> true
-                        ArticleShowFilter.READ -> false // We'll filter read articles separately
-                    },
+                    unreadOnly = showFilter == ArticleShowFilter.UNREAD,
+                    readOnly = showFilter == ArticleShowFilter.READ,
                     searchQuery = null,
                     groupId = groupId
                 )
-            ).map { articleList ->
-                val filteredList = when (showFilter) {
-                    ArticleShowFilter.ALL -> articleList
-                    ArticleShowFilter.UNREAD -> articleList.filter { !it.isRead }
-                    ArticleShowFilter.READ -> articleList.filter { it.isRead }
-                }
-                android.util.Log.d("ArticleListViewModel", "Articles updated: ${filteredList.size} articles (filter: $showFilter)")
-                filteredList
+            ).onEach { articleList ->
+                android.util.Log.d("ArticleListViewModel", "Articles updated: ${articleList.size} articles (filter: $showFilter)")
             }
         }
         .stateIn(

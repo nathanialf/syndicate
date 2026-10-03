@@ -9,6 +9,7 @@ data class ArticleFilter(
     val feedId: Long? = null,
     val groupId: Long? = null,
     val unreadOnly: Boolean = false,
+    val readOnly: Boolean = false,
     val sortOrder: SortOrder = SortOrder.NEWEST_FIRST,
     val searchQuery: String? = null
 )

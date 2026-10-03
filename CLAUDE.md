@@ -85,7 +85,9 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 - Room compiler arguments: incremental=false, expandProjection=true
 
 ### Database
-- Room database with migrations handled automatically
+- Room database (version 3); schema changes need a `Migration` added in `RssDatabase` (`exportSchema = false`, so no auto-migrations)
+- Article list queries filter read/unread state in SQL and select a truncated `description` preview; use `getArticleById` for full content
+- Article inserts use `OnConflictStrategy.IGNORE` (never REPLACE, which would cascade-delete read status); a refresh is one transaction
 - Separate read status tracking to preserve user reading progress
 - Group management supports default group selection with transactions
 

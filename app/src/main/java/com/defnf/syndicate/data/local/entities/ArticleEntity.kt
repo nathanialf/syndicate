@@ -8,7 +8,12 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "articles",
-    indices = [Index(value = ["feed_id"]), Index(value = ["published_date"])],
+    indices = [
+        Index(value = ["feed_id"]),
+        Index(value = ["published_date"]),
+        // Serves per-feed article lists in date order without a separate sort step
+        Index(value = ["feed_id", "published_date"])
+    ],
     foreignKeys = [
         ForeignKey(
             entity = FeedEntity::class,
