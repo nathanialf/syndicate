@@ -48,7 +48,7 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 
 #### UI Layer (`ui/`)
 - **Navigation**: Single activity; `RssNavigation` picks an adaptive layout and drives it from `NavigationState` (`ui/navigation/`)
-- **Layout**: Adaptive layout system in `ui/layout/` (see Adaptive Layout below)
+- **Layout**: Adaptive layout in `ui/layout/` using the Material 3 adaptive libraries (see Adaptive Layout below)
 - **Screens**: Feature-based screen organization (feedmanagement, articlelist, etc.)
 - **Components**: Reusable UI components in `components/`
 - **Theme**: Material 3 theming with dark/light/system modes
@@ -71,16 +71,20 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 - **Background Sync**: Battery-optimized periodic updates with new article notifications  
 - **Read Status**: Separate tracking system preserving state across feed refreshes
 - **Feed Groups**: Hierarchical organization with cross-reference tables
-- **Adaptive Layout** (`ui/layout/`): Layout chosen from the window width using Material 3 window size class breakpoints (`AppLayoutType`):
-  - Compact (< 600dp): single pane + bottom navigation bar
-  - Medium (600-839dp): single pane + navigation rail
-  - Expanded (840-1199dp): feeds sidebar + content pane
-  - Large (>= 1200dp): feeds sidebar + article list + article detail
-  - Each `AppLayoutType` is described by capabilities (`navigationChrome`, `hasFeedsSidebar`, `hasArticleListBesideDetail`), never matched by name outside `fromWindowWidth`
-  - `resolvePanes()` (`PaneLayout.kt`) is the single, pure, unit-tested function deciding which `PaneContent` each `PaneRole` (SIDEBAR / LIST / MAIN) shows; `AdaptiveLayout` renders the result inside the chrome (`TopLevelNavigationScaffold`) and `PaneHost` wires each pane's screen to `NavigationState` and animates content changes
-  - Screens are layout-agnostic: no layout/mode flags. Optional actions are nullable callbacks (e.g. `onBackClick`, `onSettingsClick`) that `PaneHost` supplies only when the layout needs them
-  - Insets: screens use the default Material `Scaffold`/`TopAppBar` window insets; navigation chrome consumes the insets it covers (`consumeWindowInsets`), so no screen hard-codes padding for a bar or rail
-  - A single `NavigationState` is hoisted in `RssNavigation` above the layout and saved with `rememberSaveable`, so selection survives rotation, fold/unfold and window resizing. The activity handles size-related config changes itself. System back is handled only in `RssNavigation`
+- **Adaptive Layout** (`ui/layout/`), built on the official Material 3 adaptive libraries (`material3-adaptive-navigation-suite`, `adaptive-layout`, `adaptive-navigation`):
+  - `RssNavigation` reads `currentWindowAdaptiveInfo(supportLargeAndXLargeWidth = true)` and maps its `WindowSizeClass` to an `AppLayoutType`:
+    - Compact (< 600dp): single pane + bottom navigation bar (hidden while reading an article)
+    - Medium (600-839dp): single pane + navigation rail
+    - Expanded (840-1199dp): feeds sidebar + article list or article
+    - Large (>= 1200dp): feeds sidebar + article list + article
+  - Each `AppLayoutType` is described by capabilities (`navigationSuiteType`, `hasFeedsSidebar`, `hasArticleListBesideDetail`); nothing outside `fromWindowSizeClass` matches on the layout name
+  - `AdaptiveLayout`: `NavigationSuiteScaffold` (bar / rail / none) around the feeds sidebar and the main content (`MainContent`: feeds tab, articles or settings)
+  - Articles: `ArticleListDetail` uses `NavigableListDetailPaneScaffold` (standard pane motion + predictive back). `articlePaneDirective` sets one or two panes from the layout (not the window, since the sidebar takes space), keeps hinge avoidance, and never stacks panes vertically
+  - The open article is owned by the scaffold's `ThreePaneScaffoldNavigator<String>` (content key = article id). `NavigationState` reaches it through the `ArticlePaneNavigator` interface (`ListDetailArticlePaneNavigator`), which keeps the history at most `[List, Detail(article)]`
+  - Screens are layout-agnostic: no layout/mode flags. Optional actions are nullable callbacks (e.g. `onBackClick`, `onSettingsClick`) that `Panes.kt` supplies only when the layout needs them
+  - Insets: screens use the default Material `Scaffold`/`TopAppBar` window insets; `NavigationSuiteScaffold` consumes the insets its bar or rail covers
+  - Back: the article panes handle closing an article (predictive back, `BackNavigationBehavior.PopUntilContentChange` so it also works with the list beside the article); `RssNavigation`'s `BackHandler` handles destinations and selections via `NavigationState.canNavigateBack/navigateBack`
+  - `NavigationState` is a plain, unit-tested state class saved with `NavigationState.saver`; `rememberNavigationState` (Compose/Hilt glue) also applies the default group on first launch. State survives rotation, fold/unfold and window resizing; the activity handles size-related config changes itself
 
 ## Important Notes
 
