@@ -18,7 +18,6 @@ fun SwipeableGroupItem(
     onGroupClick: (Long) -> Unit,
     onDeleteGroup: (Long) -> Unit,
     onEditGroup: (Long) -> Unit,
-    isSidebarMode: Boolean = false,
     isSelected: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -63,7 +62,6 @@ fun SwipeableGroupItem(
         GroupItem(
             group = group,
             onGroupClick = onGroupClick,
-            isSidebarMode = isSidebarMode,
             isSelected = isSelected
         )
     }

@@ -10,6 +10,7 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.defnf.syndicate.ui.layout.AppLayoutType
 import com.defnf.syndicate.ui.viewmodel.FeedListViewModel
 
 /**
@@ -152,14 +153,14 @@ class NavigationState internal constructor(
     fun canNavigateBack(layoutType: AppLayoutType): Boolean = when {
         selectedArticleId != null -> true
         // Feeds are always visible in the sidebar, so only settings can be backed out of
-        layoutType.isMultiPane -> currentDestination == TopLevelDestination.SETTINGS
+        layoutType.hasFeedsSidebar -> currentDestination == TopLevelDestination.SETTINGS
         else -> currentDestination != TopLevelDestination.ARTICLES || hasSelection
     }
 
     fun navigateBack(layoutType: AppLayoutType) {
         when {
             selectedArticleId != null -> closeArticle()
-            layoutType.isMultiPane -> navigateTo(TopLevelDestination.ARTICLES)
+            layoutType.hasFeedsSidebar -> navigateTo(TopLevelDestination.ARTICLES)
             currentDestination != TopLevelDestination.ARTICLES -> navigateTo(TopLevelDestination.ARTICLES)
             hasSelection -> backFromSelection()
         }

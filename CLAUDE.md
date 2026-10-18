@@ -48,6 +48,7 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 
 #### UI Layer (`ui/`)
 - **Navigation**: Single activity; `RssNavigation` picks an adaptive layout and drives it from `NavigationState` (`ui/navigation/`)
+- **Layout**: Adaptive layout system in `ui/layout/` (see Adaptive Layout below)
 - **Screens**: Feature-based screen organization (feedmanagement, articlelist, etc.)
 - **Components**: Reusable UI components in `components/`
 - **Theme**: Material 3 theming with dark/light/system modes
@@ -70,12 +71,16 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 - **Background Sync**: Battery-optimized periodic updates with new article notifications  
 - **Read Status**: Separate tracking system preserving state across feed refreshes
 - **Feed Groups**: Hierarchical organization with cross-reference tables
-- **Adaptive Layout**: Layout chosen from the window width using Material 3 window size class breakpoints (`AppLayoutType`):
+- **Adaptive Layout** (`ui/layout/`): Layout chosen from the window width using Material 3 window size class breakpoints (`AppLayoutType`):
   - Compact (< 600dp): single pane + bottom navigation bar
   - Medium (600-839dp): single pane + navigation rail
-  - Expanded (840-1199dp): feeds sidebar + content pane (`TwoPaneLayout`)
-  - Large (>= 1200dp): feeds sidebar + article list + article detail (`ThreePaneLayout`)
-  - A single `NavigationState` is hoisted in `RssNavigation` above the layout switch and saved with `rememberSaveable`, so selection survives rotation, fold/unfold and window resizing. The activity handles size-related config changes itself.
+  - Expanded (840-1199dp): feeds sidebar + content pane
+  - Large (>= 1200dp): feeds sidebar + article list + article detail
+  - Each `AppLayoutType` is described by capabilities (`navigationChrome`, `hasFeedsSidebar`, `hasArticleListBesideDetail`), never matched by name outside `fromWindowWidth`
+  - `resolvePanes()` (`PaneLayout.kt`) is the single, pure, unit-tested function deciding which `PaneContent` each `PaneRole` (SIDEBAR / LIST / MAIN) shows; `AdaptiveLayout` renders the result inside the chrome (`TopLevelNavigationScaffold`) and `PaneHost` wires each pane's screen to `NavigationState` and animates content changes
+  - Screens are layout-agnostic: no layout/mode flags. Optional actions are nullable callbacks (e.g. `onBackClick`, `onSettingsClick`) that `PaneHost` supplies only when the layout needs them
+  - Insets: screens use the default Material `Scaffold`/`TopAppBar` window insets; navigation chrome consumes the insets it covers (`consumeWindowInsets`), so no screen hard-codes padding for a bar or rail
+  - A single `NavigationState` is hoisted in `RssNavigation` above the layout and saved with `rememberSaveable`, so selection survives rotation, fold/unfold and window resizing. The activity handles size-related config changes itself. System back is handled only in `RssNavigation`
 
 ## Important Notes
 

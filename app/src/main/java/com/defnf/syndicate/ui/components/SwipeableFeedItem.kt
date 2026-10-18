@@ -23,7 +23,6 @@ fun SwipeableFeedItem(
     onFeedClick: (Long) -> Unit,
     onDeleteFeed: (Long) -> Unit,
     onNotificationToggle: (Long) -> Unit,
-    isSidebarMode: Boolean = false,
     resetSwipe: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -82,8 +81,7 @@ fun SwipeableFeedItem(
         FeedListItem(
             feed = feed,
             isSelected = isSelected,
-            onFeedClick = onFeedClick,
-            isSidebarMode = isSidebarMode
+            onFeedClick = onFeedClick
         )
     }
 }

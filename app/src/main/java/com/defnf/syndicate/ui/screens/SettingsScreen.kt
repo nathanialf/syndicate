@@ -6,11 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -59,11 +57,10 @@ import com.defnf.syndicate.ui.viewmodel.ExportState
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    themeViewModel: ThemeViewModel,
+    onBackClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
-    settingsViewModel: SettingsViewModel = hiltViewModel(),
-    isSidebarMode: Boolean = false,
-    onBackClick: (() -> Unit)? = null
+    themeViewModel: ThemeViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val currentThemeMode by themeViewModel.themeMode.collectAsState()
     val exportState by settingsViewModel.exportState.collectAsState()
@@ -107,11 +104,6 @@ fun SettingsScreen(
                             )
                         }
                     }
-                },
-                windowInsets = if (isSidebarMode) {
-                    WindowInsets.systemBars
-                } else {
-                    WindowInsets(0, 0, 0, 0)
                 }
             )
         }

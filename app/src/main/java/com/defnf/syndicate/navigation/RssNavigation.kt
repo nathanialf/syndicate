@@ -13,13 +13,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import com.defnf.syndicate.ui.NotificationData
-import com.defnf.syndicate.ui.navigation.AppLayoutType
+import com.defnf.syndicate.ui.layout.AdaptiveLayout
+import com.defnf.syndicate.ui.layout.AppLayoutType
 import com.defnf.syndicate.ui.navigation.rememberNavigationState
-import com.defnf.syndicate.ui.screens.BottomNavigationLayout
-import com.defnf.syndicate.ui.screens.NavigationRailLayout
-import com.defnf.syndicate.ui.screens.ThreePaneLayout
-import com.defnf.syndicate.ui.screens.TwoPaneLayout
-import com.defnf.syndicate.ui.viewmodel.ThemeViewModel
 
 /**
  * Root of the app UI. Picks a layout from the current window width and renders it from a single
@@ -28,7 +24,6 @@ import com.defnf.syndicate.ui.viewmodel.ThemeViewModel
  */
 @Composable
 fun RssNavigation(
-    themeViewModel: ThemeViewModel,
     notificationData: NotificationData? = null,
     onNotificationHandled: () -> Unit = {}
 ) {
@@ -63,11 +58,9 @@ fun RssNavigation(
             navigationState.navigateBack(layoutType)
         }
 
-        when (layoutType) {
-            AppLayoutType.BOTTOM_NAVIGATION -> BottomNavigationLayout(navigationState, themeViewModel)
-            AppLayoutType.NAVIGATION_RAIL -> NavigationRailLayout(navigationState, themeViewModel)
-            AppLayoutType.TWO_PANE -> TwoPaneLayout(navigationState, themeViewModel)
-            AppLayoutType.THREE_PANE -> ThreePaneLayout(navigationState, themeViewModel)
-        }
+        AdaptiveLayout(
+            layoutType = layoutType,
+            navigationState = navigationState
+        )
     }
 }

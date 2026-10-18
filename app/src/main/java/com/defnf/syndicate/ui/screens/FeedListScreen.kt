@@ -10,6 +10,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.draw.clip
 import com.defnf.syndicate.ui.dialogs.AddFeedDialog
 import com.defnf.syndicate.ui.dialogs.AddGroupDialog
@@ -106,25 +107,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.hilt.navigation.compose.hiltViewModel
 import android.util.Log
 import com.defnf.syndicate.ui.common.LayoutConstants
-import com.defnf.syndicate.ui.common.LayoutUtils
 import com.defnf.syndicate.ui.viewmodel.FeedListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedListScreen(
     onFeedClick: (Long) -> Unit,
-    isSidebarMode: Boolean = false,
-    hasBottomNavigation: Boolean = !isSidebarMode,
     selectedFeedId: Long? = null,
     selectedGroupId: Long? = null,
+    isAllArticlesSelected: Boolean = false,
     onAllFeedsClick: () -> Unit = {},
     onDeleteFeed: (Long) -> Unit = {},
     onGroupClick: (Long) -> Unit = {},
@@ -183,8 +179,36 @@ fun FeedListScreen(
         }
     }
 
-    // Unified layout for both modes - no TopAppBar
-    Box(modifier = modifier.fillMaxSize()) {
+    Scaffold(
+        modifier = modifier,
+        floatingActionButton = {
+            ExpandableFabMenu(
+                expanded = fabExpanded,
+                onToggle = { fabExpanded = !fabExpanded },
+                onAddFeed = {
+                    fabExpanded = false
+                    viewModel.showAddFeedDialog()
+                },
+                onImportFeed = {
+                    fabExpanded = false
+                    opmlImportViewModel.showFileDialog()
+                },
+                onAddGroup = {
+                    fabExpanded = false
+                    viewModel.showAddGroupDialog()
+                }
+            )
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) { snackbarData ->
+                androidx.compose.material3.Snackbar(
+                    snackbarData = snackbarData,
+                    containerColor = MaterialTheme.colorScheme.inverseSurface,
+                    contentColor = MaterialTheme.colorScheme.inverseOnSurface
+                )
+            }
+        }
+    ) { innerPadding ->
         FeedListContent(
             feeds = feeds,
             groups = groups,
@@ -203,73 +227,12 @@ fun FeedListScreen(
             },
             resetSwipeState = resetSwipeState,
             listState = listState,
-            paddingValues = if (isSidebarMode) {
-                androidx.compose.foundation.layout.PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = 0.dp,
-                    bottom = 0.dp
-                )
-            } else {
-                androidx.compose.foundation.layout.PaddingValues(16.dp)
-            },
+            contentPadding = innerPadding,
             selectedFeedId = selectedFeedId,
             selectedGroupId = selectedGroupId,
-            onAllFeedsClick = onAllFeedsClick,
-            isSidebarMode = isSidebarMode
+            isAllArticlesSelected = isAllArticlesSelected,
+            onAllFeedsClick = onAllFeedsClick
         )
-        
-        // FAB
-        ExpandableFabMenu(
-            expanded = fabExpanded,
-            onToggle = { fabExpanded = !fabExpanded },
-            onAddFeed = { 
-                fabExpanded = false
-                viewModel.showAddFeedDialog() 
-            },
-            onImportFeed = {
-                fabExpanded = false
-                opmlImportViewModel.showFileDialog()
-            },
-            onAddGroup = {
-                fabExpanded = false
-                viewModel.showAddGroupDialog()
-            },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(
-                    end = 16.dp,
-                    bottom = when {
-                        isSidebarMode -> 80.dp // Sidebar mode: higher up for better positioning
-                        // Single pane mode: account for bottom navigation + extra height
-                        hasBottomNavigation -> WindowInsets.systemBars.asPaddingValues().calculateBottomPadding() + 120.dp
-                        // Navigation rail mode: only the system navigation bar is below the content
-                        else -> WindowInsets.systemBars.asPaddingValues().calculateBottomPadding() + LayoutConstants.FabBottomPadding
-                    }
-                )
-        )
-        
-        // Snackbar
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(
-                    bottom = when {
-                        isSidebarMode -> 16.dp // Sidebar mode: just standard padding
-                        // Single pane mode: account for bottom navigation
-                        hasBottomNavigation -> WindowInsets.systemBars.asPaddingValues().calculateBottomPadding() + 72.dp
-                        // Navigation rail mode: only the system navigation bar is below the content
-                        else -> WindowInsets.systemBars.asPaddingValues().calculateBottomPadding() + 16.dp
-                    }
-                )
-        ) { snackbarData ->
-            androidx.compose.material3.Snackbar(
-                snackbarData = snackbarData,
-                containerColor = MaterialTheme.colorScheme.inverseSurface,
-                contentColor = MaterialTheme.colorScheme.inverseOnSurface
-            )
-        }
     }
 
     // Dialogs
@@ -428,17 +391,18 @@ private fun FeedListContent(
     onEditGroup: (Long) -> Unit = {},
     resetSwipeState: Boolean,
     listState: LazyListState,
-    paddingValues: androidx.compose.foundation.layout.PaddingValues,
+    contentPadding: PaddingValues,
     selectedFeedId: Long? = null,
     selectedGroupId: Long? = null,
-    onAllFeedsClick: () -> Unit = {},
-    isSidebarMode: Boolean = false
+    isAllArticlesSelected: Boolean = false,
+    onAllFeedsClick: () -> Unit = {}
 ) {
     if (feeds.isEmpty() && !isLoading) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(contentPadding)
+                .padding(16.dp),
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -466,9 +430,15 @@ private fun FeedListContent(
     } else {
         LazyColumn(
             state = listState,
+            // Horizontal padding as a modifier so swiped items are clipped at the card edges
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(horizontal = 16.dp),
+            // Scroll behind the system navigation bar, leaving room for the FAB menu
+            contentPadding = PaddingValues(
+                top = contentPadding.calculateTopPadding() + 16.dp,
+                bottom = contentPadding.calculateBottomPadding() + LayoutConstants.ContentBottomPaddingForFab
+            )
         ) {
             // Group 1: All Articles (independent)
             item(
@@ -480,7 +450,7 @@ private fun FeedListContent(
                     isLastInGroup = true,
                     content = {
                         AllArticlesItem(
-                            isSelected = isSidebarMode && selectedFeedId == null && selectedGroupId == null,
+                            isSelected = isAllArticlesSelected,
                             onAllFeedsClick = onAllFeedsClick
                         )
                     }
@@ -508,7 +478,6 @@ private fun FeedListContent(
                                 onGroupClick = onGroupClick,
                                 onDeleteGroup = onDeleteGroup,
                                 onEditGroup = onEditGroup,
-                                isSidebarMode = isSidebarMode,
                                 isSelected = selectedGroupId == group.id
                             )
                         }
@@ -540,20 +509,11 @@ private fun FeedListContent(
                                 onFeedClick = onFeedClick,
                                 onDeleteFeed = onDeleteFeed,
                                 onNotificationToggle = onNotificationToggle,
-                                isSidebarMode = isSidebarMode,
                                 resetSwipe = resetSwipeState
                             )
                         }
                     )
                 }
-            }
-            
-            // Empty spacer item at the end
-            item(
-                key = "bottom_spacer",
-                contentType = "spacer"
-            ) {
-                Spacer(modifier = Modifier.height(160.dp))
             }
         }
     }
@@ -562,7 +522,7 @@ private fun FeedListContent(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(contentPadding),
             contentAlignment = Alignment.Center
         ) {
             CircularProgressIndicator()
