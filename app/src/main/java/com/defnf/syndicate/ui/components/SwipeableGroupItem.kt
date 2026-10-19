@@ -19,11 +19,12 @@ fun SwipeableGroupItem(
         startAction = deleteSwipeAction { onDeleteGroup(group.id) },
         endAction = notificationsSwipeAction(group.notificationsEnabled) { onNotificationToggle(group.id) },
         modifier = modifier
-    ) {
+    ) { actionsModifier ->
         GroupItem(
             group = group,
             onGroupClick = onGroupClick,
             onGroupLongClick = onGroupLongClick,
+            modifier = actionsModifier,
             isSelected = isSelected
         )
     }

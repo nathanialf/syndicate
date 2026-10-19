@@ -40,6 +40,12 @@ class SwipeActionBoxTest {
     }
 
     @Test
+    fun `dragging back across the start to the other side is not resisted`() {
+        assertEquals(-180f, drag(offset = 120f, delta = -300f))
+        assertEquals(180f, drag(offset = -120f, delta = 300f))
+    }
+
+    @Test
     fun `a direction without an action does not move`() {
         assertEquals(0f, drag(offset = 0f, delta = 30f, canSwipeToEnd = false))
         assertEquals(0f, drag(offset = 0f, delta = -30f, canSwipeToStart = false))

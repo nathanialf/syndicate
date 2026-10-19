@@ -24,12 +24,13 @@ fun SwipeableFeedItem(
         startAction = deleteSwipeAction { onDeleteFeed(feed.id) },
         endAction = notificationsSwipeAction(feed.notificationsEnabled) { onNotificationToggle(feed.id) },
         modifier = modifier
-    ) {
+    ) { actionsModifier ->
         FeedListItem(
             feed = feed,
             isSelected = isSelected,
             onFeedClick = onFeedClick,
-            onFeedLongClick = onFeedLongClick
+            onFeedLongClick = onFeedLongClick,
+            modifier = actionsModifier
         )
     }
 }

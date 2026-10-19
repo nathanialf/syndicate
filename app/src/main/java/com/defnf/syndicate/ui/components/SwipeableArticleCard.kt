@@ -74,13 +74,13 @@ fun SwipeableArticleCard(
         endAction = toggleRead,
         // Same shape as the card being swiped, so the action behind it has matching corners
         modifier = modifier.clip(MaterialTheme.shapes.large)
-    ) {
+    ) { actionsModifier ->
         Card(
             onClick = { 
                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                 onArticleClick(article) 
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = actionsModifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
             colors = androidx.compose.material3.CardDefaults.cardColors()
         ) {

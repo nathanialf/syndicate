@@ -189,6 +189,8 @@ fun GroupOptionsSheet(
                 SheetDeleteButton(
                     text = "Delete group",
                     onClick = {
+                        // Keep a rename even if the deletion is then cancelled
+                        saveName()
                         // Close the sheet first so the confirmation isn't shown on top of it
                         scope.launch { sheetState.hide() }.invokeOnCompletion { onDelete() }
                     }

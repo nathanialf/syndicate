@@ -69,7 +69,9 @@ data class SwipeAction(
  *
  * Crossing the threshold arms the action (haptic tick, background takes the action's color, icon
  * grows); dragging back below it disarms it, so a swipe can always be cancelled before release.
- * Both actions are also exposed as accessibility actions, since swiping isn't available to everyone.
+ * Both actions are also exposed as accessibility actions, since swiping isn't available to everyone:
+ * [content] must apply the modifier it is given to its clickable element, the node accessibility
+ * services focus, so the actions are offered there.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -77,7 +79,7 @@ fun SwipeActionBox(
     modifier: Modifier = Modifier,
     startAction: SwipeAction? = null,
     endAction: SwipeAction? = null,
-    content: @Composable () -> Unit
+    content: @Composable (actionsModifier: Modifier) -> Unit
 ) {
     val density = LocalDensity.current
     val haptics = LocalHapticFeedback.current
@@ -129,18 +131,17 @@ fun SwipeActionBox(
         )
     }
 
-    Box(
-        modifier = modifier
-            .onSizeChanged { width = it.width }
-            .semantics {
-                customActions = listOfNotNull(startAction, endAction).distinct().map { action ->
-                    CustomAccessibilityAction(action.label) {
-                        action.onSwipe()
-                        true
-                    }
-                }
+    // On the content's own (merged) node: a wrapper node without a label is never focused by TalkBack
+    val actionsModifier = Modifier.semantics {
+        customActions = listOfNotNull(startAction, endAction).distinct().map { action ->
+            CustomAccessibilityAction(action.label) {
+                action.onSwipe()
+                true
             }
-    ) {
+        }
+    }
+
+    Box(modifier = modifier.onSizeChanged { width = it.width }) {
         if (offset != 0f) {
             activeAction?.let { action ->
                 SwipeActionBackground(
@@ -183,7 +184,7 @@ fun SwipeActionBox(
                     }
                 )
         ) {
-            content()
+            content(actionsModifier)
         }
     }
 }
@@ -268,7 +269,9 @@ internal fun swipeDragOffset(
     val allowed = when {
         proposed > 0f && !canSwipeToEnd -> 0f
         proposed < 0f && !canSwipeToStart -> 0f
-        abs(offset) >= threshold && abs(proposed) > abs(offset) -> offset + delta * OverDragResistance
+        // Only when moving further out on the same side, not when the drag crosses back over the start
+        abs(offset) >= threshold && proposed * offset > 0f && abs(proposed) > abs(offset) ->
+            offset + delta * OverDragResistance
         else -> proposed
     }
     return allowed.coerceIn(-maxOffset, maxOffset)

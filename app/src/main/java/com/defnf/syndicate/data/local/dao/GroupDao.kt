@@ -94,6 +94,9 @@ interface GroupDao {
     @Query("SELECT * FROM groups WHERE notifications_enabled = 1")
     fun getGroupsWithNotificationsEnabled(): Flow<List<GroupEntity>>
     
+    @Query("UPDATE groups SET name = :name WHERE id = :groupId")
+    suspend fun renameGroup(groupId: Long, name: String)
+    
     @Query("UPDATE groups SET notifications_enabled = :enabled WHERE id = :groupId")
     suspend fun updateGroupNotifications(groupId: Long, enabled: Boolean)
     

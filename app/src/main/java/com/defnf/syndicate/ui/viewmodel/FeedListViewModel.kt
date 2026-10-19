@@ -211,9 +211,10 @@ class FeedListViewModel @Inject constructor(
     /** Toggles a feed's notifications from a swipe, confirming the new state with a way to undo it. */
     fun toggleFeedNotifications(feedId: Long) {
         viewModelScope.launch {
-            val feed = feeds.value.find { it.id == feedId } ?: repository.getFeedById(feedId) ?: return@launch
-            val enabled = !feed.notificationsEnabled
             try {
+                // Read from the database rather than the list, which may not yet reflect a toggle just made
+                val feed = repository.getFeedById(feedId) ?: return@launch
+                val enabled = !feed.notificationsEnabled
                 repository.updateFeedNotifications(feedId, enabled)
                 _message.value = notificationsToggledMessage(feed.title, enabled) {
                     setFeedNotifications(feedId, !enabled)
@@ -292,9 +293,10 @@ class FeedListViewModel @Inject constructor(
     /** Toggles a group's notifications from a swipe, confirming the new state with a way to undo it. */
     fun toggleGroupNotifications(groupId: Long) {
         viewModelScope.launch {
-            val group = groups.value.find { it.id == groupId } ?: repository.getGroupById(groupId) ?: return@launch
-            val enabled = !group.notificationsEnabled
             try {
+                // Read from the database rather than the list, which may not yet reflect a toggle just made
+                val group = repository.getGroupById(groupId) ?: return@launch
+                val enabled = !group.notificationsEnabled
                 repository.updateGroupNotifications(groupId, enabled)
                 _message.value = notificationsToggledMessage(group.name, enabled) {
                     setGroupNotifications(groupId, !enabled)

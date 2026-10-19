@@ -28,7 +28,6 @@ fun AddGroupDialog(
     onDismiss: () -> Unit
 ) {
     val focusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -60,6 +59,8 @@ fun AddGroupDialog(
                         .fillMaxWidth()
                         .focusRequester(focusRequester)
                 )
+                // Inside the dialog's own composition, so the field is attached before focus is requested
+                LaunchedEffect(Unit) { focusRequester.requestFocus() }
             }
         },
         confirmButton = {
