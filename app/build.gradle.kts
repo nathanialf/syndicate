@@ -24,7 +24,7 @@ if (hasReleaseKeystore) {
 // Single source of truth for the app version. versionName feeds BuildConfig.VERSION_NAME (shown in
 // Settings) and versionCode is derived from it below (major*10000 + minor*100 + patch). Bump this one
 // value; the pre-commit hook bumps the patch.
-val appVersionName = "1.0.3"
+val appVersionName = "1.0.4"
 
 android {
     namespace = "com.defnf.syndicate"
