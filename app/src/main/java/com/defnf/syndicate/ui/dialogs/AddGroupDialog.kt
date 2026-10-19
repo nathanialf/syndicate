@@ -8,7 +8,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -19,6 +27,8 @@ fun AddGroupDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val focusRequester = remember { FocusRequester() }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -29,7 +39,7 @@ fun AddGroupDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "Enter a name for the new group:",
+                    text = "Name the group, then choose the feeds that go in it.",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 OutlinedTextField(
@@ -38,8 +48,19 @@ fun AddGroupDialog(
                     label = { Text("Group Name") },
                     placeholder = { Text("e.g. Tech News, Sports, etc.") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Words,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(onNext = {
+                        if (groupNameInput.isNotBlank()) onConfirm()
+                    }),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester)
                 )
+                // Inside the dialog's own composition, so the field is attached before focus is requested
+                LaunchedEffect(Unit) { focusRequester.requestFocus() }
             }
         },
         confirmButton = {
@@ -47,7 +68,7 @@ fun AddGroupDialog(
                 onClick = onConfirm,
                 enabled = groupNameInput.isNotBlank()
             ) {
-                Text("Add")
+                Text("Next")
             }
         },
         dismissButton = {

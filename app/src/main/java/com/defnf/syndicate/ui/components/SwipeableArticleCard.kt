@@ -20,18 +20,11 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.RssFeed
 import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,65 +38,49 @@ import androidx.compose.ui.graphics.Color
 import androidx.core.text.HtmlCompat
 import coil.compose.AsyncImage
 import com.defnf.syndicate.data.models.Article
-import com.defnf.syndicate.ui.common.LayoutConstants
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import android.net.Uri
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+/** An article card: swipe either way to toggle its read state. */
 @Composable
 fun SwipeableArticleCard(
     article: Article,
     onArticleClick: (Article) -> Unit,
     onToggleReadState: (Article) -> Unit,
-    resetSwipe: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val hapticFeedback = LocalHapticFeedback.current
-    val swipeState = rememberSwipeToDismissBoxState(
-        positionalThreshold = { totalDistance -> totalDistance * 0.4f }
-    )
-    
-    // Handle swipe actions
-    LaunchedEffect(swipeState.currentValue) {
-        when (swipeState.currentValue) {
-            SwipeToDismissBoxValue.StartToEnd, SwipeToDismissBoxValue.EndToStart -> {
-                if (swipeState.targetValue != SwipeToDismissBoxValue.Settled) {
-                    // Toggle read state on swipe in either direction
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onToggleReadState(article)
-                    swipeState.snapTo(SwipeToDismissBoxValue.Settled)
-                }
-            }
-            SwipeToDismissBoxValue.Settled -> { /* No action needed */ }
-        }
-    }
-    
-    // Reset swipe state when requested
-    LaunchedEffect(resetSwipe) {
-        if (resetSwipe) {
-            swipeState.snapTo(SwipeToDismissBoxValue.Settled)
-        }
-    }
-    
-    SwipeToDismissBox(
-        state = swipeState,
-        backgroundContent = {
-            ArticleSwipeBackground(
-                swipeDirection = swipeState.dismissDirection,
-                isRead = article.isRead
-            )
+    val toggleRead = SwipeAction(
+        icon = if (article.isRead) Icons.Default.RadioButtonUnchecked else Icons.Default.CheckCircle,
+        label = if (article.isRead) "Mark unread" else "Mark read",
+        containerColor = if (article.isRead) {
+            MaterialTheme.colorScheme.secondaryContainer
+        } else {
+            MaterialTheme.colorScheme.primaryContainer
         },
-        modifier = modifier
-    ) {
+        contentColor = if (article.isRead) {
+            MaterialTheme.colorScheme.onSecondaryContainer
+        } else {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        },
+        onSwipe = { onToggleReadState(article) }
+    )
+
+    SwipeActionBox(
+        startAction = toggleRead,
+        endAction = toggleRead,
+        // Same shape as the card being swiped, so the action behind it has matching corners
+        modifier = modifier.clip(MaterialTheme.shapes.large)
+    ) { actionsModifier ->
         Card(
             onClick = { 
                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                 onArticleClick(article) 
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = actionsModifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
             colors = androidx.compose.material3.CardDefaults.cardColors()
         ) {
@@ -193,54 +170,6 @@ fun SwipeableArticleCard(
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun ArticleSwipeBackground(
-    swipeDirection: SwipeToDismissBoxValue,
-    isRead: Boolean
-) {
-    val backgroundColor = when (swipeDirection) {
-        SwipeToDismissBoxValue.StartToEnd, SwipeToDismissBoxValue.EndToStart -> {
-            if (isRead) MaterialTheme.colorScheme.secondaryContainer
-            else MaterialTheme.colorScheme.primaryContainer
-        }
-        SwipeToDismissBoxValue.Settled -> MaterialTheme.colorScheme.surface
-    }
-    
-    val iconColor = when (swipeDirection) {
-        SwipeToDismissBoxValue.StartToEnd, SwipeToDismissBoxValue.EndToStart -> {
-            if (isRead) MaterialTheme.colorScheme.onSecondaryContainer
-            else MaterialTheme.colorScheme.onPrimaryContainer
-        }
-        SwipeToDismissBoxValue.Settled -> MaterialTheme.colorScheme.onSurface
-    }
-    
-    val icon = if (isRead) Icons.Default.RadioButtonUnchecked else Icons.Default.CheckCircle
-    val text = if (isRead) "Mark as Unread" else "Mark as Read"
-    
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            // Same shape as the card being swiped
-            .clip(MaterialTheme.shapes.large)
-            .background(backgroundColor)
-            .padding(horizontal = 24.dp),
-        contentAlignment = when (swipeDirection) {
-            SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
-            SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
-            SwipeToDismissBoxValue.Settled -> Alignment.Center
-        }
-    ) {
-        if (swipeDirection != SwipeToDismissBoxValue.Settled) {
-            Icon(
-                imageVector = icon,
-                contentDescription = text,
-                tint = iconColor,
-                modifier = Modifier.size(LayoutConstants.SwipeIconSize)
-            )
         }
     }
 }

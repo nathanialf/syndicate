@@ -1,87 +1,55 @@
 package com.defnf.syndicate.ui.components
 
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsOff
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import com.defnf.syndicate.data.models.Feed
 
-@OptIn(ExperimentalMaterial3Api::class)
+/** A feed row: swipe towards the end to delete, towards the start to toggle notifications, long press for options. */
 @Composable
 fun SwipeableFeedItem(
     feed: Feed,
     isSelected: Boolean,
     onFeedClick: (Long) -> Unit,
+    onFeedLongClick: (Long) -> Unit,
     onDeleteFeed: (Long) -> Unit,
     onNotificationToggle: (Long) -> Unit,
-    resetSwipe: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    val hapticFeedback = LocalHapticFeedback.current
-    val swipeState = rememberSwipeToDismissBoxState(
-        positionalThreshold = { totalDistance -> totalDistance * 0.4f }
-    )
-    
-    // Handle swipe actions
-    LaunchedEffect(swipeState.currentValue) {
-        when (swipeState.currentValue) {
-            SwipeToDismissBoxValue.StartToEnd -> {
-                if (swipeState.targetValue != SwipeToDismissBoxValue.Settled) {
-                    // Delete action (swipe right) - don't dismiss yet, wait for confirmation
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onDeleteFeed(feed.id)
-                    swipeState.snapTo(SwipeToDismissBoxValue.Settled)
-                }
-            }
-            SwipeToDismissBoxValue.EndToStart -> {
-                if (swipeState.targetValue != SwipeToDismissBoxValue.Settled) {
-                    // Notification toggle action (swipe left)
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onNotificationToggle(feed.id)
-                    swipeState.snapTo(SwipeToDismissBoxValue.Settled)
-                }
-            }
-            SwipeToDismissBoxValue.Settled -> { /* No action needed */ }
-        }
-    }
-    
-    // Reset swipe state when requested
-    LaunchedEffect(resetSwipe) {
-        if (resetSwipe) {
-            swipeState.snapTo(SwipeToDismissBoxValue.Settled)
-        }
-    }
-    
-    // Reset swipe state after notification toggle action
-    LaunchedEffect(swipeState.targetValue) {
-        if (swipeState.targetValue == SwipeToDismissBoxValue.EndToStart) {
-            swipeState.snapTo(SwipeToDismissBoxValue.Settled)
-        }
-    }
-    
-    SwipeToDismissBox(
-        state = swipeState,
-        backgroundContent = {
-            SwipeBackground(
-                swipeDirection = swipeState.dismissDirection,
-                isNotificationEnabled = feed.notificationsEnabled
-            )
-        },
+    SwipeActionBox(
+        startAction = deleteSwipeAction { onDeleteFeed(feed.id) },
+        endAction = notificationsSwipeAction(feed.notificationsEnabled) { onNotificationToggle(feed.id) },
         modifier = modifier
-    ) {
+    ) { actionsModifier ->
         FeedListItem(
             feed = feed,
             isSelected = isSelected,
-            onFeedClick = onFeedClick
+            onFeedClick = onFeedClick,
+            onFeedLongClick = onFeedLongClick,
+            modifier = actionsModifier
         )
     }
 }
+
+@Composable
+internal fun deleteSwipeAction(onDelete: () -> Unit) = SwipeAction(
+    icon = Icons.Default.Delete,
+    label = "Delete",
+    containerColor = MaterialTheme.colorScheme.errorContainer,
+    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+    onSwipe = onDelete
+)
+
+/** Toggles notifications, described by what the swipe will do rather than the current state. */
+@Composable
+internal fun notificationsSwipeAction(enabled: Boolean, onToggle: () -> Unit) = SwipeAction(
+    icon = if (enabled) Icons.Default.NotificationsOff else Icons.Default.Notifications,
+    label = if (enabled) "Mute" else "Notify",
+    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+    onSwipe = onToggle
+)

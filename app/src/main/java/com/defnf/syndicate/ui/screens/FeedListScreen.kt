@@ -11,8 +11,6 @@ import com.defnf.syndicate.ui.dialogs.AddFeedDialog
 import com.defnf.syndicate.ui.dialogs.AddGroupDialog
 import com.defnf.syndicate.ui.dialogs.DeleteFeedDialog
 import com.defnf.syndicate.ui.dialogs.DeleteGroupDialog
-import com.defnf.syndicate.ui.dialogs.EditGroupDialog
-import com.defnf.syndicate.ui.dialogs.FeedGroupDialog
 import com.defnf.syndicate.ui.dialogs.OpmlFilePickerDialog
 import com.defnf.syndicate.ui.dialogs.OpmlPreviewDialog
 import com.defnf.syndicate.ui.dialogs.OpmlImportProgressDialog
@@ -25,7 +23,6 @@ import com.defnf.syndicate.ui.components.GroupItem
 import com.defnf.syndicate.ui.components.SegmentedItem
 import com.defnf.syndicate.ui.components.SwipeableGroupItem
 import com.defnf.syndicate.ui.components.SwipeableFeedItem
-import com.defnf.syndicate.ui.components.SwipeBackground
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,9 +30,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.offset
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -87,7 +81,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -107,8 +103,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.hilt.navigation.compose.hiltViewModel
-import android.util.Log
 import com.defnf.syndicate.ui.common.LayoutConstants
+import com.defnf.syndicate.ui.sheets.FeedOptionsSheet
+import com.defnf.syndicate.ui.sheets.GroupOptionsSheet
 import com.defnf.syndicate.ui.viewmodel.FeedListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -129,8 +126,8 @@ fun FeedListScreen(
     val feeds by viewModel.feeds.collectAsState()
     val groups by viewModel.groups.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    val errorMessage by viewModel.errorMessage.collectAsState()
-    val successMessage by viewModel.successMessage.collectAsState()
+    val message by viewModel.message.collectAsState()
+    val appNotificationsEnabled by viewModel.appNotificationsEnabled.collectAsState()
     val showAddFeedDialog by viewModel.showAddFeedDialog.collectAsState()
     val showAddGroupDialog by viewModel.showAddGroupDialog.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -139,17 +136,12 @@ fun FeedListScreen(
     var feedUrlInput by remember { mutableStateOf("") }
     var groupNameInput by remember { mutableStateOf("") }
     
-    val showFeedGroupDialog by viewModel.showFeedGroupDialog.collectAsState()
-    val selectedFeedForGrouping by viewModel.selectedFeedForGrouping.collectAsState()
-    val feedGroupAssignments by viewModel.feedGroupAssignments.collectAsState()
-    val showDeleteFeedDialog by viewModel.showDeleteFeedDialog.collectAsState()
+    val feedOptionsId by viewModel.feedOptionsId.collectAsState()
+    val feedOptionsGroupIds by viewModel.feedOptionsGroupIds.collectAsState()
+    val groupOptionsId by viewModel.groupOptionsId.collectAsState()
+    val groupOptionsFeedIds by viewModel.groupOptionsFeedIds.collectAsState()
     val feedToDelete by viewModel.feedToDelete.collectAsState()
-    val resetSwipeState by viewModel.resetSwipeState.collectAsState()
-    val showDeleteGroupDialog by viewModel.showDeleteGroupDialog.collectAsState()
     val groupToDelete by viewModel.groupToDelete.collectAsState()
-    val showEditGroupDialog by viewModel.showEditGroupDialog.collectAsState()
-    val groupToEdit by viewModel.groupToEdit.collectAsState()
-    val groupEditFeedAssignments by viewModel.groupEditFeedAssignments.collectAsState()
     
     // OPML Import state
     val importState by opmlImportViewModel.importState.collectAsState()
@@ -161,18 +153,15 @@ fun FeedListScreen(
     val context = LocalContext.current
     
 
-    LaunchedEffect(errorMessage) {
-        errorMessage?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.clearError()
-        }
-    }
-    
-    LaunchedEffect(successMessage) {
-        successMessage?.let {
-            Log.d("FeedListScreen", "Showing success snackbar: $it")
-            snackbarHostState.showSnackbar(it)
-            viewModel.clearSuccess()
+    LaunchedEffect(message) {
+        message?.let {
+            val result = snackbarHostState.showSnackbar(
+                message = it.text,
+                actionLabel = it.actionLabel,
+                duration = if (it.actionLabel != null) SnackbarDuration.Long else SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) it.onAction?.invoke()
+            viewModel.clearMessage()
         }
     }
 
@@ -211,18 +200,13 @@ fun FeedListScreen(
             groups = groups,
             isLoading = isLoading,
             onFeedClick = onFeedClick,
-            onDeleteFeed = { feedId ->
-                viewModel.showDeleteFeedDialog(feedId)
-            },
-            onNotificationToggle = { feedId -> viewModel.toggleFeedNotifications(feedId) },
+            onFeedLongClick = viewModel::showFeedOptions,
+            onDeleteFeed = viewModel::requestDeleteFeed,
+            onFeedNotificationToggle = viewModel::toggleFeedNotifications,
             onGroupClick = onGroupClick,
-            onDeleteGroup = { groupId ->
-                viewModel.showDeleteGroupDialog(groupId)
-            },
-            onEditGroup = { groupId ->
-                viewModel.showEditGroupDialog(groupId)
-            },
-            resetSwipeState = resetSwipeState,
+            onGroupLongClick = viewModel::showGroupOptions,
+            onDeleteGroup = viewModel::requestDeleteGroup,
+            onGroupNotificationToggle = viewModel::toggleGroupNotifications,
             listState = listState,
             contentPadding = innerPadding,
             selectedFeedId = selectedFeedId,
@@ -267,61 +251,65 @@ fun FeedListScreen(
         )
     }
 
-    if (showDeleteFeedDialog) {
-        feedToDelete?.let { feed ->
-            DeleteFeedDialog(
+    feedOptionsId?.let { feedId ->
+        feeds.find { it.id == feedId }?.let { feed ->
+            FeedOptionsSheet(
                 feed = feed,
-                onConfirm = {
-                    // Call the provided callback first to update parent state
-                    onDeleteFeed(feed.id)
-                    // Then confirm deletion which will close dialog and update VM state
-                    viewModel.confirmDeleteFeed()
+                groups = groups,
+                groupIds = feedOptionsGroupIds,
+                appNotificationsEnabled = appNotificationsEnabled,
+                onNotificationsChange = { viewModel.setFeedNotifications(feed.id, it) },
+                onGroupChange = { groupId, inGroup -> viewModel.setFeedInGroup(feed.id, groupId, inGroup) },
+                onCreateGroup = { name -> viewModel.createGroupWithFeed(feed.id, name) },
+                onDelete = {
+                    viewModel.hideFeedOptions()
+                    viewModel.requestDeleteFeed(feed.id)
                 },
-                onDismiss = viewModel::hideDeleteFeedDialog
+                onDismiss = viewModel::hideFeedOptions
             )
         }
     }
 
-    if (showDeleteGroupDialog) {
-        groupToDelete?.let { group ->
-            DeleteGroupDialog(
+    groupOptionsId?.let { groupId ->
+        groups.find { it.id == groupId }?.let { group ->
+            GroupOptionsSheet(
                 group = group,
-                onConfirm = {
-                    viewModel.confirmDeleteGroup()
-                    // Also call the provided callback
-                    onDeleteGroup(group.id)
+                feeds = feeds,
+                feedIds = groupOptionsFeedIds,
+                appNotificationsEnabled = appNotificationsEnabled,
+                onRename = { name -> viewModel.renameGroup(group.id, name) },
+                onDefaultChange = { viewModel.setDefaultGroup(group.id, it) },
+                onNotificationsChange = { viewModel.setGroupNotifications(group.id, it) },
+                onFeedChange = { feedId, inGroup -> viewModel.setFeedInGroup(feedId, group.id, inGroup) },
+                onDelete = {
+                    viewModel.hideGroupOptions()
+                    viewModel.requestDeleteGroup(group.id)
                 },
-                onDismiss = viewModel::hideDeleteGroupDialog
+                onDismiss = viewModel::hideGroupOptions
             )
         }
     }
 
-    if (showFeedGroupDialog && selectedFeedForGrouping != null) {
-        FeedGroupDialog(
-            feedId = selectedFeedForGrouping,
-            groups = groups,
-            selectedGroupIds = feedGroupAssignments,
-            onToggleGroup = viewModel::toggleFeedGroup,
-            onConfirm = viewModel::confirmFeedGroupAssignment,
-            onDismiss = viewModel::hideFeedGroupDialog
+    feedToDelete?.let { feed ->
+        DeleteFeedDialog(
+            feed = feed,
+            onConfirm = {
+                // Let navigation drop the feed if it's open before it disappears
+                onDeleteFeed(feed.id)
+                viewModel.confirmDeleteFeed()
+            },
+            onDismiss = viewModel::cancelDeleteFeed
         )
     }
 
-    if (showEditGroupDialog && groupToEdit != null) {
-        EditGroupDialog(
-            group = groupToEdit!!,
-            feeds = feeds,
-            selectedFeedIds = groupEditFeedAssignments,
-            onFeedToggle = viewModel::toggleGroupEditFeedAssignment,
-            onConfirm = { name, isDefault, notificationsEnabled ->
-                viewModel.updateGroup(
-                    groupToEdit!!.id,
-                    name,
-                    isDefault,
-                    notificationsEnabled
-                )
+    groupToDelete?.let { group ->
+        DeleteGroupDialog(
+            group = group,
+            onConfirm = {
+                onDeleteGroup(group.id)
+                viewModel.confirmDeleteGroup()
             },
-            onDismiss = viewModel::hideEditGroupDialog
+            onDismiss = viewModel::cancelDeleteGroup
         )
     }
     
@@ -382,12 +370,13 @@ private fun FeedListContent(
     groups: List<com.defnf.syndicate.data.models.Group>,
     isLoading: Boolean,
     onFeedClick: (Long) -> Unit,
+    onFeedLongClick: (Long) -> Unit,
     onDeleteFeed: (Long) -> Unit,
-    onNotificationToggle: (Long) -> Unit,
+    onFeedNotificationToggle: (Long) -> Unit,
     onGroupClick: (Long) -> Unit,
+    onGroupLongClick: (Long) -> Unit,
     onDeleteGroup: (Long) -> Unit,
-    onEditGroup: (Long) -> Unit = {},
-    resetSwipeState: Boolean,
+    onGroupNotificationToggle: (Long) -> Unit,
     listState: LazyListState,
     contentPadding: PaddingValues,
     selectedFeedId: Long? = null,
@@ -459,8 +448,9 @@ private fun FeedListContent(
                         SwipeableGroupItem(
                             group = group,
                             onGroupClick = onGroupClick,
+                            onGroupLongClick = onGroupLongClick,
                             onDeleteGroup = onDeleteGroup,
-                            onEditGroup = onEditGroup,
+                            onNotificationToggle = onGroupNotificationToggle,
                             isSelected = selectedGroupId == group.id
                         )
                     }
@@ -490,9 +480,9 @@ private fun FeedListContent(
                             feed = feed,
                             isSelected = selectedFeedId == feed.id,
                             onFeedClick = onFeedClick,
+                            onFeedLongClick = onFeedLongClick,
                             onDeleteFeed = onDeleteFeed,
-                            onNotificationToggle = onNotificationToggle,
-                            resetSwipe = resetSwipeState
+                            onNotificationToggle = onFeedNotificationToggle
                         )
                     }
                 }

@@ -1,67 +1,30 @@
 package com.defnf.syndicate.ui.components
 
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import com.defnf.syndicate.data.models.Group
 
-@OptIn(ExperimentalMaterial3Api::class)
+/** A group row with the same gestures as a feed row: swipe to delete or toggle notifications, long press for options. */
 @Composable
 fun SwipeableGroupItem(
     group: Group,
     onGroupClick: (Long) -> Unit,
+    onGroupLongClick: (Long) -> Unit,
     onDeleteGroup: (Long) -> Unit,
-    onEditGroup: (Long) -> Unit,
+    onNotificationToggle: (Long) -> Unit,
     isSelected: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    val hapticFeedback = LocalHapticFeedback.current
-    val swipeState = rememberSwipeToDismissBoxState(
-        positionalThreshold = { totalDistance -> totalDistance * 0.4f }
-    )
-    
-    // Handle swipe actions
-    LaunchedEffect(swipeState.currentValue) {
-        when (swipeState.currentValue) {
-            SwipeToDismissBoxValue.StartToEnd -> {
-                if (swipeState.targetValue != SwipeToDismissBoxValue.Settled) {
-                    // Delete action (swipe right) - don't dismiss yet, wait for confirmation
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onDeleteGroup(group.id)
-                    swipeState.snapTo(SwipeToDismissBoxValue.Settled)
-                }
-            }
-            SwipeToDismissBoxValue.EndToStart -> {
-                if (swipeState.targetValue != SwipeToDismissBoxValue.Settled) {
-                    // Edit action (swipe left) - don't dismiss yet, wait for action completion
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onEditGroup(group.id)
-                    swipeState.snapTo(SwipeToDismissBoxValue.Settled)
-                }
-            }
-            SwipeToDismissBoxValue.Settled -> { /* No action needed */ }
-        }
-    }
-    
-    SwipeToDismissBox(
-        state = swipeState,
-        backgroundContent = {
-            SwipeBackground(
-                swipeDirection = swipeState.dismissDirection,
-                isGroupMode = true
-            )
-        },
+    SwipeActionBox(
+        startAction = deleteSwipeAction { onDeleteGroup(group.id) },
+        endAction = notificationsSwipeAction(group.notificationsEnabled) { onNotificationToggle(group.id) },
         modifier = modifier
-    ) {
+    ) { actionsModifier ->
         GroupItem(
             group = group,
             onGroupClick = onGroupClick,
+            onGroupLongClick = onGroupLongClick,
+            modifier = actionsModifier,
             isSelected = isSelected
         )
     }

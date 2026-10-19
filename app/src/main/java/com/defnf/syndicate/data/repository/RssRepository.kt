@@ -85,9 +85,6 @@ class RssRepository @Inject constructor(
         notificationManager.dismissFeedNotifications(feed.id)
     }
     
-    suspend fun deleteGroup(group: Group) = 
-        groupDao.deleteGroup(group.toEntity())
-    
     suspend fun updateLastFetched(feedId: Long, timestamp: Long) = 
         feedDao.updateLastFetched(feedId, timestamp)
     
@@ -157,10 +154,6 @@ class RssRepository @Inject constructor(
     
     suspend fun getFeedCountForGroup(groupId: Long): Int = 
         groupDao.getFeedCountForGroup(groupId)
-    
-    suspend fun updateFeedGroups(feedId: Long, groupIds: List<Long>) {
-        groupDao.updateFeedGroups(feedId, groupIds)
-    }
     
     suspend fun setDefaultGroup(groupId: Long) {
         groupDao.setDefaultGroup(groupId)
@@ -300,23 +293,28 @@ class RssRepository @Inject constructor(
         return groupId
     }
     
-    suspend fun updateGroup(groupId: Long, name: String, isDefault: Boolean, notificationsEnabled: Boolean) {
-        val existingGroup = groupDao.getGroupById(groupId)
-        existingGroup?.let { group ->
-            val updatedGroup = group.copy(
-                name = name,
-                isDefault = false, // Initially set to false
-                notificationsEnabled = notificationsEnabled
-            )
-            groupDao.updateGroup(updatedGroup)
-            
-            // If this group should be default, use the transaction method
-            if (isDefault) {
-                groupDao.setDefaultGroup(groupId)
-            }
+    /** Updates only the name, so a notifications or default change made meanwhile isn't overwritten. */
+    suspend fun renameGroup(groupId: Long, name: String) {
+        groupDao.renameGroup(groupId, name)
+    }
+
+    /** Makes the group the default (replacing any other default), or clears it if it is the default. */
+    suspend fun setGroupDefault(groupId: Long, isDefault: Boolean) {
+        if (isDefault) {
+            groupDao.setDefaultGroup(groupId)
+        } else if (groupDao.getGroupById(groupId)?.isDefault == true) {
+            groupDao.clearDefaultGroup()
         }
     }
-    
+
+    suspend fun setFeedInGroup(feedId: Long, groupId: Long, inGroup: Boolean) {
+        if (inGroup) {
+            groupDao.insertFeedGroupCrossRef(FeedGroupCrossRef(feedId, groupId))
+        } else {
+            groupDao.deleteFeedFromGroup(feedId, groupId)
+        }
+    }
+
     suspend fun deleteGroup(groupId: Long) {
         // Check if this is the default group before deleting
         val groupToDelete = groupDao.getGroupById(groupId)
@@ -343,12 +341,6 @@ class RssRepository @Inject constructor(
         feedIds.forEach { feedId ->
             groupDao.updateFeedGroups(feedId, groupIds)
         }
-    }
-    
-    suspend fun updateGroupFeeds(groupId: Long, feedIds: List<Long>) {
-        groupDao.removeAllFeedsFromGroup(groupId)
-        val crossRefs = feedIds.map { FeedGroupCrossRef(it, groupId) }
-        groupDao.insertFeedGroupCrossRefs(crossRefs)
     }
     
     suspend fun updateFeedNotifications(feedId: Long, enabled: Boolean) {

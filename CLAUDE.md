@@ -56,7 +56,8 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 - **Navigation**: Single activity; `RssNavigation` picks an adaptive layout and drives it from `NavigationState` (`ui/navigation/`)
 - **Layout**: Adaptive layout in `ui/layout/` using the Material 3 adaptive libraries (see Adaptive Layout below)
 - **Screens**: Feature-based screen organization (feedmanagement, articlelist, etc.)
-- **Components**: Reusable UI components in `components/`
+- **Components**: Reusable UI components in `components/`. Swipeable rows use `SwipeActionBox` (the item springs back rather than being dismissed; drag/release decisions are the unit-tested `swipeDragOffset` / `swipeReleaseResult`), not `SwipeToDismissBox`
+- **Sheets**: Feed and group options are `ModalBottomSheet`s in `sheets/`, opened by long press; every change saves immediately (no save/cancel). Feeds and groups share gestures: swipe towards the end deletes (after confirmation), towards the start toggles notifications (snackbar with Undo)
 - **Theme**: Material 3 Expressive theming (`MaterialExpressiveTheme`) with dark/light/system modes
 
 #### Dependency Injection (`di/`)
