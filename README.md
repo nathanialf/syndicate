@@ -15,7 +15,7 @@ A modern Android RSS reader built with Jetpack Compose and Material 3 design, fe
 - **Dark/Light Theme**: System-aware theming with manual override options
 - **Smart Duplicate Detection**: HTTP/HTTPS URL normalization prevents duplicate feeds
 - **Material 3 List-Detail Layout**: Selected feeds highlighted with proper Material colors
-- **Swipe Gestures**: Swipe feeds to delete or toggle notifications with haptic feedback
+- **Swipe Gestures**: Swipe feeds and groups right to delete or left to toggle notifications (with Undo); the item springs back, and a haptic tick marks the point where the action will trigger
 - **Enhanced Error Reporting**: Detailed import error messages with specific failure reasons
 - **Article Reading**: Full article detail view on both screen sizes
 - **Read/Unread Status**: Mark articles as read/unread with swipe gestures and visual indicators
@@ -65,8 +65,8 @@ A modern Android RSS reader built with Jetpack Compose and Material 3 design, fe
 ## Usage
 
 1. **Adding Feeds**: Tap the + button to add RSS feeds by URL or import from OPML files (with confirmation notifications)
-2. **Feed Organization**: Swipe feeds to delete or organize into custom groups
-3. **Group Management**: Create, edit, and delete feed groups for better organization
+2. **Feed Organization**: Long press a feed to set its notifications and groups (or create a group for it); swipe to delete or toggle notifications
+3. **Group Management**: Long press a group to rename it, choose its feeds and set notifications or open-on-launch; changes save as you make them
 4. **OPML Import**: Import feed subscriptions with intelligent duplicate detection
 5. **Reading Articles**: Tap any feed to view its articles
 6. **Export**: Use Settings > Export OPML to backup your feed list

@@ -33,6 +33,10 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -84,6 +88,10 @@ fun ArticleListScreen(
 
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val setReadState: (String, Boolean) -> Unit = { articleId, isRead ->
+        if (isRead) viewModel.markAsRead(articleId) else viewModel.markAsUnread(articleId)
+    }
     val scrollToTop: () -> Unit = {
         coroutineScope.launch { listState.animateScrollToItem(0) }
     }
@@ -114,6 +122,7 @@ fun ArticleListScreen(
 
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -194,10 +203,21 @@ fun ArticleListScreen(
             onFilterChange = viewModel::setShowFilter,
             onArticleClick = onArticleClick,
             onToggleReadState = { article ->
-                if (article.isRead) {
-                    viewModel.markAsUnread(article.id)
-                } else {
-                    viewModel.markAsRead(article.id)
+                val markRead = !article.isRead
+                setReadState(article.id, markRead)
+                // The filter hides the article once it changes, so offer a way to bring it back
+                val leavesList = (markRead && showFilter == ArticleShowFilter.UNREAD) ||
+                    (!markRead && showFilter == ArticleShowFilter.READ)
+                if (leavesList) {
+                    coroutineScope.launch {
+                        snackbarHostState.currentSnackbarData?.dismiss()
+                        val result = snackbarHostState.showSnackbar(
+                            message = if (markRead) "Marked as read" else "Marked as unread",
+                            actionLabel = "Undo",
+                            duration = SnackbarDuration.Short
+                        )
+                        if (result == SnackbarResult.ActionPerformed) setReadState(article.id, !markRead)
+                    }
                 }
             },
             listState = listState,

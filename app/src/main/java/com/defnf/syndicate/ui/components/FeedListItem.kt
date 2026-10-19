@@ -1,6 +1,6 @@
 package com.defnf.syndicate.ui.components
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.defnf.syndicate.data.models.Feed
 
@@ -21,8 +23,10 @@ fun FeedListItem(
     feed: Feed,
     isSelected: Boolean,
     onFeedClick: (Long) -> Unit,
+    onFeedLongClick: ((Long) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val haptics = LocalHapticFeedback.current
     // Pre-calculate expensive values to avoid recomputation during scroll
     val truncatedDescription = remember(feed.description) {
         feed.description?.takeIf { it != feed.title && it.isNotBlank() }?.let { description ->
@@ -90,7 +94,16 @@ fun FeedListItem(
             containerColor = containerColor
         ),
         modifier = modifier
-            .clickable { onFeedClick(feed.id) }
+            .combinedClickable(
+                onClick = { onFeedClick(feed.id) },
+                onLongClickLabel = if (onFeedLongClick != null) "Options" else null,
+                onLongClick = onFeedLongClick?.let { onLong ->
+                    {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onLong(feed.id)
+                    }
+                }
+            )
             .fillMaxWidth()
     )
 }

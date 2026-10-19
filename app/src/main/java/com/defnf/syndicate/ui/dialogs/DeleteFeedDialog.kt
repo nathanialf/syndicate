@@ -26,11 +26,11 @@ fun DeleteFeedDialog(
             )
         },
         title = {
-            Text("Delete Feed")
+            Text("Delete feed?")
         },
         text = {
             Text(
-                text = "Are you sure you want to delete \"${feed.title}\"? This action cannot be undone.",
+                text = "\"${feed.title}\" and its articles will be removed. This can't be undone.",
                 style = MaterialTheme.typography.bodyMedium
             )
         },

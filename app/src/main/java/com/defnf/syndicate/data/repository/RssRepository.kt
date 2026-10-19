@@ -317,6 +317,27 @@ class RssRepository @Inject constructor(
         }
     }
     
+    suspend fun renameGroup(groupId: Long, name: String) {
+        groupDao.getGroupById(groupId)?.let { groupDao.updateGroup(it.copy(name = name)) }
+    }
+
+    /** Makes the group the default (replacing any other default), or clears it if it is the default. */
+    suspend fun setGroupDefault(groupId: Long, isDefault: Boolean) {
+        if (isDefault) {
+            groupDao.setDefaultGroup(groupId)
+        } else if (groupDao.getGroupById(groupId)?.isDefault == true) {
+            groupDao.clearDefaultGroup()
+        }
+    }
+
+    suspend fun setFeedInGroup(feedId: Long, groupId: Long, inGroup: Boolean) {
+        if (inGroup) {
+            groupDao.insertFeedGroupCrossRef(FeedGroupCrossRef(feedId, groupId))
+        } else {
+            groupDao.deleteFeedFromGroup(feedId, groupId)
+        }
+    }
+
     suspend fun deleteGroup(groupId: Long) {
         // Check if this is the default group before deleting
         val groupToDelete = groupDao.getGroupById(groupId)

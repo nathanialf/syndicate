@@ -26,11 +26,11 @@ fun DeleteGroupDialog(
             )
         },
         title = {
-            Text("Delete Group")
+            Text("Delete group?")
         },
         text = {
             Text(
-                text = "Are you sure you want to delete \"${group.name}\"? This action cannot be undone.",
+                text = "\"${group.name}\" will be removed. The feeds in it are kept.",
                 style = MaterialTheme.typography.bodyMedium
             )
         },
