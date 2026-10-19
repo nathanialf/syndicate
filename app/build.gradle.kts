@@ -21,16 +21,20 @@ if (hasReleaseKeystore) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+// Single source of truth for the app version. versionCode is derived from it below
+// (major*10000 + minor*100 + patch). Bump this one value; the pre-commit hook bumps the patch.
+val appVersionName = "1.0.2"
+
 android {
     namespace = "com.defnf.syndicate"
-    compileSdk = 35
+    compileSdk = 36
     
     defaultConfig {
         applicationId = "com.defnf.syndicate"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        targetSdk = 36
+        versionCode = generateVersionCode()
+        versionName = appVersionName
         
         vectorDrawables.useSupportLibrary = true
         
@@ -63,6 +67,11 @@ android {
     
     buildFeatures {
         compose = true
+    }
+
+    testOptions {
+        // Robolectric needs the merged resources to render the real UI (store screenshots)
+        unitTests.isIncludeAndroidResources = true
     }
     
     compileOptions {
@@ -150,6 +159,13 @@ dependencies {
     // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    // Play Store assets are rendered on the JVM (no emulator): Robolectric + Compose UI test + Hilt
+    testImplementation(composeBom)
+    testImplementation("org.robolectric:robolectric:4.16")
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("androidx.work:work-testing:2.9.1")
+    testImplementation("com.google.dagger:hilt-android-testing:2.52")
+    kspTest("com.google.dagger:hilt-compiler:2.52")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
@@ -180,5 +196,22 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 ktlint {
     filter {
         exclude { element -> element.file.path.contains("generated") }
+    }
+}
+
+fun generateVersionCode(): Int {
+    val parts = appVersionName.split(".")
+    val major = parts[0].toInt()
+    val minor = parts[1].toInt()
+    val patch = parts[2].toInt()
+    return major * 10000 + minor * 100 + patch
+}
+
+// Play Store listing assets: `./gradlew :app:testDebugUnitTest -PstoreAssets --tests '*StoreAssetsTest'`
+// renders them into store-assets/ (the test is skipped without the property)
+tasks.withType<Test>().configureEach {
+    if (project.hasProperty("storeAssets")) {
+        systemProperty("syndicate.storeAssetsDir", rootProject.file("store-assets").path)
+        outputs.upToDateWhen { false }
     }
 }

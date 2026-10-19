@@ -13,6 +13,12 @@ Syndicate is a modern Android RSS reader built with Jetpack Compose and Material
 - `./gradlew assembleRelease` - Build release APK  
 - `./gradlew installDebug` - Build and install debug APK to connected device
 
+### Release
+- Version: bump `appVersionName` in `app/build.gradle.kts`; `versionCode` is derived (major*10000 + minor*100 + patch). Play never accepts a versionCode twice
+- `.claude/skills/run-syndicate/driver.sh release` - signed release APK + AAB (needs `keystore.properties`), fails on any compiler warning
+- `.githooks/pre-commit` bumps the patch and builds the signed AAB on commits touching the app; enable with `git config core.hooksPath .githooks`
+- Play Store assets: `./gradlew :app:testDebugUnitTest -PstoreAssets --tests '*StoreAssetsTest'` renders the icon, feature graphic and phone/tablet screenshots into `store-assets/` (Robolectric, no emulator needed)
+
 ### Code Quality
 - `./gradlew ktlintCheck` - Run ktlint code style checks
 - `./gradlew ktlintFormat` - Auto-format code with ktlint
@@ -27,7 +33,7 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 
 ### Environment
 - Minimum SDK: 26 (Android 8.0)
-- Target SDK: 35 (Android 15)  
+- Target SDK: 36 (Android 16), the minimum Play accepts  
 - Kotlin 2.0.21 with Compose enabled
 - Java 17 compatibility
 
