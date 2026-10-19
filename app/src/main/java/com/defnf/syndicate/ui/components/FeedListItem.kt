@@ -21,7 +21,6 @@ fun FeedListItem(
     feed: Feed,
     isSelected: Boolean,
     onFeedClick: (Long) -> Unit,
-    isSidebarMode: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     // Pre-calculate expensive values to avoid recomputation during scroll

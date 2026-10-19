@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,7 +39,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.activity.compose.BackHandler
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,8 +64,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.defnf.syndicate.ui.components.FaviconIcon
 import com.defnf.syndicate.ui.viewmodel.ArticleDetailViewModel
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.systemBars
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -80,8 +76,7 @@ import android.net.Uri
 fun ArticleDetailScreen(
     articleId: String,
     onBackClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    isSidebarMode: Boolean = false
+    modifier: Modifier = Modifier
 ) {
     val viewModel: ArticleDetailViewModel = hiltViewModel()
     val article by viewModel.article.collectAsState()
@@ -91,14 +86,9 @@ fun ArticleDetailScreen(
     LaunchedEffect(articleId) {
         viewModel.loadArticle(articleId)
     }
-    
-    // Handle system back gesture
-    BackHandler {
-        onBackClick()
-    }
 
-    
     Scaffold(
+        modifier = modifier,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -152,17 +142,12 @@ fun ArticleDetailScreen(
                             )
                         }
                     }
-                },
-                windowInsets = if (isSidebarMode) {
-                    androidx.compose.foundation.layout.WindowInsets.systemBars
-                } else {
-                    androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
                 }
             )
         }
     ) { paddingValues ->
         Box(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {

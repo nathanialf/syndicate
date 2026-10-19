@@ -2,37 +2,44 @@ package com.defnf.syndicate.navigation
 
 import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import com.defnf.syndicate.ui.NotificationData
-import com.defnf.syndicate.ui.navigation.AppLayoutType
+import com.defnf.syndicate.ui.layout.AdaptiveLayout
+import com.defnf.syndicate.ui.layout.AppLayoutType
+import com.defnf.syndicate.ui.layout.rememberArticlePaneNavigator
+import com.defnf.syndicate.ui.layout.rememberArticlePaneScaffoldNavigator
 import com.defnf.syndicate.ui.navigation.rememberNavigationState
-import com.defnf.syndicate.ui.screens.BottomNavigationLayout
-import com.defnf.syndicate.ui.screens.NavigationRailLayout
-import com.defnf.syndicate.ui.screens.ThreePaneLayout
-import com.defnf.syndicate.ui.screens.TwoPaneLayout
-import com.defnf.syndicate.ui.viewmodel.ThemeViewModel
 
 /**
- * Root of the app UI. Picks a layout from the current window width and renders it from a single
+ * Root of the app UI. Picks a layout from the window size class and renders it from a single
  * hoisted [com.defnf.syndicate.ui.navigation.NavigationState], so the selection is preserved when
  * the window changes size (rotation, fold/unfold, split-screen, freeform windows).
  */
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun RssNavigation(
-    themeViewModel: ThemeViewModel,
     notificationData: NotificationData? = null,
     onNotificationHandled: () -> Unit = {}
 ) {
-    val navigationState = rememberNavigationState()
+    val windowAdaptiveInfo = currentWindowAdaptiveInfo(supportLargeAndXLargeWidth = true)
+    val layoutType = AppLayoutType.fromWindowSizeClass(windowAdaptiveInfo.windowSizeClass)
+    val articlePaneScaffoldNavigator = rememberArticlePaneScaffoldNavigator(windowAdaptiveInfo, layoutType)
+    val navigationState = rememberNavigationState(rememberArticlePaneNavigator(articlePaneScaffoldNavigator))
+
+    LaunchedEffect(layoutType) {
+        Log.d("RssNavigation", "Window size class: ${windowAdaptiveInfo.windowSizeClass}, layout: $layoutType")
+    }
 
     // Handle notification data
     LaunchedEffect(notificationData) {
@@ -46,28 +53,22 @@ fun RssNavigation(
         }
     }
 
+    // System back for destinations and selections. Composed before the article panes, whose own
+    // predictive back handler takes precedence while an article is open.
+    BackHandler(enabled = navigationState.canNavigateBack(layoutType)) {
+        navigationState.navigateBack(layoutType)
+    }
+
     // Keep content clear of side cutouts and side-mounted navigation bars (e.g. landscape phones)
-    BoxWithConstraints(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
     ) {
-        val layoutType = AppLayoutType.fromWindowWidth(maxWidth)
-
-        LaunchedEffect(layoutType) {
-            Log.d("RssNavigation", "Window width: $maxWidth, layout: $layoutType")
-        }
-
-        // Handle system back gesture
-        BackHandler(enabled = navigationState.canNavigateBack(layoutType)) {
-            navigationState.navigateBack(layoutType)
-        }
-
-        when (layoutType) {
-            AppLayoutType.BOTTOM_NAVIGATION -> BottomNavigationLayout(navigationState, themeViewModel)
-            AppLayoutType.NAVIGATION_RAIL -> NavigationRailLayout(navigationState, themeViewModel)
-            AppLayoutType.TWO_PANE -> TwoPaneLayout(navigationState, themeViewModel)
-            AppLayoutType.THREE_PANE -> ThreePaneLayout(navigationState, themeViewModel)
-        }
+        AdaptiveLayout(
+            layoutType = layoutType,
+            navigationState = navigationState,
+            articlePaneNavigator = articlePaneScaffoldNavigator
+        )
     }
 }

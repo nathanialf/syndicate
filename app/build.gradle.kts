@@ -90,17 +90,23 @@ dependencies {
     androidTestImplementation(composeBom)
     
     // Compose
+    val material3Version = "1.5.0-alpha04"
     implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.material3:material3:1.5.0-alpha04")
+    implementation("androidx.compose.material3:material3:$material3Version")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
     implementation("androidx.navigation:navigation-compose:2.8.2")
-    
-    // Material 3 Window Size
-    implementation("androidx.compose.material3:material3-window-size-class")
-    
+
+    // Material 3 adaptive layouts: window size classes, navigation bar/rail switching and the
+    // list-detail pane scaffold (with predictive back)
+    val adaptiveVersion = "1.2.0"
+    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:$material3Version")
+    implementation("androidx.compose.material3.adaptive:adaptive:$adaptiveVersion")
+    implementation("androidx.compose.material3.adaptive:adaptive-layout:$adaptiveVersion")
+    implementation("androidx.compose.material3.adaptive:adaptive-navigation:$adaptiveVersion")
+
     // Core Android
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")

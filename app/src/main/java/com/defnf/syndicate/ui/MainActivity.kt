@@ -56,7 +56,6 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     RssNavigation(
-                        themeViewModel = themeViewModel,
                         notificationData = pendingNotification,
                         onNotificationHandled = { pendingNotification = null }
                     )

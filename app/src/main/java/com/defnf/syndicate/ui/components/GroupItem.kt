@@ -25,7 +25,6 @@ fun GroupItem(
     group: Group,
     onGroupClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
-    isSidebarMode: Boolean = false,
     isSelected: Boolean = false
 ) {
     ListItem(
