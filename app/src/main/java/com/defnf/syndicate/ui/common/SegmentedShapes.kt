@@ -1,6 +1,5 @@
 package com.defnf.syndicate.ui.common
 
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -21,11 +20,4 @@ object SegmentedShapes {
     /** Bottom corner size of item [index] of [count] items; a selected item is rounded all around. */
     fun bottomCorner(index: Int, count: Int, selected: Boolean = false): Dp =
         if (selected || index == count - 1) OuterCorner else InnerCorner
-
-    /** Shape of item [index] of [count] items in a group. */
-    fun itemShape(index: Int, count: Int, selected: Boolean = false): RoundedCornerShape {
-        val top = topCorner(index, selected)
-        val bottom = bottomCorner(index, count, selected)
-        return RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom)
-    }
 }

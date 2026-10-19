@@ -11,7 +11,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -25,7 +24,6 @@ import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FabPosition
@@ -36,7 +34,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -50,14 +47,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.text.HtmlCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.defnf.syndicate.ui.common.LayoutConstants
+import com.defnf.syndicate.ui.components.ConnectedToggleButtonGroup
 import com.defnf.syndicate.ui.components.EmptyState
 import com.defnf.syndicate.ui.components.SwipeableArticleCard
 import com.defnf.syndicate.ui.viewmodel.ArticleListViewModel
@@ -135,7 +130,8 @@ fun ArticleListScreen(
                 },
                 subtitle = {
                     Text(
-                        text = articleCountLabel(articles.size, showFilter),
+                        // No count until the articles have loaded, rather than a misleading "0"
+                        text = if (isLoading && articles.isEmpty()) "" else articleCountLabel(articles.size, showFilter),
                         maxLines = 1
                     )
                 },
@@ -221,39 +217,22 @@ private fun articleCountLabel(count: Int, filter: ArticleShowFilter): String {
 }
 
 /** Connected button group choosing which articles are listed. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ArticleFilterButtonGroup(
     selected: ArticleShowFilter,
     onSelect: (ArticleShowFilter) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val options = listOf(
-        ArticleShowFilter.UNREAD to "Unread",
-        ArticleShowFilter.ALL to "All",
-        ArticleShowFilter.READ to "Read"
+    ConnectedToggleButtonGroup(
+        options = listOf(
+            ArticleShowFilter.UNREAD to "Unread",
+            ArticleShowFilter.ALL to "All",
+            ArticleShowFilter.READ to "Read"
+        ),
+        selected = selected,
+        onSelect = onSelect,
+        modifier = modifier
     )
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
-    ) {
-        options.forEachIndexed { index, (filter, label) ->
-            ToggleButton(
-                checked = selected == filter,
-                onCheckedChange = { onSelect(filter) },
-                modifier = Modifier
-                    .weight(1f)
-                    .semantics { role = Role.RadioButton },
-                shapes = when (index) {
-                    0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                    options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-                }
-            ) {
-                Text(label)
-            }
-        }
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
