@@ -53,7 +53,12 @@ class NavigationState internal constructor(
 
     fun selectAllArticles() = select(allArticles = true)
 
-    fun openArticle(articleId: String) = articlePane.openArticle(articleId)
+    fun openArticle(articleId: String) {
+        // Articles are only shown in the articles destination. With a sidebar the article list is
+        // also on screen while the feeds tab is selected (e.g. the window was widened on it).
+        currentDestination = TopLevelDestination.ARTICLES
+        articlePane.openArticle(articleId)
+    }
 
     fun closeArticle() = articlePane.closeArticle()
 

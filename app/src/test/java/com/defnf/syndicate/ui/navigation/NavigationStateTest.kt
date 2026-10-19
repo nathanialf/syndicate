@@ -2,6 +2,7 @@ package com.defnf.syndicate.ui.navigation
 
 import androidx.compose.runtime.saveable.SaverScope
 import com.defnf.syndicate.ui.layout.AppLayoutType
+import com.defnf.syndicate.ui.layout.MainContent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -116,6 +117,19 @@ class NavigationStateTest {
         state.navigateTo(TopLevelDestination.ARTICLES)
 
         assertEquals("a1", state.openArticleId)
+    }
+
+    @Test
+    fun `opening an article from the feeds tab switches to the articles`() {
+        // With a sidebar the article list is shown while the feeds tab is still selected
+        state.navigateTo(TopLevelDestination.FEEDS)
+
+        state.openArticle("a1")
+
+        assertEquals(TopLevelDestination.ARTICLES, state.currentDestination)
+        assertEquals("a1", state.openArticleId)
+        // So folding back to a phone shows the article rather than the feeds tab
+        assertEquals(MainContent.ARTICLES, AppLayoutType.BOTTOM_NAVIGATION.mainContentFor(state.currentDestination))
     }
 
     @Test

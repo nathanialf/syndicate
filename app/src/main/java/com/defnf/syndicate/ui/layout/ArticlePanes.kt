@@ -12,6 +12,8 @@ import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneSca
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
@@ -132,23 +134,10 @@ internal fun ArticleListDetail(
         },
         detailPane = {
             AnimatedPane {
-                val openArticleId = navigationState.openArticleId
-                val lastOpenedArticleId = rememberLastNonNull(openArticleId)
-                // Keep showing a closed article while its pane animates out
-                val isDetailPaneLeaving = navigator.scaffoldValue[ListDetailPaneScaffoldRole.Detail] ==
-                    PaneAdaptedValue.Hidden
-                val articleId = openArticleId ?: lastOpenedArticleId.takeIf { isDetailPaneLeaving }
-
-                if (articleId != null) {
-                    key(articleId) {
-                        ArticleDetailScreen(
-                            articleId = articleId,
-                            onBackClick = navigationState::closeArticle
-                        )
-                    }
-                } else {
-                    NoArticleSelected()
-                }
+                ArticleDetailPane(
+                    navigator = navigator,
+                    navigationState = navigationState
+                )
             }
         },
         modifier = modifier,
@@ -156,17 +145,45 @@ internal fun ArticleListDetail(
         // on content changes rather than only on layout changes
         defaultBackBehavior = BackNavigationBehavior.PopUntilContentChange
     )
+
+    // The navigator only moves the scaffold to its current pane layout when it navigates, and only
+    // while the scaffold is composed. Catch up when the panes appear after an article was opened
+    // elsewhere (e.g. from a notification on another tab) or when resizing changes the pane count.
+    LaunchedEffect(navigator, navigator.scaffoldValue) {
+        if (navigator.scaffoldState.targetState != navigator.scaffoldValue) {
+            // Seeking back with no progress animates the scaffold to the current scaffold value
+            navigator.seekBack(fraction = 0f)
+        }
+    }
 }
 
-/** Returns [value], or the last non-null value it had while it is null. */
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-private fun <T : Any> rememberLastNonNull(value: T?): T? {
-    val last = remember { LastValue<T>() }
-    if (value != null) last.value = value
-    return last.value
+private fun ArticleDetailPane(
+    navigator: ThreePaneScaffoldNavigator<String>,
+    navigationState: NavigationState
+) {
+    val openArticleId = navigationState.openArticleId
+    val isLeaving = navigator.scaffoldValue[ListDetailPaneScaffoldRole.Detail] == PaneAdaptedValue.Hidden
+    // While the pane animates out after closing an article, keep showing that article. Only what
+    // was on screen counts: an article closed while the pane stayed visible is not brought back.
+    val previous = remember { ShownArticle() }
+    val articleId = openArticleId ?: previous.id.takeIf { isLeaving }
+    SideEffect { previous.id = articleId }
+
+    if (articleId != null) {
+        key(articleId) {
+            ArticleDetailScreen(
+                articleId = articleId,
+                onBackClick = navigationState::closeArticle
+            )
+        }
+    } else {
+        NoArticleSelected()
+    }
 }
 
-/** Plain holder for [rememberLastNonNull]; it is only read in the same composition that writes it. */
-private class LastValue<T : Any> {
-    var value: T? = null
+/** The article shown by the last committed composition of [ArticleDetailPane]. */
+private class ShownArticle {
+    var id: String? = null
 }
