@@ -1,5 +1,6 @@
 package com.defnf.syndicate.ui.screens
 
+import com.defnf.syndicate.BuildConfig
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
@@ -202,7 +203,7 @@ fun SettingsScreen(
                     index = 1,
                     count = 2,
                     title = "Version",
-                    subtitle = "1.0.0",
+                    subtitle = BuildConfig.VERSION_NAME,
                     icon = Icons.Default.Info
                 )
             }

@@ -21,9 +21,10 @@ if (hasReleaseKeystore) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
-// Single source of truth for the app version. versionCode is derived from it below
-// (major*10000 + minor*100 + patch). Bump this one value; the pre-commit hook bumps the patch.
-val appVersionName = "1.0.2"
+// Single source of truth for the app version. versionName feeds BuildConfig.VERSION_NAME (shown in
+// Settings) and versionCode is derived from it below (major*10000 + minor*100 + patch). Bump this one
+// value; the pre-commit hook bumps the patch.
+val appVersionName = "1.0.3"
 
 android {
     namespace = "com.defnf.syndicate"
@@ -67,6 +68,7 @@ android {
     
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     testOptions {
