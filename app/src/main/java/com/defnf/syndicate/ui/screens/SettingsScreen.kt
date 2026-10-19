@@ -1,5 +1,23 @@
 package com.defnf.syndicate.ui.screens
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.ToggleButton
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import com.defnf.syndicate.ui.components.SegmentedItem
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,7 +72,7 @@ import com.defnf.syndicate.ui.viewmodel.ThemeViewModel
 import com.defnf.syndicate.ui.viewmodel.SettingsViewModel
 import com.defnf.syndicate.ui.viewmodel.ExportState
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsScreen(
     onBackClick: (() -> Unit)? = null,
@@ -88,23 +106,26 @@ fun SettingsScreen(
         }
     }
     
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            CenterAlignedTopAppBar(
+            LargeFlexibleTopAppBar(
                 title = {
                     Text(text = "Settings")
                 },
                 navigationIcon = {
                     if (onBackClick != null) {
-                        IconButton(onClick = onBackClick) {
+                        IconButton(onClick = onBackClick, shapes = IconButtonDefaults.shapes()) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back"
                             )
                         }
                     }
-                }
+                },
+                scrollBehavior = scrollBehavior
             )
         }
     ) { paddingValues ->
@@ -114,11 +135,13 @@ fun SettingsScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // Notifications Section  
             SettingsSection(title = "Notifications") {
                 SettingsToggleItem(
+                    index = 0,
+                    count = 1,
                     title = "Enable Notifications",
                     subtitle = "Receive notifications for new articles",
                     icon = Icons.Default.Notifications,
@@ -145,6 +168,8 @@ fun SettingsScreen(
             // Data Section
             SettingsSection(title = "Data") {
                 SettingsClickableItem(
+                    index = 0,
+                    count = 1,
                     title = "Export OPML",
                     subtitle = when (val state = exportState) {
                         is ExportState.Loading -> "Exporting..."
@@ -168,35 +193,19 @@ fun SettingsScreen(
             
             // Appearance Section
             SettingsSection(title = "Appearance") {
-                SettingsDropdownItem(
-                    title = "Theme",
-                    subtitle = "Choose your preferred color scheme",
-                    value = when (currentThemeMode) {
-                        ThemeMode.LIGHT -> "light"
-                        ThemeMode.DARK -> "dark"
-                        ThemeMode.SYSTEM -> "system"
-                    },
-                    options = listOf(
-                        "system" to "Follow System",
-                        "light" to "Light",
-                        "dark" to "Dark"
-                    ),
-                    onValueChange = { value ->
-                        val mode = when (value) {
-                            "light" -> ThemeMode.LIGHT
-                            "dark" -> ThemeMode.DARK
-                            "system" -> ThemeMode.SYSTEM
-                            else -> ThemeMode.SYSTEM
-                        }
-                        themeViewModel.setThemeMode(mode)
-                    },
-                    icon = Icons.Default.Palette
+                SettingsThemeItem(
+                    index = 0,
+                    count = 1,
+                    selected = currentThemeMode,
+                    onSelect = themeViewModel::setThemeMode
                 )
             }
             
             // About Section
             SettingsSection(title = "About") {
                 SettingsClickableItem(
+                    index = 0,
+                    count = 2,
                     title = "Developed by Nathanial Fine",
                     subtitle = "defnf.com",
                     icon = Icons.Default.Person,
@@ -207,6 +216,8 @@ fun SettingsScreen(
                 )
                 
                 SettingsItem(
+                    index = 1,
+                    count = 2,
                     title = "Version",
                     subtitle = "1.0.0",
                     icon = Icons.Default.Info
@@ -216,98 +227,102 @@ fun SettingsScreen(
     }
 }
 
+/** A titled group of settings, whose items are drawn as one segmented list. */
 @Composable
 private fun SettingsSection(
     title: String,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Card {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            
-            content()
-        }
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+        )
+        content()
     }
 }
 
 @Composable
-private fun SettingsDropdownItem(
+private fun SettingsListItem(
+    index: Int,
+    count: Int,
     title: String,
     subtitle: String,
-    value: String,
-    options: List<Pair<String, String>>,
-    onValueChange: (String) -> Unit,
-    icon: androidx.compose.ui.graphics.vector.ImageVector
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    trailingContent: (@Composable () -> Unit)? = null
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val selectedOption = options.find { it.first == value }?.second ?: value
-    
-    Box {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            
-            TextButton(
-                onClick = { expanded = true }
-            ) {
-                Text(
-                    text = selectedOption,
-                    color = MaterialTheme.colorScheme.primary
-                )
+    SegmentedItem(index = index, count = count) {
+        ListItem(
+            headlineContent = { Text(text = title) },
+            supportingContent = { Text(text = subtitle) },
+            leadingContent = {
                 Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
+                    imageVector = icon,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            }
-        }
-        
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            offset = DpOffset(x = (-48).dp, y = 0.dp)
-        ) {
-            options.forEach { (optionValue, label) ->
-                DropdownMenuItem(
-                    text = { Text(label) },
-                    onClick = {
-                        onValueChange(optionValue)
-                        expanded = false
+            },
+            trailingContent = trailingContent,
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            modifier = modifier
+        )
+    }
+}
+
+/** Theme choice as a connected button group under its title. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun SettingsThemeItem(
+    index: Int,
+    count: Int,
+    selected: ThemeMode,
+    onSelect: (ThemeMode) -> Unit
+) {
+    val options = listOf(
+        ThemeMode.SYSTEM to "System",
+        ThemeMode.LIGHT to "Light",
+        ThemeMode.DARK to "Dark"
+    )
+    SegmentedItem(index = index, count = count) {
+        Column(modifier = Modifier.padding(bottom = 16.dp)) {
+            ListItem(
+                headlineContent = { Text(text = "Theme") },
+                supportingContent = { Text(text = "Choose your preferred color scheme") },
+                leadingContent = {
+                    Icon(
+                        imageVector = Icons.Default.Palette,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
+            ) {
+                options.forEachIndexed { optionIndex, (mode, label) ->
+                    ToggleButton(
+                        checked = selected == mode,
+                        onCheckedChange = { onSelect(mode) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .semantics { role = Role.RadioButton },
+                        shapes = when (optionIndex) {
+                            0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                            options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                            else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                        }
+                    ) {
+                        Text(label)
                     }
-                )
+                }
             }
         }
     }
@@ -315,121 +330,85 @@ private fun SettingsDropdownItem(
 
 @Composable
 private fun SettingsClickableItem(
+    index: Int,
+    count: Int,
     title: String,
     subtitle: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     onClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        
-        Spacer(modifier = Modifier.width(16.dp))
-        
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        
-        IconButton(onClick = onClick) {
+    SettingsListItem(
+        index = index,
+        count = count,
+        title = title,
+        subtitle = subtitle,
+        icon = icon,
+        modifier = Modifier.clickable(onClick = onClick),
+        trailingContent = {
             Icon(
                 imageVector = Icons.Default.ChevronRight,
-                contentDescription = "Open",
+                contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-    }
+    )
 }
 
 @Composable
 private fun SettingsItem(
+    index: Int,
+    count: Int,
     title: String,
     subtitle: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector
+    icon: ImageVector
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        
-        Spacer(modifier = Modifier.width(16.dp))
-        
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
+    SettingsListItem(
+        index = index,
+        count = count,
+        title = title,
+        subtitle = subtitle,
+        icon = icon
+    )
 }
 
 @Composable
 private fun SettingsToggleItem(
+    index: Int,
+    count: Int,
     title: String,
     subtitle: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        
-        Spacer(modifier = Modifier.width(16.dp))
-        
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+    SettingsListItem(
+        index = index,
+        count = count,
+        title = title,
+        subtitle = subtitle,
+        icon = icon,
+        modifier = Modifier.toggleable(
+            value = checked,
+            role = Role.Switch,
+            onValueChange = onCheckedChange
+        ),
+        trailingContent = {
+            Switch(
+                checked = checked,
+                // The whole row toggles the switch
+                onCheckedChange = null,
+                thumbContent = if (checked) {
+                    {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(SwitchDefaults.IconSize)
+                        )
+                    }
+                } else {
+                    null
+                }
             )
         }
-        
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange
-        )
-    }
+    )
 }

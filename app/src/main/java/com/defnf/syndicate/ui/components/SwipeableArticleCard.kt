@@ -104,6 +104,7 @@ fun SwipeableArticleCard(
                 onArticleClick(article) 
             },
             modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.large,
             colors = androidx.compose.material3.CardDefaults.cardColors()
         ) {
             Column(
@@ -118,7 +119,7 @@ fun SwipeableArticleCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(16f / 9f)
-                            .clip(RoundedCornerShape(8.dp)),
+                            .clip(MaterialTheme.shapes.medium),
                         contentScale = ContentScale.Crop
                     )
                 }
@@ -223,7 +224,8 @@ private fun ArticleSwipeBackground(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(12.dp))
+            // Same shape as the card being swiped
+            .clip(MaterialTheme.shapes.large)
             .background(backgroundColor)
             .padding(horizontal = 24.dp),
         contentAlignment = when (swipeDirection) {

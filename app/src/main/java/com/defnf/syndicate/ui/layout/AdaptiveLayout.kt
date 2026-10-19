@@ -9,11 +9,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.rememberNavigationSuiteScaffoldState
 import androidx.compose.runtime.Composable
@@ -24,8 +22,9 @@ import com.defnf.syndicate.ui.navigation.NavigationState
 import com.defnf.syndicate.ui.navigation.TopLevelDestination
 
 /**
- * Renders the app for [layoutType]: the navigation bar or rail from [NavigationSuiteScaffold],
- * the feeds sidebar when the layout has one, and the main content beside it.
+ * Renders the app for [layoutType]: the Material 3 Expressive short navigation bar or wide
+ * navigation rail from [NavigationSuiteScaffold], the feeds sidebar when the layout has one, and
+ * the main content beside it.
  *
  * [NavigationSuiteScaffold] consumes the window insets its bar or rail covers, so screens use the
  * default Material window insets in every layout.
@@ -56,10 +55,6 @@ fun AdaptiveLayout(
             }
         },
         layoutType = layoutType.navigationSuiteType,
-        navigationSuiteColors = NavigationSuiteDefaults.colors(
-            navigationBarContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            navigationRailContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-        ),
         state = navigationSuiteState
     ) {
         Row(modifier = Modifier.fillMaxSize()) {

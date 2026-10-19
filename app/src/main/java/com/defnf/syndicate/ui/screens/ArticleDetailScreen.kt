@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.res.painterResource
@@ -25,8 +26,13 @@ import androidx.compose.material.icons.filled.RssFeed
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingToolbarDefaults
+import androidx.compose.material3.FloatingToolbarExitDirection
+import androidx.compose.material3.HorizontalFloatingToolbar
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -62,6 +69,7 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.defnf.syndicate.ui.common.LayoutConstants
 import com.defnf.syndicate.ui.components.FaviconIcon
 import com.defnf.syndicate.ui.viewmodel.ArticleDetailViewModel
 import java.text.SimpleDateFormat
@@ -71,7 +79,7 @@ import java.util.Locale
 import android.content.Intent
 import android.net.Uri
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ArticleDetailScreen(
     articleId: String,
@@ -82,6 +90,10 @@ fun ArticleDetailScreen(
     val article by viewModel.article.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val context = LocalContext.current
+    // The floating toolbar slides away while reading down and comes back when scrolling up
+    val toolbarScrollBehavior = FloatingToolbarDefaults.exitAlwaysScrollBehavior(
+        exitDirection = FloatingToolbarExitDirection.Bottom
+    )
 
     LaunchedEffect(articleId) {
         viewModel.loadArticle(articleId)
@@ -92,19 +104,50 @@ fun ArticleDetailScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text(text = article?.feedTitle ?: "Article")
+                    Text(
+                        text = article?.feedTitle ?: "Article",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = onBackClick, shapes = IconButtonDefaults.shapes()) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
                         )
                     }
-                },
-                actions = {
-                    article?.let { art ->
-                        // Share button
+                }
+            )
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .nestedScroll(toolbarScrollBehavior)
+        ) {
+            when {
+                isLoading -> {
+                    LoadingIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+                article != null -> {
+                    val art = article!!
+                    ArticleDetailContent(
+                        article = art,
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    HorizontalFloatingToolbar(
+                        expanded = true,
+                        scrollBehavior = toolbarScrollBehavior,
+                        colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .offset(y = -FloatingToolbarDefaults.ScreenOffset)
+                    ) {
                         IconButton(
                             onClick = {
                                 val shareIntent = Intent().apply {
@@ -114,7 +157,8 @@ fun ArticleDetailScreen(
                                     putExtra(Intent.EXTRA_SUBJECT, art.title)
                                 }
                                 context.startActivity(Intent.createChooser(shareIntent, "Share Article"))
-                            }
+                            },
+                            shapes = IconButtonDefaults.shapes()
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Share,
@@ -122,7 +166,6 @@ fun ArticleDetailScreen(
                             )
                         }
 
-                        // Open in browser button
                         IconButton(
                             onClick = {
                                 if (!art.url.isNullOrBlank() && art.url.startsWith("http")) {
@@ -134,7 +177,8 @@ fun ArticleDetailScreen(
                                         android.util.Log.e("ArticleDetail", "Failed to open URL: ${art.url}", e)
                                     }
                                 }
-                            }
+                            },
+                            shapes = IconButtonDefaults.shapes()
                         ) {
                             Icon(
                                 imageVector = Icons.Default.OpenInBrowser,
@@ -142,26 +186,6 @@ fun ArticleDetailScreen(
                             )
                         }
                     }
-                }
-            )
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            when {
-                isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-                article != null -> {
-                    ArticleDetailContent(
-                        article = article!!,
-                        modifier = Modifier.fillMaxSize()
-                    )
                 }
                 else -> {
                     Text(
@@ -175,6 +199,7 @@ fun ArticleDetailScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ArticleDetailContent(
     article: com.defnf.syndicate.data.models.Article,
@@ -194,7 +219,7 @@ private fun ArticleDetailContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(16f / 9f)
-                    .clip(RoundedCornerShape(12.dp)),
+                    .clip(MaterialTheme.shapes.extraLarge),
                 contentScale = ContentScale.Crop
             )
         }
@@ -203,9 +228,7 @@ private fun ArticleDetailContent(
         SelectionContainer {
             Text(
                 text = article.title,
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
+                style = MaterialTheme.typography.headlineMediumEmphasized,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
@@ -258,8 +281,8 @@ private fun ArticleDetailContent(
             )
         }
 
-        // Bottom spacing
-        Spacer(modifier = Modifier.height(32.dp))
+        // Leave room to scroll the end of the article clear of the floating toolbar
+        Spacer(modifier = Modifier.height(LayoutConstants.ContentBottomPaddingForFab))
     }
 }
 
@@ -288,9 +311,9 @@ private fun RichContentDisplay(
     val contentElements = parseHtmlToElements(html)
     
     if (contentElements.isNotEmpty()) {
-        Card(modifier = modifier) {
+        Card(modifier = modifier, shape = MaterialTheme.shapes.extraLarge) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 contentElements.forEach { element ->
@@ -314,7 +337,7 @@ private fun RichContentDisplay(
                                 contentDescription = element.alt,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(8.dp)),
+                                    .clip(MaterialTheme.shapes.large),
                                 contentScale = ContentScale.FillWidth,
                                 error = painterResource(android.R.drawable.ic_menu_report_image),
                                 placeholder = painterResource(android.R.drawable.ic_menu_gallery)
@@ -333,8 +356,9 @@ private fun RichContentDisplay(
                         is ContentElement.CodeBlockContent -> {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
+                                shape = MaterialTheme.shapes.large,
                                 colors = androidx.compose.material3.CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
                                 )
                             ) {
                                 SelectionContainer {
@@ -362,6 +386,7 @@ private fun RichContentDisplay(
                                             android.util.Log.e("ArticleDetail", "Failed to open YouTube video: ${element.videoId}", e)
                                         }
                                     },
+                                shape = MaterialTheme.shapes.large,
                                 colors = androidx.compose.material3.CardDefaults.cardColors(
                                     containerColor = MaterialTheme.colorScheme.primaryContainer
                                 )
