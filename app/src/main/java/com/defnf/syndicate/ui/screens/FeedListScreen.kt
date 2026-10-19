@@ -3,11 +3,6 @@ package com.defnf.syndicate.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,21 +17,21 @@ import com.defnf.syndicate.ui.dialogs.OpmlFilePickerDialog
 import com.defnf.syndicate.ui.dialogs.OpmlPreviewDialog
 import com.defnf.syndicate.ui.dialogs.OpmlImportProgressDialog
 import com.defnf.syndicate.ui.dialogs.OpmlImportResultDialog
+import com.defnf.syndicate.ui.components.EmptyState
 import com.defnf.syndicate.ui.components.ExpandableFabMenu
 import com.defnf.syndicate.ui.components.FaviconIcon
 import com.defnf.syndicate.ui.components.FeedListItem
 import com.defnf.syndicate.ui.components.GroupItem
+import com.defnf.syndicate.ui.components.SegmentedItem
 import com.defnf.syndicate.ui.components.SwipeableGroupItem
 import com.defnf.syndicate.ui.components.SwipeableFeedItem
 import com.defnf.syndicate.ui.components.SwipeBackground
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
@@ -58,7 +53,6 @@ import androidx.compose.material.icons.filled.CreateNewFolder
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import androidx.compose.foundation.border
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -81,10 +75,13 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.material3.toShape
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -378,6 +375,7 @@ fun FeedListScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun FeedListContent(
     feeds: List<com.defnf.syndicate.data.models.Feed>,
@@ -405,27 +403,11 @@ private fun FeedListContent(
                 .padding(16.dp),
             contentAlignment = Alignment.Center
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.RssFeed,
-                    contentDescription = null,
-                    modifier = Modifier.width(64.dp).height(64.dp),
-                    tint = MaterialTheme.colorScheme.outline
-                )
-                Text(
-                    text = "No feeds yet",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "Tap the + button to add your first RSS feed",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
+            EmptyState(
+                icon = Icons.Default.RssFeed,
+                title = "No feeds yet",
+                message = "Tap the + button to add your first RSS feed"
+            )
         }
     } else {
         LazyColumn(
@@ -445,16 +427,16 @@ private fun FeedListContent(
                 key = "all_articles_group",
                 contentType = "card_group"
             ) {
-                GroupedCard(
-                    isFirstInGroup = true,
-                    isLastInGroup = true,
-                    content = {
-                        AllArticlesItem(
-                            isSelected = isAllArticlesSelected,
-                            onAllFeedsClick = onAllFeedsClick
-                        )
-                    }
-                )
+                SegmentedItem(
+                    index = 0,
+                    count = 1,
+                    selected = isAllArticlesSelected
+                ) {
+                    AllArticlesItem(
+                        isSelected = isAllArticlesSelected,
+                        onAllFeedsClick = onAllFeedsClick
+                    )
+                }
             }
             
             // Spacer between groups
@@ -469,19 +451,19 @@ private fun FeedListContent(
                     key = { "group_${it.value.id}" },
                     contentType = { "group" }
                 ) { (index, group) ->
-                    GroupedCard(
-                        isFirstInGroup = index == 0,
-                        isLastInGroup = index == groups.size - 1,
-                        content = {
-                            SwipeableGroupItem(
-                                group = group,
-                                onGroupClick = onGroupClick,
-                                onDeleteGroup = onDeleteGroup,
-                                onEditGroup = onEditGroup,
-                                isSelected = selectedGroupId == group.id
-                            )
-                        }
-                    )
+                    SegmentedItem(
+                        index = index,
+                        count = groups.size,
+                        selected = selectedGroupId == group.id
+                    ) {
+                        SwipeableGroupItem(
+                            group = group,
+                            onGroupClick = onGroupClick,
+                            onDeleteGroup = onDeleteGroup,
+                            onEditGroup = onEditGroup,
+                            isSelected = selectedGroupId == group.id
+                        )
+                    }
                 }
             }
             
@@ -499,20 +481,20 @@ private fun FeedListContent(
                     key = { "feed_${it.value.id}" },
                     contentType = { "feed" }
                 ) { (index, feed) ->
-                    GroupedCard(
-                        isFirstInGroup = index == 0,
-                        isLastInGroup = index == feeds.size - 1,
-                        content = {
-                            SwipeableFeedItem(
-                                feed = feed,
-                                isSelected = selectedFeedId == feed.id,
-                                onFeedClick = onFeedClick,
-                                onDeleteFeed = onDeleteFeed,
-                                onNotificationToggle = onNotificationToggle,
-                                resetSwipe = resetSwipeState
-                            )
-                        }
-                    )
+                    SegmentedItem(
+                        index = index,
+                        count = feeds.size,
+                        selected = selectedFeedId == feed.id
+                    ) {
+                        SwipeableFeedItem(
+                            feed = feed,
+                            isSelected = selectedFeedId == feed.id,
+                            onFeedClick = onFeedClick,
+                            onDeleteFeed = onDeleteFeed,
+                            onNotificationToggle = onNotificationToggle,
+                            resetSwipe = resetSwipeState
+                        )
+                    }
                 }
             }
         }
@@ -525,50 +507,15 @@ private fun FeedListContent(
                 .padding(contentPadding),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator()
+            LoadingIndicator()
         }
-    }
-}
-
-/**
- * A card container that handles grouped card styling similar to Android Settings.
- * Cards within a group have connecting corners - top card has rounded top corners only,
- * bottom card has rounded bottom corners only, middle cards have square corners.
- */
-@Composable
-private fun GroupedCard(
-    isFirstInGroup: Boolean,
-    isLastInGroup: Boolean,
-    content: @Composable () -> Unit
-) {
-    val shape = when {
-        isFirstInGroup && isLastInGroup -> RoundedCornerShape(12.dp) // Single card in group
-        isFirstInGroup -> RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
-        isLastInGroup -> RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 12.dp, bottomEnd = 12.dp)
-        else -> RoundedCornerShape(4.dp) // Middle cards have rounded corners
-    }
-    
-    val topPadding = if (isFirstInGroup) 0.dp else 2.dp // Gap between connected cards
-    
-    Card(
-        shape = shape,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer // Match the list item colors
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 0.dp // No elevation
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = topPadding)
-    ) {
-        content()
     }
 }
 
 /**
  * The "All Articles" list item extracted as a separate composable for use in grouped cards
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AllArticlesItem(
     isSelected: Boolean,
@@ -590,7 +537,7 @@ private fun AllArticlesItem(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .clip(CircleShape)
+                    .clip(MaterialShapes.Cookie4Sided.toShape())
                     .background(
                         if (isSelected) {
                             MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f)

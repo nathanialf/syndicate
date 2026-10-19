@@ -1,38 +1,38 @@
 package com.defnf.syndicate.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.RssFeed
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingActionButtonMenu
+import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleFloatingActionButton
+import androidx.compose.material3.ToggleFloatingActionButtonDefaults.animateIcon
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.traversalIndex
 
+private data class FabMenuAction(
+    val icon: ImageVector,
+    val label: String,
+    val onClick: () -> Unit
+)
+
+/**
+ * The feeds screen's Material 3 Expressive FAB menu: a toggle FAB that morphs into a close button
+ * and reveals the add actions above it.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ExpandableFabMenu(
     expanded: Boolean,
@@ -42,108 +42,43 @@ fun ExpandableFabMenu(
     onAddGroup: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val rotation by animateFloatAsState(
-        targetValue = if (expanded) 45f else 0f,
-        animationSpec = tween(300),
-        label = "fab_rotation"
+    // Back closes the menu before it leaves the screen
+    BackHandler(enabled = expanded, onBack = onToggle)
+
+    val actions = listOf(
+        FabMenuAction(Icons.Default.Folder, "Add Group", onAddGroup),
+        FabMenuAction(Icons.Default.Download, "Import Feeds", onImportFeed),
+        FabMenuAction(Icons.Default.RssFeed, "Add Feed", onAddFeed)
     )
-    
-    val cornerRadius by animateDpAsState(
-        targetValue = if (expanded) 28.dp else 16.dp, // 28dp for circle, 16dp for default FAB
-        animationSpec = tween(300),
-        label = "fab_corner_radius"
-    )
-    
-    Column(
-        modifier = modifier.padding(16.dp),
-        horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Menu items (shown when expanded)
-        AnimatedVisibility(
-            visible = expanded,
-            enter = slideInVertically(
-                initialOffsetY = { fullHeight -> fullHeight / 4 },
-                animationSpec = tween(300)
-            ) + fadeIn(animationSpec = tween(300)),
-            exit = slideOutVertically(
-                targetOffsetY = { fullHeight -> fullHeight / 4 },
-                animationSpec = tween(300)
-            ) + fadeOut(animationSpec = tween(300))
-        ) {
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.padding(8.dp)
+
+    FloatingActionButtonMenu(
+        expanded = expanded,
+        modifier = modifier,
+        button = {
+            ToggleFloatingActionButton(
+                checked = expanded,
+                onCheckedChange = { onToggle() },
+                modifier = Modifier.semantics {
+                    // Reached before the menu items, which are laid out above it
+                    traversalIndex = -1f
+                    stateDescription = if (expanded) "Expanded" else "Collapsed"
+                    contentDescription = "Add menu"
+                }
             ) {
-                // Add Group
-                FabMenuItem(
-                    icon = Icons.Default.Folder,
-                    label = "Add Group",
-                    onClick = onAddGroup
-                )
-                
-                // Import Feeds
-                FabMenuItem(
-                    icon = Icons.Default.Download,
-                    label = "Import Feeds",
-                    onClick = onImportFeed
-                )
-                
-                // Add Feed
-                FabMenuItem(
-                    icon = Icons.Default.RssFeed,
-                    label = "Add Feed",
-                    onClick = onAddFeed
+                Icon(
+                    imageVector = if (checkedProgress > 0.5f) Icons.Default.Close else Icons.Default.Add,
+                    contentDescription = null,
+                    modifier = Modifier.animateIcon({ checkedProgress })
                 )
             }
         }
-        
-        // Main FAB
-        FloatingActionButton(
-            onClick = onToggle,
-            containerColor = if (expanded) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = if (expanded) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onTertiaryContainer,
-            shape = RoundedCornerShape(cornerRadius),
-            elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(
-                defaultElevation = 6.dp,
-                pressedElevation = 12.dp
-            )
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = if (expanded) "Close menu" else "Open menu",
-                modifier = Modifier.rotate(rotation)
+    ) {
+        actions.forEach { action ->
+            FloatingActionButtonMenuItem(
+                onClick = action.onClick,
+                icon = { Icon(imageVector = action.icon, contentDescription = null) },
+                text = { Text(text = action.label) }
             )
         }
-    }
-}
-
-@Composable
-private fun FabMenuItem(
-    icon: ImageVector,
-    label: String,
-    onClick: () -> Unit
-) {
-    ExtendedFloatingActionButton(
-        onClick = onClick,
-        containerColor = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        shape = RoundedCornerShape(50),
-        elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(
-            defaultElevation = 6.dp,
-            pressedElevation = 12.dp
-        )
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge
-        )
     }
 }

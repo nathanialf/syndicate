@@ -51,7 +51,7 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 - **Layout**: Adaptive layout in `ui/layout/` using the Material 3 adaptive libraries (see Adaptive Layout below)
 - **Screens**: Feature-based screen organization (feedmanagement, articlelist, etc.)
 - **Components**: Reusable UI components in `components/`
-- **Theme**: Material 3 theming with dark/light/system modes
+- **Theme**: Material 3 Expressive theming (`MaterialExpressiveTheme`) with dark/light/system modes
 
 #### Dependency Injection (`di/`)
 - Hilt for DI with `DatabaseModule` providing Room database and preferences
@@ -73,8 +73,8 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 - **Feed Groups**: Hierarchical organization with cross-reference tables
 - **Adaptive Layout** (`ui/layout/`), built on the official Material 3 adaptive libraries (`material3-adaptive-navigation-suite`, `adaptive-layout`, `adaptive-navigation`):
   - `RssNavigation` reads `currentWindowAdaptiveInfo(supportLargeAndXLargeWidth = true)` and maps its `WindowSizeClass` to an `AppLayoutType`:
-    - Compact (< 600dp): single pane + bottom navigation bar (hidden while reading an article)
-    - Medium (600-839dp): single pane + navigation rail
+    - Compact (< 600dp): single pane + short navigation bar (hidden while reading an article)
+    - Medium (600-839dp): single pane + collapsed wide navigation rail
     - Expanded (840-1199dp): feeds sidebar + article list or article
     - Large (>= 1200dp): feeds sidebar + article list + article
   - Each `AppLayoutType` is described by capabilities (`navigationSuiteType`, `hasFeedsSidebar`, `hasArticleListBesideDetail`); nothing outside `fromWindowSizeClass` matches on the layout name
@@ -106,7 +106,10 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 - Favicon URL generation from feed metadata
 
 ### Theming
-- Material 3 with dynamic theming support
+- Material 3 Expressive: `SyndicateTheme` wraps `MaterialExpressiveTheme` with `MotionScheme.expressive()` and dynamic color (falls back to `expressiveLightColorScheme()` / `darkColorScheme()` before Android 12)
+- Expressive components in use: `FloatingActionButtonMenu` (feeds), connected `ToggleButton` groups (article filter, theme), `HorizontalFloatingToolbar` (article actions), `LoadingIndicator` (also for pull to refresh), `LargeFlexibleTopAppBar` (settings), top app bar subtitles, shape-morphing `IconButton`s, `MaterialShapes` (empty states, group icons)
+- Grouped lists (feeds sidebar, settings) use `SegmentedItem` / `SegmentedShapes`: large outer corners, tight inner corners, and a selected item morphs to fully rounded
+- Expressive APIs need `@OptIn(ExperimentalMaterial3ExpressiveApi::class)`; animate with `MaterialTheme.motionScheme` specs rather than fixed tweens
 - System/light/dark theme modes stored in DataStore preferences
 - Edge-to-edge display with proper inset handling
 

@@ -1,18 +1,26 @@
 package com.defnf.syndicate.ui.theme
 
 import android.app.Activity
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.MotionScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.ui.platform.LocalContext
-import android.os.Build
+import androidx.compose.material3.expressiveLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-
+/**
+ * Material 3 Expressive theme: dynamic color where available, the expressive motion scheme
+ * (spring-based, slightly bouncy) and the default shape scale used by the expressive components.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SyndicateTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -23,8 +31,8 @@ fun SyndicateTheme(
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> androidx.compose.material3.darkColorScheme()
-        else -> androidx.compose.material3.lightColorScheme()
+        darkTheme -> darkColorScheme()
+        else -> expressiveLightColorScheme()
     }
 
     val view = LocalView.current
@@ -38,8 +46,9 @@ fun SyndicateTheme(
         }
     }
 
-    MaterialTheme(
+    MaterialExpressiveTheme(
         colorScheme = colorScheme,
+        motionScheme = MotionScheme.expressive(),
         typography = Typography,
         content = content
     )

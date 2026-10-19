@@ -24,8 +24,8 @@ class AppLayoutTypeTest {
 
     @Test
     fun `phones and medium windows reach destinations from a bar or rail`() {
-        assertEquals(NavigationSuiteType.NavigationBar, AppLayoutType.BOTTOM_NAVIGATION.navigationSuiteType)
-        assertEquals(NavigationSuiteType.NavigationRail, AppLayoutType.NAVIGATION_RAIL.navigationSuiteType)
+        assertEquals(NavigationSuiteType.ShortNavigationBarCompact, AppLayoutType.BOTTOM_NAVIGATION.navigationSuiteType)
+        assertEquals(NavigationSuiteType.WideNavigationRailCollapsed, AppLayoutType.NAVIGATION_RAIL.navigationSuiteType)
         assertEquals(NavigationSuiteType.None, AppLayoutType.TWO_PANE.navigationSuiteType)
         assertEquals(NavigationSuiteType.None, AppLayoutType.THREE_PANE.navigationSuiteType)
     }

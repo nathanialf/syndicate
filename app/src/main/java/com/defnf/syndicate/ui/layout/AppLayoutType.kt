@@ -19,16 +19,16 @@ enum class AppLayoutType(
     /** Whether the article list stays visible next to the article being read. */
     val hasArticleListBesideDetail: Boolean
 ) {
-    /** Compact width (< 600dp): single pane with a bottom navigation bar. */
+    /** Compact width (< 600dp): single pane with a bottom (short) navigation bar. */
     BOTTOM_NAVIGATION(
-        navigationSuiteType = NavigationSuiteType.NavigationBar,
+        navigationSuiteType = NavigationSuiteType.ShortNavigationBarCompact,
         hasFeedsSidebar = false,
         hasArticleListBesideDetail = false
     ),
 
-    /** Medium width (600dp - 839dp): single pane with a navigation rail. */
+    /** Medium width (600dp - 839dp): single pane with a (collapsed wide) navigation rail. */
     NAVIGATION_RAIL(
-        navigationSuiteType = NavigationSuiteType.NavigationRail,
+        navigationSuiteType = NavigationSuiteType.WideNavigationRailCollapsed,
         hasFeedsSidebar = false,
         hasArticleListBesideDetail = false
     ),
@@ -53,7 +53,7 @@ enum class AppLayoutType(
 
     /** Whether the navigation bar slides away while an article is read, giving it the full height. */
     val hidesNavigationWhileReading: Boolean
-        get() = navigationSuiteType == NavigationSuiteType.NavigationBar
+        get() = navigationSuiteType == NavigationSuiteType.ShortNavigationBarCompact
 
     /** What fills the space beside the navigation chrome and the feeds sidebar for [destination]. */
     fun mainContentFor(destination: TopLevelDestination): MainContent = when (destination) {

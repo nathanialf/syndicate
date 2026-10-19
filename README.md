@@ -5,7 +5,7 @@ A modern Android RSS reader built with Jetpack Compose and Material 3 design, fe
 ## Features
 
 ### ✅ Implemented
-- **Modern Material 3 Design**: Clean, intuitive interface following Material Design guidelines
+- **Material 3 Expressive Design**: Expressive motion, shapes and components (FAB menu, floating toolbar, connected button groups, loading indicators)
 - **Adaptive Layout**: Bottom navigation on phones, navigation rail on medium-width windows, two-pane (feeds + content) on expanded widths and three-pane (feeds + list + article) on large screens; state is preserved across rotation, folding and window resizing
 - **Feed Management**: Add, organize, and delete RSS feeds with swipe gestures
 - **Feed Groups/Folders**: Organize feeds into custom groups with full CRUD operations
@@ -48,7 +48,7 @@ A modern Android RSS reader built with Jetpack Compose and Material 3 design, fe
 
 - **Language**: Kotlin
 - **UI Framework**: Jetpack Compose
-- **Design System**: Material 3
+- **Design System**: Material 3 Expressive
 - **Database**: Room
 - **DI**: Hilt
 - **HTTP**: OkHttp + Retrofit

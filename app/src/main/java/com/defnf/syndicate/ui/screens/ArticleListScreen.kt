@@ -1,5 +1,10 @@
 package com.defnf.syndicate.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -13,26 +18,26 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -47,6 +52,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.text.HtmlCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.defnf.syndicate.ui.common.LayoutConstants
+import com.defnf.syndicate.ui.components.ConnectedToggleButtonGroup
+import com.defnf.syndicate.ui.components.EmptyState
 import com.defnf.syndicate.ui.components.SwipeableArticleCard
 import com.defnf.syndicate.ui.viewmodel.ArticleListViewModel
 import com.defnf.syndicate.ui.viewmodel.ArticleShowFilter
@@ -56,7 +63,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ArticleListScreen(
     feedId: Long? = null,
@@ -108,7 +115,7 @@ fun ArticleListScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = {
                     Text(
                         text = currentFeed?.title ?: "All Articles",
@@ -121,9 +128,17 @@ fun ArticleListScreen(
                         )
                     )
                 },
+                subtitle = {
+                    Text(
+                        // No count until the articles have loaded, rather than a misleading "0"
+                        text = if (isLoading && articles.isEmpty()) "" else articleCountLabel(articles.size, showFilter),
+                        maxLines = 1
+                    )
+                },
+                titleHorizontalAlignment = Alignment.CenterHorizontally,
                 navigationIcon = {
                     if (onBackClick != null) {
-                        IconButton(onClick = onBackClick) {
+                        IconButton(onClick = onBackClick, shapes = IconButtonDefaults.shapes()) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back"
@@ -132,14 +147,17 @@ fun ArticleListScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.markAllAsRead() }) {
+                    IconButton(
+                        onClick = { viewModel.markAllAsRead() },
+                        shapes = IconButtonDefaults.shapes()
+                    ) {
                         Icon(
                             imageVector = Icons.Default.DoneAll,
                             contentDescription = "Mark all as read"
                         )
                     }
                     if (onSettingsClick != null) {
-                        IconButton(onClick = onSettingsClick) {
+                        IconButton(onClick = onSettingsClick, shapes = IconButtonDefaults.shapes()) {
                             Icon(
                                 imageVector = Icons.Default.Settings,
                                 contentDescription = "Settings"
@@ -151,11 +169,14 @@ fun ArticleListScreen(
         },
         floatingActionButtonPosition = FabPosition.Center,
         floatingActionButton = {
-            if (!isAtTop && articles.isNotEmpty()) {
-                SmallFloatingActionButton(
-                    onClick = scrollToTop,
-                    shape = CircleShape
-                ) {
+            AnimatedVisibility(
+                visible = !isAtTop && articles.isNotEmpty(),
+                enter = scaleIn(MaterialTheme.motionScheme.fastSpatialSpec()) +
+                    fadeIn(MaterialTheme.motionScheme.fastEffectsSpec()),
+                exit = scaleOut(MaterialTheme.motionScheme.fastSpatialSpec()) +
+                    fadeOut(MaterialTheme.motionScheme.fastEffectsSpec())
+            ) {
+                SmallFloatingActionButton(onClick = scrollToTop) {
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowUp,
                         contentDescription = "Scroll to top"
@@ -186,7 +207,35 @@ fun ArticleListScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+private fun articleCountLabel(count: Int, filter: ArticleShowFilter): String {
+    val noun = if (count == 1) "article" else "articles"
+    return when (filter) {
+        ArticleShowFilter.UNREAD -> "$count unread"
+        ArticleShowFilter.READ -> "$count read"
+        ArticleShowFilter.ALL -> "$count $noun"
+    }
+}
+
+/** Connected button group choosing which articles are listed. */
+@Composable
+private fun ArticleFilterButtonGroup(
+    selected: ArticleShowFilter,
+    onSelect: (ArticleShowFilter) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ConnectedToggleButtonGroup(
+        options = listOf(
+            ArticleShowFilter.UNREAD to "Unread",
+            ArticleShowFilter.ALL to "All",
+            ArticleShowFilter.READ to "Read"
+        ),
+        selected = selected,
+        onSelect = onSelect,
+        modifier = modifier
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ArticleListContent(
     articles: List<com.defnf.syndicate.data.models.Article>,
@@ -201,9 +250,18 @@ private fun ArticleListContent(
     contentPadding: PaddingValues,
     onRefresh: () -> Unit = {}
 ) {
+    val pullToRefreshState = rememberPullToRefreshState()
     PullToRefreshBox(
         isRefreshing = isRefreshing,
         onRefresh = onRefresh,
+        state = pullToRefreshState,
+        indicator = {
+            PullToRefreshDefaults.LoadingIndicator(
+                state = pullToRefreshState,
+                isRefreshing = isRefreshing,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
+        },
         modifier = Modifier
             .fillMaxSize()
             .padding(top = contentPadding.calculateTopPadding())
@@ -213,34 +271,13 @@ private fun ArticleListContent(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Segmented buttons for filtering
-            SingleChoiceSegmentedButtonRow(
+            ArticleFilterButtonGroup(
+                selected = showFilter,
+                onSelect = onFilterChange,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                SegmentedButton(
-                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3),
-                    onClick = { onFilterChange(ArticleShowFilter.UNREAD) },
-                    selected = showFilter == ArticleShowFilter.UNREAD
-                ) {
-                    Text("Unread")
-                }
-                SegmentedButton(
-                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3),
-                    onClick = { onFilterChange(ArticleShowFilter.ALL) },
-                    selected = showFilter == ArticleShowFilter.ALL
-                ) {
-                    Text("All")
-                }
-                SegmentedButton(
-                    shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3),
-                    onClick = { onFilterChange(ArticleShowFilter.READ) },
-                    selected = showFilter == ArticleShowFilter.READ
-                ) {
-                    Text("Read")
-                }
-            }
+            )
 
             // Articles list
             if (articles.isEmpty() && !isLoading) {
@@ -253,35 +290,19 @@ private fun ArticleListContent(
                     contentPadding = PaddingValues(16.dp)
                 ) {
                     item {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Article,
-                                contentDescription = null,
-                                modifier = Modifier.padding(16.dp),
-                                tint = MaterialTheme.colorScheme.outline
-                            )
-                            Text(
-                                text = when (showFilter) {
-                                    ArticleShowFilter.UNREAD -> "No unread articles"
-                                    ArticleShowFilter.READ -> "No read articles"
-                                    ArticleShowFilter.ALL -> if (feedId != null) "No articles in this feed" else "No articles yet"
-                                },
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = when (showFilter) {
-                                    ArticleShowFilter.UNREAD -> "All articles have been read"
-                                    ArticleShowFilter.READ -> "No articles have been read yet"
-                                    ArticleShowFilter.ALL -> if (feedId != null) "This feed doesn't have any articles yet" else "Add some feeds to see articles here"
-                                },
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.outline
-                            )
-                        }
+                        EmptyState(
+                            icon = Icons.AutoMirrored.Filled.Article,
+                            title = when (showFilter) {
+                                ArticleShowFilter.UNREAD -> "No unread articles"
+                                ArticleShowFilter.READ -> "No read articles"
+                                ArticleShowFilter.ALL -> if (feedId != null) "No articles in this feed" else "No articles yet"
+                            },
+                            message = when (showFilter) {
+                                ArticleShowFilter.UNREAD -> "All articles have been read"
+                                ArticleShowFilter.READ -> "No articles have been read yet"
+                                ArticleShowFilter.ALL -> if (feedId != null) "This feed doesn't have any articles yet" else "Add some feeds to see articles here"
+                            }
+                        )
                     }
                 }
             } else {
@@ -305,7 +326,9 @@ private fun ArticleListContent(
                             article = article,
                             onArticleClick = onArticleClick,
                             onToggleReadState = onToggleReadState,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateItem()
                         )
                     }
                 }
