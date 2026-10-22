@@ -34,12 +34,16 @@ fun FaviconIcon(
 ) {
     val context = LocalContext.current
     
-    val iconTint = if (isSelected) {
-        MaterialTheme.colorScheme.onSecondaryContainer
-    } else if (isAvailable) {
-        MaterialTheme.colorScheme.tertiary
-    } else {
-        MaterialTheme.colorScheme.error
+    // Without a favicon the feed icon sits in a tonal badge, like the group icons
+    val badgeColor = when {
+        isSelected -> MaterialTheme.colorScheme.primary
+        isAvailable -> MaterialTheme.colorScheme.tertiaryContainer
+        else -> MaterialTheme.colorScheme.errorContainer
+    }
+    val iconTint = when {
+        isSelected -> MaterialTheme.colorScheme.onPrimary
+        isAvailable -> MaterialTheme.colorScheme.onTertiaryContainer
+        else -> MaterialTheme.colorScheme.onErrorContainer
     }
 
     var imageLoadSuccess by remember { mutableStateOf(true) }
@@ -64,13 +68,7 @@ fun FaviconIcon(
                 if (!feed.faviconUrl.isNullOrBlank() && imageLoadSuccess) {
                     baseModifier // No background for favicons
                 } else {
-                    baseModifier.background(
-                        if (isSelected) {
-                            MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f)
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
-                        }
-                    )
+                    baseModifier.background(badgeColor)
                 }
             },
         contentAlignment = Alignment.Center

@@ -50,11 +50,7 @@ fun FeedListItem(
         MaterialTheme.colorScheme.onSurfaceVariant
     }
     
-    val containerColor = if (isSelected) {
-        MaterialTheme.colorScheme.secondaryContainer
-    } else {
-        MaterialTheme.colorScheme.surfaceContainer // Same as default card color
-    }
+    val containerColor = GroupedListDefaults.itemColor(isSelected)
     
     ListItem(
         headlineContent = {

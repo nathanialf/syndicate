@@ -21,8 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.defnf.syndicate.ui.components.ListSectionHeader
 import com.defnf.syndicate.ui.components.SegmentedItem
 
 /*
@@ -36,13 +36,7 @@ internal fun sheetItemColor(): Color = MaterialTheme.colorScheme.surfaceContaine
 
 @Composable
 internal fun SheetSectionTitle(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleSmall,
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp)
-    )
+    ListSectionHeader(text = text, modifier = modifier.padding(top = 8.dp))
 }
 
 /** A segmented row with a switch; the whole row toggles it. */

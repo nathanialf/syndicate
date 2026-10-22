@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.dp
  * items are separated by a small gap.
  */
 object SegmentedShapes {
-    val OuterCorner = 20.dp
+    val OuterCorner = 24.dp
     val InnerCorner = 4.dp
     val ItemGap = 2.dp
 

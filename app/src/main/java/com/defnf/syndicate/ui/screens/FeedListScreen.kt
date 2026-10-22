@@ -20,6 +20,9 @@ import com.defnf.syndicate.ui.components.ExpandableFabMenu
 import com.defnf.syndicate.ui.components.FaviconIcon
 import com.defnf.syndicate.ui.components.FeedListItem
 import com.defnf.syndicate.ui.components.GroupItem
+import com.defnf.syndicate.ui.components.GroupedListDefaults
+import com.defnf.syndicate.ui.components.IconBadge
+import com.defnf.syndicate.ui.components.ListSectionHeader
 import com.defnf.syndicate.ui.components.SegmentedItem
 import com.defnf.syndicate.ui.components.SwipeableGroupItem
 import com.defnf.syndicate.ui.components.SwipeableFeedItem
@@ -167,6 +170,7 @@ fun FeedListScreen(
 
     Scaffold(
         modifier = modifier,
+        containerColor = GroupedListDefaults.containerColor,
         floatingActionButton = {
             ExpandableFabMenu(
                 expanded = fabExpanded,
@@ -428,13 +432,11 @@ private fun FeedListContent(
                 }
             }
             
-            // Spacer between groups
-            item(key = "spacer_1") {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-            
             // Group 2: Feed Groups
             if (groups.isNotEmpty()) {
+                item(key = "groups_header", contentType = "header") {
+                    ListSectionHeader(text = "Groups", modifier = Modifier.padding(top = 24.dp))
+                }
                 items(
                     items = groups.withIndex().toList(),
                     key = { "group_${it.value.id}" },
@@ -457,15 +459,11 @@ private fun FeedListContent(
                 }
             }
             
-            // Spacer between groups
-            if (groups.isNotEmpty()) {
-                item(key = "spacer_2") {
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-            }
-            
             // Group 3: Individual Feeds
             if (feeds.isNotEmpty()) {
+                item(key = "feeds_header", contentType = "header") {
+                    ListSectionHeader(text = "Subscriptions", modifier = Modifier.padding(top = 24.dp))
+                }
                 items(
                     items = feeds.withIndex().toList(),
                     key = { "feed_${it.value.id}" },
@@ -524,37 +522,23 @@ private fun AllArticlesItem(
             )
         },
         leadingContent = {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(MaterialShapes.Cookie4Sided.toShape())
-                    .background(
-                        if (isSelected) {
-                            MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f)
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
-                        }
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.RssFeed,
-                    contentDescription = null,
-                    tint = if (isSelected) {
-                        MaterialTheme.colorScheme.onSecondaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+            IconBadge(
+                icon = Icons.Default.RssFeed,
+                containerColor = if (isSelected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.primaryContainer
+                },
+                contentColor = if (isSelected) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                },
+                shape = MaterialShapes.Cookie4Sided.toShape()
+            )
         },
         colors = androidx.compose.material3.ListItemDefaults.colors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceContainer // Same as default card color
-            }
+            containerColor = GroupedListDefaults.itemColor(isSelected)
         ),
         modifier = Modifier
             .clickable { onAllFeedsClick() }

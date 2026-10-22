@@ -116,6 +116,7 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 - Material 3 Expressive: `SyndicateTheme` wraps `MaterialExpressiveTheme` with `MotionScheme.expressive()` and dynamic color (falls back to `expressiveLightColorScheme()` / `darkColorScheme()` before Android 12)
 - Expressive components in use: `FloatingActionButtonMenu` (feeds), connected `ToggleButton` groups (article filter, theme), `HorizontalFloatingToolbar` (article actions), `LoadingIndicator` (also for pull to refresh), `LargeFlexibleTopAppBar` (settings), top app bar subtitles, shape-morphing `IconButton`s, `MaterialShapes` (empty states, group icons)
 - Grouped lists (feeds sidebar, settings) use `SegmentedItem` / `SegmentedShapes`: large outer corners, tight inner corners, and a selected item morphs to fully rounded
+- Grouped screens follow the Android Settings app (`components/GroupedList.kt`): `GroupedListDefaults` puts bright items (`surfaceBright`) on a tinted page (`surfaceContainer`, also used for the top app bar), `ListSectionHeader` titles each group, and leading icons sit in tonal `IconBadge`s (one tone per settings section)
 - Expressive APIs need `@OptIn(ExperimentalMaterial3ExpressiveApi::class)`; animate with `MaterialTheme.motionScheme` specs rather than fixed tweens
 - System/light/dark theme modes stored in DataStore preferences
 - Edge-to-edge display with proper inset handling

@@ -1,8 +1,6 @@
 package com.defnf.syndicate.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -16,11 +14,9 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.defnf.syndicate.data.models.Group
 
@@ -47,30 +43,20 @@ fun GroupItem(
             )
         },
         leadingContent = {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(MaterialShapes.Cookie4Sided.toShape())
-                    .background(
-                        if (isSelected) {
-                            MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f)
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
-                        }
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Folder,
-                    contentDescription = "Group",
-                    tint = if (isSelected) {
-                        MaterialTheme.colorScheme.onSecondaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+            IconBadge(
+                icon = Icons.Default.Folder,
+                containerColor = if (isSelected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.secondaryContainer
+                },
+                contentColor = if (isSelected) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onSecondaryContainer
+                },
+                shape = MaterialShapes.Cookie4Sided.toShape()
+            )
         },
         supportingContent = if (group.isDefault) {
             {
@@ -96,11 +82,7 @@ fun GroupItem(
             }
         } else null,
         colors = androidx.compose.material3.ListItemDefaults.colors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceContainer // Same as default card color
-            }
+            containerColor = GroupedListDefaults.itemColor(isSelected)
         ),
         modifier = modifier
             .combinedClickable(

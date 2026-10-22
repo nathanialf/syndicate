@@ -26,7 +26,7 @@ fun SegmentedItem(
     count: Int,
     modifier: Modifier = Modifier,
     selected: Boolean = false,
-    color: Color = MaterialTheme.colorScheme.surfaceContainer,
+    color: Color = GroupedListDefaults.itemColor,
     content: @Composable () -> Unit
 ) {
     val cornerSpec = MaterialTheme.motionScheme.fastSpatialSpec<Dp>()

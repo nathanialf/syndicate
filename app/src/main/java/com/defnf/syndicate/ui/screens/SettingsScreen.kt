@@ -14,7 +14,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.defnf.syndicate.ui.components.ConnectedToggleButtonGroup
+import com.defnf.syndicate.ui.components.GroupedListDefaults
+import com.defnf.syndicate.ui.components.IconBadge
+import com.defnf.syndicate.ui.components.ListSectionHeader
 import com.defnf.syndicate.ui.components.SegmentedItem
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -47,9 +54,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.defnf.syndicate.data.models.ThemeMode
 import com.defnf.syndicate.ui.viewmodel.ThemeViewModel
@@ -91,9 +96,12 @@ fun SettingsScreen(
     }
     
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    // Like the Android Settings app, the bar keeps the page color when content scrolls under it
+    val pageColor = GroupedListDefaults.containerColor
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = pageColor,
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
@@ -109,6 +117,10 @@ fun SettingsScreen(
                         }
                     }
                 },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = pageColor,
+                    scrolledContainerColor = pageColor
+                ),
                 scrollBehavior = scrollBehavior
             )
         }
@@ -118,17 +130,19 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(horizontal = 16.dp)
+                .padding(top = 8.dp, bottom = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Notifications Section  
             SettingsSection(title = "Notifications") {
                 SettingsToggleItem(
                     index = 0,
-                    count = 1,
-                    title = "Enable Notifications",
-                    subtitle = "Receive notifications for new articles",
+                    count = 2,
+                    title = "New articles",
+                    subtitle = "Get notified when your feeds have new articles",
                     icon = Icons.Default.Notifications,
+                    tone = IconTone.TERTIARY,
                     checked = notificationsEnabled,
                     onCheckedChange = { enabled ->
                         if (enabled && !notificationManager.areNotificationsEnabled()) {
@@ -147,35 +161,23 @@ fun SettingsScreen(
                         }
                     }
                 )
-            }
-            
-            // Data Section
-            SettingsSection(title = "Data") {
                 SettingsClickableItem(
-                    index = 0,
-                    count = 1,
-                    title = "Export OPML",
-                    subtitle = when (val state = exportState) {
-                        is ExportState.Loading -> "Exporting..."
-                        is ExportState.Success -> "Export successful!"
-                        is ExportState.Error -> "Export failed: ${state.message}"
-                        else -> "Export your feeds to an OPML file"
-                    },
-                    icon = when (exportState) {
-                        is ExportState.Loading -> Icons.Default.Sync
-                        is ExportState.Success -> Icons.Default.CheckCircle
-                        is ExportState.Error -> Icons.Default.Error
-                        else -> Icons.Default.FileDownload
-                    },
+                    index = 1,
+                    count = 2,
+                    title = "System notification settings",
+                    subtitle = "Sound, vibration and how notifications appear",
+                    icon = Icons.Default.Tune,
+                    tone = IconTone.TERTIARY,
                     onClick = {
-                        if (exportState !is ExportState.Loading) {
-                            settingsViewModel.exportOpml(context)
+                        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
                         }
-                    }
+                        context.startActivity(intent)
+                    },
+                    trailingIcon = Icons.AutoMirrored.Filled.OpenInNew
                 )
             }
-            
-            // Appearance Section
+
             SettingsSection(title = "Appearance") {
                 SettingsThemeItem(
                     index = 0,
@@ -184,8 +186,35 @@ fun SettingsScreen(
                     onSelect = themeViewModel::setThemeMode
                 )
             }
-            
-            // About Section
+
+            SettingsSection(title = "Data") {
+                SettingsListItem(
+                    index = 0,
+                    count = 1,
+                    title = "Export OPML",
+                    subtitle = when (val state = exportState) {
+                        is ExportState.Loading -> "Exporting…"
+                        is ExportState.Success -> "Export successful"
+                        is ExportState.Error -> "Export failed: ${state.message}"
+                        else -> "Save your subscriptions to an OPML file"
+                    },
+                    icon = when (exportState) {
+                        is ExportState.Success -> Icons.Default.CheckCircle
+                        is ExportState.Error -> Icons.Default.Error
+                        else -> Icons.Default.FileDownload
+                    },
+                    tone = if (exportState is ExportState.Error) IconTone.ERROR else IconTone.SECONDARY,
+                    modifier = Modifier.clickable(enabled = exportState !is ExportState.Loading) {
+                        settingsViewModel.exportOpml(context)
+                    },
+                    trailingContent = if (exportState is ExportState.Loading) {
+                        { LoadingIndicator(modifier = Modifier.size(32.dp)) }
+                    } else {
+                        null
+                    }
+                )
+            }
+
             SettingsSection(title = "About") {
                 SettingsClickableItem(
                     index = 0,
@@ -193,41 +222,63 @@ fun SettingsScreen(
                     title = "Developed by Nathanial Fine",
                     subtitle = "defnf.com",
                     icon = Icons.Default.Person,
-                    onClick = { 
+                    tone = IconTone.NEUTRAL,
+                    onClick = {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://defnf.com"))
                         context.startActivity(intent)
-                    }
+                    },
+                    trailingIcon = Icons.AutoMirrored.Filled.OpenInNew
                 )
-                
-                SettingsItem(
+
+                SettingsListItem(
                     index = 1,
                     count = 2,
                     title = "Version",
                     subtitle = BuildConfig.VERSION_NAME,
-                    icon = Icons.Default.Info
+                    icon = Icons.Default.Info,
+                    tone = IconTone.NEUTRAL
                 )
             }
         }
     }
 }
 
-/** A titled group of settings, whose items are drawn as one segmented list. */
+/** The tonal colors of an item's icon badge; each section has its own, as in the Android Settings app. */
+private enum class IconTone { PRIMARY, SECONDARY, TERTIARY, NEUTRAL, ERROR }
+
+@Composable
+private fun SettingsIcon(icon: ImageVector, tone: IconTone) {
+    val colors = MaterialTheme.colorScheme
+    val (container, content) = when (tone) {
+        IconTone.PRIMARY -> colors.primaryContainer to colors.onPrimaryContainer
+        IconTone.SECONDARY -> colors.secondaryContainer to colors.onSecondaryContainer
+        IconTone.TERTIARY -> colors.tertiaryContainer to colors.onTertiaryContainer
+        IconTone.NEUTRAL -> colors.surfaceContainerHighest to colors.onSurfaceVariant
+        IconTone.ERROR -> colors.errorContainer to colors.onErrorContainer
+    }
+    IconBadge(icon = icon, containerColor = container, contentColor = content)
+}
+
+/**
+ * A titled group of settings, whose items are drawn as one segmented list. Wide windows keep the
+ * list at a readable width.
+ */
 @Composable
 private fun SettingsSection(
     title: String,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
-        )
+    Column(
+        modifier = Modifier
+            .widthIn(max = SettingsMaxWidth)
+            .fillMaxWidth()
+    ) {
+        ListSectionHeader(text = title)
         content()
     }
 }
+
+private val SettingsMaxWidth = 640.dp
 
 @Composable
 private fun SettingsListItem(
@@ -236,6 +287,7 @@ private fun SettingsListItem(
     title: String,
     subtitle: String,
     icon: ImageVector,
+    tone: IconTone,
     modifier: Modifier = Modifier,
     trailingContent: (@Composable () -> Unit)? = null
 ) {
@@ -244,6 +296,7 @@ private fun SettingsListItem(
             title = title,
             subtitle = subtitle,
             icon = icon,
+            tone = tone,
             modifier = modifier,
             trailingContent = trailingContent
         )
@@ -256,19 +309,14 @@ private fun SettingsListItemContent(
     title: String,
     subtitle: String,
     icon: ImageVector,
+    tone: IconTone,
     modifier: Modifier = Modifier,
     trailingContent: (@Composable () -> Unit)? = null
 ) {
     ListItem(
-        headlineContent = { Text(text = title) },
+        headlineContent = { Text(text = title, style = MaterialTheme.typography.titleMedium) },
         supportingContent = { Text(text = subtitle) },
-        leadingContent = {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        },
+        leadingContent = { SettingsIcon(icon = icon, tone = tone) },
         trailingContent = trailingContent,
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = modifier
@@ -288,7 +336,8 @@ private fun SettingsThemeItem(
             SettingsListItemContent(
                 title = "Theme",
                 subtitle = "Choose your preferred color scheme",
-                icon = Icons.Default.Palette
+                icon = Icons.Default.Palette,
+                tone = IconTone.PRIMARY
             )
             ConnectedToggleButtonGroup(
                 options = listOf(
@@ -306,6 +355,7 @@ private fun SettingsThemeItem(
     }
 }
 
+/** An item that opens something; [trailingIcon] shows where it leads, such as another app. */
 @Composable
 private fun SettingsClickableItem(
     index: Int,
@@ -313,7 +363,9 @@ private fun SettingsClickableItem(
     title: String,
     subtitle: String,
     icon: ImageVector,
-    onClick: () -> Unit
+    tone: IconTone,
+    onClick: () -> Unit,
+    trailingIcon: ImageVector? = null
 ) {
     SettingsListItem(
         index = index,
@@ -321,31 +373,17 @@ private fun SettingsClickableItem(
         title = title,
         subtitle = subtitle,
         icon = icon,
+        tone = tone,
         modifier = Modifier.clickable(onClick = onClick),
-        trailingContent = {
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        trailingContent = trailingIcon?.let {
+            {
+                Icon(
+                    imageVector = it,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
-    )
-}
-
-@Composable
-private fun SettingsItem(
-    index: Int,
-    count: Int,
-    title: String,
-    subtitle: String,
-    icon: ImageVector
-) {
-    SettingsListItem(
-        index = index,
-        count = count,
-        title = title,
-        subtitle = subtitle,
-        icon = icon
     )
 }
 
@@ -356,6 +394,7 @@ private fun SettingsToggleItem(
     title: String,
     subtitle: String,
     icon: ImageVector,
+    tone: IconTone,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
@@ -365,6 +404,7 @@ private fun SettingsToggleItem(
         title = title,
         subtitle = subtitle,
         icon = icon,
+        tone = tone,
         modifier = Modifier.toggleable(
             value = checked,
             role = Role.Switch,
