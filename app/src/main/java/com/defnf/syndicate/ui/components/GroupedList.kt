@@ -4,10 +4,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItemColors
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.ListItemShapes
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,50 +20,78 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * Colors of screens built from grouped lists, drawn like the Android Settings app: the items are
- * bright tiles (see [SegmentedItem]) on a tinted page, and a selected item takes the secondary
- * container color.
+ * Grouped lists (feeds, settings, the option sheets) are built from Material's
+ * [androidx.compose.material3.SegmentedListItem]: [ListItemDefaults.segmentedShapes] gives each
+ * item large outer and tight inner corners, a selected item morphs to fully rounded, and items are
+ * [ItemGap] apart. Items sit on [MaterialTheme.colorScheme.surfaceContainer], since the default
+ * segmented container blends into the page.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 object GroupedListDefaults {
-    val containerColor: Color
-        @Composable get() = MaterialTheme.colorScheme.surfaceContainer
+    val ItemGap: Dp = ListItemDefaults.SegmentedGap
 
-    val itemColor: Color
-        @Composable get() = MaterialTheme.colorScheme.surfaceBright
+    /** Colors of a selectable item: a selected one takes the secondary container. */
+    @Composable
+    fun colors(containerColor: Color = MaterialTheme.colorScheme.surfaceContainer): ListItemColors =
+        ListItemDefaults.segmentedColors(containerColor = containerColor)
 
-    val selectedItemColor: Color
-        @Composable get() = MaterialTheme.colorScheme.secondaryContainer
+    /**
+     * Colors of a toggleable item. It reports itself as selected while on, but its switch or
+     * checkbox already shows that, so it keeps its normal colors.
+     */
+    @Composable
+    fun toggleColors(containerColor: Color = MaterialTheme.colorScheme.surfaceContainer): ListItemColors {
+        val colors = MaterialTheme.colorScheme
+        return ListItemDefaults.segmentedColors(
+            containerColor = containerColor,
+            selectedContainerColor = containerColor,
+            selectedContentColor = colors.onSurface,
+            selectedLeadingContentColor = colors.onSurfaceVariant,
+            selectedTrailingContentColor = colors.onSurfaceVariant,
+            selectedOverlineContentColor = colors.onSurfaceVariant,
+            selectedSupportingContentColor = colors.onSurfaceVariant
+        )
+    }
 
     @Composable
-    fun itemColor(selected: Boolean): Color = if (selected) selectedItemColor else itemColor
+    fun shapes(index: Int, count: Int): ListItemShapes = ListItemDefaults.segmentedShapes(index = index, count = count)
+
+    /** The shape item [index] of [count] currently has, for clipping what is drawn behind it. */
+    @Composable
+    fun currentShape(index: Int, count: Int, selected: Boolean): Shape =
+        shapes(index, count).let { if (selected) it.selectedShape else it.shape }
 }
 
+/** Separates item [index] of a group from the one above it. */
+fun Modifier.groupedItemGap(index: Int): Modifier = padding(top = if (index == 0) 0.dp else GroupedListDefaults.ItemGap)
+
 /** The title above a group of items, lined up with the content of the items. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ListSectionHeader(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
-        style = MaterialTheme.typography.titleSmall,
-        fontWeight = FontWeight.SemiBold,
+        style = MaterialTheme.typography.titleSmallEmphasized,
         color = MaterialTheme.colorScheme.primary,
         modifier = modifier.padding(start = 16.dp, bottom = 8.dp)
     )
 }
 
-/** An item's leading icon set in a tonal [shape], like the icons of the Android Settings app. */
+/** An item's leading icon on a tonal expressive [shape]. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun IconBadge(
     icon: ImageVector,
     containerColor: Color,
     contentColor: Color,
     modifier: Modifier = Modifier,
-    shape: Shape = CircleShape,
-    size: Dp = 40.dp
+    shape: Shape = MaterialShapes.Cookie4Sided.toShape(),
+    size: Dp = 40.dp,
+    iconSize: Dp = 22.dp
 ) {
     Box(
         modifier = modifier
@@ -71,7 +104,7 @@ fun IconBadge(
             imageVector = icon,
             contentDescription = null,
             tint = contentColor,
-            modifier = Modifier.size(size / 2)
+            modifier = Modifier.size(iconSize)
         )
     }
 }

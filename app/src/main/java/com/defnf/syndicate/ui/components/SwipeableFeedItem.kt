@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsOff
+import androidx.compose.material3.ListItemShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -14,6 +15,7 @@ import com.defnf.syndicate.data.models.Feed
 fun SwipeableFeedItem(
     feed: Feed,
     isSelected: Boolean,
+    shapes: ListItemShapes,
     onFeedClick: (Long) -> Unit,
     onFeedLongClick: (Long) -> Unit,
     onDeleteFeed: (Long) -> Unit,
@@ -28,6 +30,7 @@ fun SwipeableFeedItem(
         FeedListItem(
             feed = feed,
             isSelected = isSelected,
+            shapes = shapes,
             onFeedClick = onFeedClick,
             onFeedLongClick = onFeedLongClick,
             modifier = actionsModifier

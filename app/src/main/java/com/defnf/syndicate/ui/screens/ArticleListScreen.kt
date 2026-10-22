@@ -21,8 +21,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MarkEmailUnread
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -59,6 +61,7 @@ import com.defnf.syndicate.ui.common.LayoutConstants
 import com.defnf.syndicate.ui.components.ConnectedToggleButtonGroup
 import com.defnf.syndicate.ui.components.EmptyState
 import com.defnf.syndicate.ui.components.SwipeableArticleCard
+import com.defnf.syndicate.ui.components.ToggleOption
 import com.defnf.syndicate.ui.viewmodel.ArticleListViewModel
 import com.defnf.syndicate.ui.viewmodel.ArticleShowFilter
 import java.text.SimpleDateFormat
@@ -241,9 +244,9 @@ private fun articleCountLabel(count: Int, filter: ArticleShowFilter): String {
 private fun ArticleFilterButtonGroup(selected: ArticleShowFilter, onSelect: (ArticleShowFilter) -> Unit, modifier: Modifier = Modifier) {
     ConnectedToggleButtonGroup(
         options = listOf(
-            ArticleShowFilter.UNREAD to "Unread",
-            ArticleShowFilter.ALL to "All",
-            ArticleShowFilter.READ to "Read"
+            ToggleOption(ArticleShowFilter.UNREAD, "Unread", Icons.Default.MarkEmailUnread),
+            ToggleOption(ArticleShowFilter.ALL, "All", Icons.AutoMirrored.Filled.ViewList),
+            ToggleOption(ArticleShowFilter.READ, "Read", Icons.Default.DoneAll)
         ),
         selected = selected,
         onSelect = onSelect,

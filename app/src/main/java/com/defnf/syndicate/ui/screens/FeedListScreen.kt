@@ -1,10 +1,8 @@
 package com.defnf.syndicate.ui.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,17 +13,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.RssFeed
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -44,9 +41,9 @@ import com.defnf.syndicate.ui.components.ExpandableFabMenu
 import com.defnf.syndicate.ui.components.GroupedListDefaults
 import com.defnf.syndicate.ui.components.IconBadge
 import com.defnf.syndicate.ui.components.ListSectionHeader
-import com.defnf.syndicate.ui.components.SegmentedItem
 import com.defnf.syndicate.ui.components.SwipeableFeedItem
 import com.defnf.syndicate.ui.components.SwipeableGroupItem
+import com.defnf.syndicate.ui.components.groupedItemGap
 import com.defnf.syndicate.ui.dialogs.AddFeedDialog
 import com.defnf.syndicate.ui.dialogs.AddGroupDialog
 import com.defnf.syndicate.ui.dialogs.DeleteFeedDialog
@@ -117,7 +114,6 @@ fun FeedListScreen(
 
     Scaffold(
         modifier = modifier,
-        containerColor = GroupedListDefaults.containerColor,
         floatingActionButton = {
             ExpandableFabMenu(
                 expanded = fabExpanded,
@@ -367,16 +363,10 @@ private fun FeedListContent(
                 key = "all_articles_group",
                 contentType = "card_group"
             ) {
-                SegmentedItem(
-                    index = 0,
-                    count = 1,
-                    selected = isAllArticlesSelected
-                ) {
-                    AllArticlesItem(
-                        isSelected = isAllArticlesSelected,
-                        onAllFeedsClick = onAllFeedsClick
-                    )
-                }
+                AllArticlesItem(
+                    isSelected = isAllArticlesSelected,
+                    onAllFeedsClick = onAllFeedsClick
+                )
             }
 
             // Group 2: Feed Groups
@@ -389,20 +379,20 @@ private fun FeedListContent(
                     key = { "group_${it.value.id}" },
                     contentType = { "group" }
                 ) { (index, group) ->
-                    SegmentedItem(
-                        index = index,
-                        count = groups.size,
-                        selected = selectedGroupId == group.id
-                    ) {
-                        SwipeableGroupItem(
-                            group = group,
-                            onGroupClick = onGroupClick,
-                            onGroupLongClick = onGroupLongClick,
-                            onDeleteGroup = onDeleteGroup,
-                            onNotificationToggle = onGroupNotificationToggle,
-                            isSelected = selectedGroupId == group.id
-                        )
-                    }
+                    val selected = selectedGroupId == group.id
+                    SwipeableGroupItem(
+                        group = group,
+                        isSelected = selected,
+                        shapes = GroupedListDefaults.shapes(index, groups.size),
+                        onGroupClick = onGroupClick,
+                        onGroupLongClick = onGroupLongClick,
+                        onDeleteGroup = onDeleteGroup,
+                        onNotificationToggle = onGroupNotificationToggle,
+                        // The swipe actions show through the item's own shape
+                        modifier = Modifier
+                            .groupedItemGap(index)
+                            .clip(GroupedListDefaults.currentShape(index, groups.size, selected))
+                    )
                 }
             }
 
@@ -416,20 +406,19 @@ private fun FeedListContent(
                     key = { "feed_${it.value.id}" },
                     contentType = { "feed" }
                 ) { (index, feed) ->
-                    SegmentedItem(
-                        index = index,
-                        count = feeds.size,
-                        selected = selectedFeedId == feed.id
-                    ) {
-                        SwipeableFeedItem(
-                            feed = feed,
-                            isSelected = selectedFeedId == feed.id,
-                            onFeedClick = onFeedClick,
-                            onFeedLongClick = onFeedLongClick,
-                            onDeleteFeed = onDeleteFeed,
-                            onNotificationToggle = onFeedNotificationToggle
-                        )
-                    }
+                    val selected = selectedFeedId == feed.id
+                    SwipeableFeedItem(
+                        feed = feed,
+                        isSelected = selected,
+                        shapes = GroupedListDefaults.shapes(index, feeds.size),
+                        onFeedClick = onFeedClick,
+                        onFeedLongClick = onFeedLongClick,
+                        onDeleteFeed = onDeleteFeed,
+                        onNotificationToggle = onFeedNotificationToggle,
+                        modifier = Modifier
+                            .groupedItemGap(index)
+                            .clip(GroupedListDefaults.currentShape(index, feeds.size, selected))
+                    )
                 }
             }
         }
@@ -447,45 +436,32 @@ private fun FeedListContent(
     }
 }
 
-/**
- * The "All Articles" list item extracted as a separate composable for use in grouped cards
- */
+/** Every article, in a group of its own above the groups and feeds. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AllArticlesItem(isSelected: Boolean, onAllFeedsClick: () -> Unit) {
-    ListItem(
-        headlineContent = {
-            Text(
-                text = "All Articles",
-                style = MaterialTheme.typography.titleMedium,
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.onSecondaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                }
-            )
-        },
+    SegmentedListItem(
+        selected = isSelected,
+        onClick = onAllFeedsClick,
+        shapes = GroupedListDefaults.shapes(index = 0, count = 1),
+        colors = GroupedListDefaults.colors(),
         leadingContent = {
             IconBadge(
                 icon = Icons.Default.RssFeed,
+                // The selected row takes a strong tone; a surface-colored badge stays clear on it
                 containerColor = if (isSelected) {
-                    MaterialTheme.colorScheme.primary
+                    MaterialTheme.colorScheme.surface
                 } else {
                     MaterialTheme.colorScheme.primaryContainer
                 },
                 contentColor = if (isSelected) {
-                    MaterialTheme.colorScheme.onPrimary
+                    MaterialTheme.colorScheme.primary
                 } else {
                     MaterialTheme.colorScheme.onPrimaryContainer
-                },
-                shape = MaterialShapes.Cookie4Sided.toShape()
+                }
             )
-        },
-        colors = androidx.compose.material3.ListItemDefaults.colors(
-            containerColor = GroupedListDefaults.itemColor(isSelected)
-        ),
-        modifier = Modifier
-            .clickable { onAllFeedsClick() }
-            .fillMaxWidth()
-    )
+        }
+    ) {
+        Text("All Articles")
+    }
 }

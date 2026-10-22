@@ -34,8 +34,9 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 
 ### Environment
 - Minimum SDK: 26 (Android 8.0)
-- Target SDK: 36 (Android 16), the minimum Play accepts  
-- Kotlin 2.0.21 with Compose enabled
+- Compile SDK 37 (required by Compose 1.12 / Material 3 1.5); target SDK 36 (Android 16), the minimum Play accepts
+- Gradle 9.6, AGP 9.4 with built-in Kotlin (no `org.jetbrains.kotlin.android` plugin; the root buildscript pins KGP), Kotlin 2.3.21, KSP 2.3 (KSP2, so Room 2.8), Hilt 2.60
+- Compose BOM 2026.09.00, Material 3 `1.5.0-beta01` (the expressive APIs aren't in a stable release yet), adaptive 1.3
 - Java 17 compatibility
 
 ## Architecture
@@ -57,7 +58,7 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 - **Navigation**: Single activity; `RssNavigation` picks an adaptive layout and drives it from `NavigationState` (`ui/navigation/`)
 - **Layout**: Adaptive layout in `ui/layout/` using the Material 3 adaptive libraries (see Adaptive Layout below)
 - **Screens**: Feature-based screen organization (feedmanagement, articlelist, etc.)
-- **Components**: Reusable UI components in `components/`. Swipeable rows use `SwipeActionBox` (the item springs back rather than being dismissed; drag/release decisions are the unit-tested `swipeDragOffset` / `swipeReleaseResult`), not `SwipeToDismissBox`
+- **Components**: Reusable UI components in `components/`. Grouped lists use Material's `SegmentedListItem` with `ListItemDefaults.segmentedShapes` (see Theming). Swipeable rows use `SwipeActionBox` (the item springs back rather than being dismissed; drag/release decisions are the unit-tested `swipeDragOffset` / `swipeReleaseResult`), not `SwipeToDismissBox`
 - **Sheets**: Feed and group options are `ModalBottomSheet`s in `sheets/`, opened by long press; every change saves immediately (no save/cancel). Feeds and groups share gestures: swipe towards the end deletes (after confirmation), towards the start toggles notifications (snackbar with Undo)
 - **Theme**: Material 3 Expressive theming (`MaterialExpressiveTheme`) with dark/light/system modes
 
@@ -116,14 +117,14 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 
 ### Theming
 - Material 3 Expressive: `SyndicateTheme` wraps `MaterialExpressiveTheme` with `MotionScheme.expressive()` and dynamic color (falls back to `expressiveLightColorScheme()` / `darkColorScheme()` before Android 12)
-- Expressive components in use: `FloatingActionButtonMenu` (feeds), connected `ToggleButton` groups (article filter, theme), `HorizontalFloatingToolbar` (article actions), `LoadingIndicator` (also for pull to refresh), `LargeFlexibleTopAppBar` (settings), top app bar subtitles, shape-morphing `IconButton`s, `MaterialShapes` (empty states, group icons)
-- Grouped lists (feeds sidebar, settings) use `SegmentedItem` / `SegmentedShapes`: large outer corners, tight inner corners, and a selected item morphs to fully rounded
-- Grouped screens follow the Android Settings app (`components/GroupedList.kt`): `GroupedListDefaults` puts bright items (`surfaceBright`) on a tinted page (`surfaceContainer`, also used for the top app bar), `ListSectionHeader` titles each group, and leading icons sit in tonal `IconBadge`s (one tone per settings section)
+- Expressive components in use: `FloatingActionButtonMenu` (feeds), connected `ToggleButton` groups with icons (`ConnectedToggleButtonGroup`: article filter, theme), `SegmentedListItem`, `HorizontalFloatingToolbar` (article actions), `LoadingIndicator` (also for pull to refresh), `LargeFlexibleTopAppBar` (settings), top app bar subtitles, shape-morphing `IconButton`s, `MaterialShapes` (empty states, group icons)
+- Grouped lists (feeds, settings, option sheets) are Material's `SegmentedListItem`, styled like the Grid app (`components/GroupedList.kt`): `GroupedListDefaults.shapes(index, count)` (large outer, tight inner corners; a selected item morphs to fully rounded), items on `surfaceContainer` on the default page color, `ItemGap` between them (`Modifier.groupedItemGap`), `ListSectionHeader` (`titleSmallEmphasized`) above each group, and leading icons in tonal `IconBadge`s on a cookie shape. Toggle rows use `toggleColors()` so being on doesn't recolor them. Swipeable rows clip the swipe box to `currentShape`
+- Settings mirrors Grid's: switch, link and choice rows (connected `ToggleButton`s with icons), and an About hero card with the launcher icon (`AppIcon`) and a version pill
 - Expressive APIs need `@OptIn(ExperimentalMaterial3ExpressiveApi::class)`; animate with `MaterialTheme.motionScheme` specs rather than fixed tweens
 - System/light/dark theme modes stored in DataStore preferences
 - Edge-to-edge display with proper inset handling
 
 ### Testing
 - Unit tests with JUnit and Coroutines Test
-- Compose UI tests with test manifests for debug builds
+- Compose UI tests with test manifests for debug builds; use the `androidx.compose.ui.test.junit4.v2` rules (StandardTestDispatcher: advance the clock or wait for idle explicitly)
 - Android instrumented tests for Room database operations

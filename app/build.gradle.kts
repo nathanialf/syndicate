@@ -3,7 +3,6 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
@@ -28,7 +27,8 @@ val appVersionName = "1.0.4"
 
 android {
     namespace = "com.defnf.syndicate"
-    compileSdk = 36
+    // 37 is required by Compose 1.12 / Material 3 1.5 (targetSdk stays at the Play-required level)
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.defnf.syndicate"
@@ -81,10 +81,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -96,12 +92,12 @@ android {
 
 dependencies {
     // Compose BOM - This manages versions for all Compose libraries
-    val composeBom = platform("androidx.compose:compose-bom:2025.10.01")
+    val composeBom = platform("androidx.compose:compose-bom:2026.09.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
     // Compose
-    val material3Version = "1.5.0-alpha04"
+    val material3Version = "1.5.0-beta01"
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3:$material3Version")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -112,7 +108,7 @@ dependencies {
 
     // Material 3 adaptive layouts: window size classes, navigation bar/rail switching and the
     // list-detail pane scaffold (with predictive back)
-    val adaptiveVersion = "1.2.0"
+    val adaptiveVersion = "1.3.0"
     implementation("androidx.compose.material3:material3-adaptive-navigation-suite:$material3Version")
     implementation("androidx.compose.material3.adaptive:adaptive:$adaptiveVersion")
     implementation("androidx.compose.material3.adaptive:adaptive-layout:$adaptiveVersion")
@@ -124,7 +120,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
 
     // Room
-    val roomVersion = "2.6.1"
+    val roomVersion = "2.8.5"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
@@ -148,8 +144,8 @@ dependencies {
     // We'll use built-in Android HtmlCompat instead
 
     // Hilt (DI)
-    implementation("com.google.dagger:hilt-android:2.52")
-    ksp("com.google.dagger:hilt-compiler:2.52")
+    implementation("com.google.dagger:hilt-android:2.60.1")
+    ksp("com.google.dagger:hilt-compiler:2.60.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // DataStore (for settings)
@@ -168,8 +164,8 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.16")
     testImplementation("androidx.compose.ui:ui-test-junit4")
     testImplementation("androidx.work:work-testing:2.9.1")
-    testImplementation("com.google.dagger:hilt-android-testing:2.52")
-    kspTest("com.google.dagger:hilt-compiler:2.52")
+    testImplementation("com.google.dagger:hilt-android-testing:2.60.1")
+    kspTest("com.google.dagger:hilt-compiler:2.60.1")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
@@ -190,9 +186,13 @@ afterEvaluate {
 }
 
 // Enable all warnings as errors and configure compiler options for Kotlin 2.0+
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+kotlin {
     compilerOptions {
-        allWarningsAsErrors.set(true)
+        // jvmTarget follows android.compileOptions.targetCompatibility with built-in Kotlin
+        allWarningsAsErrors = true
+        // Kotlin 2.2+ default: an annotation on a constructor property (e.g. Hilt's
+        // @ApplicationContext) applies to the parameter and the property/field.
+        freeCompilerArgs.add("-Xannotation-default-target=param-property")
     }
 }
 

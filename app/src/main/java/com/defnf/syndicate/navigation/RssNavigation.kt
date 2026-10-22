@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
@@ -29,7 +29,7 @@ import com.defnf.syndicate.ui.navigation.rememberNavigationState
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun RssNavigation(notificationData: NotificationData? = null, onNotificationHandled: () -> Unit = {}) {
-    val windowAdaptiveInfo = currentWindowAdaptiveInfo(supportLargeAndXLargeWidth = true)
+    val windowAdaptiveInfo = currentWindowAdaptiveInfoV2()
     val layoutType = AppLayoutType.fromWindowSizeClass(windowAdaptiveInfo.windowSizeClass)
     val articlePaneScaffoldNavigator = rememberArticlePaneScaffoldNavigator(windowAdaptiveInfo, layoutType)
     val navigationState = rememberNavigationState(rememberArticlePaneNavigator(articlePaneScaffoldNavigator))

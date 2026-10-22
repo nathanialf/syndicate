@@ -36,12 +36,12 @@ fun FaviconIcon(
 
     // Without a favicon the feed icon sits in a tonal badge, like the group icons
     val badgeColor = when {
-        isSelected -> MaterialTheme.colorScheme.primary
+        isSelected -> MaterialTheme.colorScheme.surface
         isAvailable -> MaterialTheme.colorScheme.tertiaryContainer
         else -> MaterialTheme.colorScheme.errorContainer
     }
     val iconTint = when {
-        isSelected -> MaterialTheme.colorScheme.onPrimary
+        isSelected -> MaterialTheme.colorScheme.primary
         isAvailable -> MaterialTheme.colorScheme.onTertiaryContainer
         else -> MaterialTheme.colorScheme.onErrorContainer
     }
