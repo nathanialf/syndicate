@@ -31,6 +31,7 @@ import coil.memory.MemoryCache
 import coil.request.ImageRequest
 import coil.size.Size
 import com.defnf.syndicate.data.models.Feed
+import java.io.IOException
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
@@ -62,8 +63,9 @@ fun FaviconIcon(feed: Feed, isSelected: Boolean, isAvailable: Boolean, modifier:
             ImageRequest.Builder(context)
                 .data(it)
                 .memoryCacheKey(it)
-                // Favicons are tiny; one decode serves every size it's shown at, sharp at each
-                .size(Size.ORIGINAL)
+                // One decode serves every size it's shown at: large enough to stay sharp at 40dp on the
+                // densest screens, small enough that a site's 256px icon doesn't fill the memory cache
+                .size(FaviconDecodeSize)
                 .build()
         }
     }
@@ -98,7 +100,8 @@ fun FaviconIcon(feed: Feed, isSelected: Boolean, isAvailable: Boolean, modifier:
                 // Fill the circle even when a site's icon isn't square
                 contentScale = ContentScale.Crop,
                 onSuccess = { loaded = true },
-                onError = { url?.let(FailedFavicons::add) },
+                // Network errors (offline, timeouts) are retried next time; only a missing or undecodable icon is remembered
+                onError = { state -> if (state.result.throwable !is IOException) url?.let(FailedFavicons::add) },
                 modifier = Modifier
                     .matchParentSize()
                     .graphicsLayer { alpha = faviconAlpha }
@@ -114,5 +117,7 @@ fun FaviconIcon(feed: Feed, isSelected: Boolean, isAvailable: Boolean, modifier:
     }
 }
 
-/** Favicon URLs that failed to load in this process. */
+private val FaviconDecodeSize = Size(192, 192)
+
+/** Favicon URLs that failed to load in this process (missing or undecodable, not network errors). */
 private val FailedFavicons: MutableSet<String> = Collections.newSetFromMap(ConcurrentHashMap())
