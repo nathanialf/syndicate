@@ -157,4 +157,11 @@ class ArticleContentParserTest {
     fun `summary is the text on one line`() {
         assertEquals("Title Body text", ArticleContentParser.summary("<h1>Title</h1><p>Body&nbsp;text</p><img src=\"x.png\">"))
     }
+
+    @Test
+    fun `summary skips the repeated title, captions and code`() {
+        val html = "<h1>My post</h1><figure><img src=\"https://x.example/a.png\"><figcaption>Caption</figcaption></figure>" +
+            "<p>First.</p><pre>code()</pre><ul><li>Point</li></ul>"
+        assertEquals("First. Point", ArticleContentParser.summary(html, title = "My post"))
+    }
 }

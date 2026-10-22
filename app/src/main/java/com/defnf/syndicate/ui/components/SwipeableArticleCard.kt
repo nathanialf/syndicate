@@ -108,6 +108,7 @@ fun SwipeableArticleCard(
                 article.description?.let { description ->
                     ArticlePreview(
                         html = description,
+                        title = article.title,
                         isRead = article.isRead,
                         maxLines = 3,
                         modifier = Modifier.fillMaxWidth()
@@ -181,9 +182,9 @@ private fun formatDate(timestamp: Long): String {
 
 /** The start of the article's text; its images are left out since the card already shows the headline image. */
 @Composable
-private fun ArticlePreview(html: String, isRead: Boolean, maxLines: Int, modifier: Modifier = Modifier) {
+private fun ArticlePreview(html: String, title: String, isRead: Boolean, maxLines: Int, modifier: Modifier = Modifier) {
     // Parse once per description instead of on every recomposition while scrolling
-    val summary = remember(html) { ArticleContentParser.summary(html) }
+    val summary = remember(html, title) { ArticleContentParser.summary(html, title) }
     if (summary.isNotEmpty()) {
         Text(
             text = summary,

@@ -33,11 +33,22 @@ object ArticleContentParser {
     }
 
     /** The article's text on one line, for previews. */
-    fun summary(html: String): String = Jsoup.parseBodyFragment(html).body()
-        .also(::removeClutter)
-        .text()
-        .replace(NBSP, ' ')
+    /**
+     * The article's text on one line, for previews: what the reader shows as text, without a
+     * leading heading repeating [title], image captions or code.
+     */
+    fun summary(html: String, title: String? = null): String = parse(html, title = title).blocks
+        .joinToString(" ") { it.plainText() }
+        .replace(WHITESPACE, " ")
         .trim()
+
+    private fun ArticleBlock.plainText(): String = when (this) {
+        is ArticleBlock.Paragraph -> text.text
+        is ArticleBlock.Heading -> text.text
+        is ArticleBlock.Quote -> blocks.joinToString(" ") { it.plainText() }
+        is ArticleBlock.BulletList -> items.joinToString(" ") { item -> item.joinToString(" ") { it.plainText() } }
+        is ArticleBlock.Image, is ArticleBlock.Code, is ArticleBlock.Video, ArticleBlock.Divider -> ""
+    }
 
     /**
      * A key that is equal for two URLs of the same image: the scheme, a CDN proxy prefix and the
@@ -87,7 +98,6 @@ object ArticleContentParser {
 
     internal fun youTubeId(src: String): String? = YOUTUBE_EMBED.find(src)?.groupValues?.get(1)
 
-    private const val NBSP = ' '
     private val WHITESPACE = Regex("\\s+")
     private val SCHEME = Regex("^(https?:)?//", RegexOption.IGNORE_CASE)
     private val PHOTON_PREFIX = Regex("^i[0-3]\\.wp\\.com/", RegexOption.IGNORE_CASE)
