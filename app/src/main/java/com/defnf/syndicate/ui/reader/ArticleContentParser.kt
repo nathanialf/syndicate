@@ -72,6 +72,8 @@ object ArticleContentParser {
         when (block) {
             is ArticleBlock.Image -> block.takeUnless { imageKey(it.url) == key }
             is ArticleBlock.Quote -> ArticleBlock.Quote(block.blocks.withoutImage(key)).takeIf { it.blocks.isNotEmpty() }
+            is ArticleBlock.BulletList -> block.copy(items = block.items.map { it.withoutImage(key) }.filter { it.isNotEmpty() })
+                .takeIf { it.items.isNotEmpty() }
             else -> block
         }
     }
@@ -178,10 +180,14 @@ private class BlockBuilder {
                 is Element -> if (node.normalName() == "br") {
                     builder.lineBreak()
                 } else {
+                    // Block content flattened into one line is still separated, like cells of a nested table
+                    val isBlock = node.normalName() in BLOCK_TAGS || node.normalName() in TABLE_TAGS
+                    if (isBlock) builder.appendText(" ")
                     val style = inlineStyle(node)
                     if (style != null) builder.push(style)
                     node.childNodes().forEach(::walk)
                     if (style != null) builder.pop()
+                    if (isBlock) builder.appendText(" ")
                 }
             }
         }
@@ -205,7 +211,9 @@ private class BlockBuilder {
 
     private fun figure(element: Element) {
         val images = element.select("img")
-        if (images.isEmpty()) {
+        // A gallery nests a figure per image, each with its own caption
+        val isGallery = element.select("figure").size > 1
+        if (images.isEmpty() || isGallery) {
             flush()
             visitChildren(element)
             flush()
@@ -225,7 +233,7 @@ private class BlockBuilder {
 
     /** The image's URL; lazy-loading pages keep it in a data attribute and put a placeholder in src. */
     private fun imageUrl(img: Element): String? {
-        val candidates = listOf("src", "data-src", "data-lazy-src", "data-original").map { img.attr(it) } +
+        val candidates = listOf("data-src", "data-lazy-src", "data-original", "src").map { img.attr(it) } +
             img.attr("srcset").split(',').map { it.trim().substringBefore(' ') }
         return candidates
             .map { it.trim() }
@@ -237,20 +245,27 @@ private class BlockBuilder {
     private fun resolve(baseUri: String, url: String): String = when {
         url.startsWith("//") -> "https:$url"
         baseUri.isBlank() -> url
-        else -> runCatching { java.net.URI(baseUri).resolve(url).toString() }.getOrDefault(url)
+        // URL, unlike URI.resolve, handles bases without a path and unescaped characters
+        else -> runCatching { java.net.URL(java.net.URL(baseUri), url).toString() }.getOrDefault(url)
     }
 
-    /** Tables are read row by row, a row's cells separated by a middle dot. */
+    /**
+     * Tables are read row by row, a row's cells separated by a middle dot, followed by the row's images.
+     * Nested tables are read as part of the cell holding them.
+     */
     private fun table(element: Element) {
         flush()
-        element.select("tr").forEach { row ->
-            val cells = row.children().filter { it.normalName() == "td" || it.normalName() == "th" }
-                .mapNotNull { cell -> inlineTextOf(cell) }
-            if (cells.isNotEmpty()) {
-                val bold = row.children().all { it.normalName() == "th" }
-                blocks += ArticleBlock.Paragraph(joinCells(cells, bold))
+        element.select("tr")
+            .filter { row -> row.parents().firstOrNull { it.normalName() == "table" } == element }
+            .forEach { row ->
+                val cellElements = row.children().filter { it.normalName() == "td" || it.normalName() == "th" }
+                val cells = cellElements.mapNotNull { cell -> inlineTextOf(cell) }
+                if (cells.isNotEmpty()) {
+                    val bold = cellElements.all { it.normalName() == "th" }
+                    blocks += ArticleBlock.Paragraph(joinCells(cells, bold))
+                }
+                cellElements.flatMap { it.select("img") }.mapNotNullTo(blocks) { image(it, caption = null) }
             }
-        }
     }
 
     private fun joinCells(cells: List<InlineText>, bold: Boolean): InlineText {
@@ -271,6 +286,7 @@ private class BlockBuilder {
             "p", "div", "section", "article", "header", "footer", "main", "aside", "nav", "center",
             "address", "details", "summary", "dl", "dt", "dd", "li", "figcaption", "caption", "body"
         )
+        val TABLE_TAGS = setOf("table", "thead", "tbody", "tfoot", "tr", "td", "th")
     }
 }
 
@@ -295,7 +311,7 @@ private class InlineBuilder {
 
     fun appendText(raw: String) {
         for (char in raw) {
-            if (char.isWhitespace() || char == ' ') {
+            if (char.isWhitespace()) {
                 if (text.isNotEmpty() && !text.last().isWhitespace()) text.append(' ')
             } else {
                 text.append(char)

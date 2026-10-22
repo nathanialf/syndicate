@@ -316,12 +316,9 @@ private fun ArticleListContent(
                             message = when (showFilter) {
                                 ArticleShowFilter.UNREAD -> "All articles have been read"
                                 ArticleShowFilter.READ -> "No articles have been read yet"
-                                ArticleShowFilter.ALL -> if (feedId !=
-                                    null
-                                ) {
-                                    "This feed doesn't have any articles yet"
-                                } else {
-                                    "Add some feeds to see articles here"
+                                ArticleShowFilter.ALL -> when (feedId) {
+                                    null -> "Add some feeds to see articles here"
+                                    else -> "This feed doesn't have any articles yet"
                                 }
                             }
                         )

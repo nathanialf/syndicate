@@ -8,10 +8,13 @@ import com.defnf.syndicate.ui.reader.ArticleContent
 import com.defnf.syndicate.ui.reader.ArticleContentParser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -28,20 +31,28 @@ class ArticleDetailViewModel @Inject constructor(private val repository: RssRepo
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    // The view model outlives the article shown (the detail pane reuses it), so a load still
+    // running for the previous article must not overwrite the new one
+    private var loadJob: Job? = null
+
     fun loadArticle(articleId: String) {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             _isLoading.value = true
             try {
                 // Get article from repository
                 val articleResult = repository.getArticleById(articleId)
                 _content.value = articleResult?.description?.let { html ->
                     withContext(Dispatchers.Default) {
-                        ArticleContentParser.parse(
-                            html = html,
-                            baseUrl = articleResult.url,
-                            headerImageUrl = articleResult.thumbnailUrl,
-                            title = articleResult.title
-                        )
+                        // A body that fails to parse still leaves the title and the link to the article
+                        runCatching {
+                            ArticleContentParser.parse(
+                                html = html,
+                                baseUrl = articleResult.url,
+                                headerImageUrl = articleResult.thumbnailUrl,
+                                title = articleResult.title
+                            )
+                        }.getOrNull()
                     }
                 }
                 _article.value = articleResult
@@ -50,11 +61,14 @@ class ArticleDetailViewModel @Inject constructor(private val repository: RssRepo
                 if (articleResult != null) {
                     repository.markAsRead(articleId, true)
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _article.value = null
                 _content.value = null
             } finally {
-                _isLoading.value = false
+                // A cancelled load leaves the state to the load that replaced it
+                if (isActive) _isLoading.value = false
             }
         }
     }

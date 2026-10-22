@@ -114,6 +114,46 @@ class ArticleContentParserTest {
     }
 
     @Test
+    fun `nested tables are read once and images in cells are kept`() {
+        val blocks = parse(
+            "<table><tr><td><a href=\"/p\"><img src=\"/thumb.jpg\"></a></td><td>Outer" +
+                "<table><tr><td>Inner</td></tr></table></td></tr></table>"
+        )
+        assertEquals(listOf(Paragraph(InlineText("Outer Inner")), Image("https://example.com/thumb.jpg", null, null)), blocks)
+    }
+
+    @Test
+    fun `gallery figures keep each caption with its image`() {
+        val blocks = parse(
+            "<figure><figure><img src=\"/a.jpg\"><figcaption>A</figcaption></figure>" +
+                "<figure><img src=\"/b.jpg\"><figcaption>B</figcaption></figure></figure>"
+        )
+        assertEquals(
+            listOf(
+                Image("https://example.com/a.jpg", null, InlineText("A")),
+                Image("https://example.com/b.jpg", null, InlineText("B"))
+            ),
+            blocks
+        )
+    }
+
+    @Test
+    fun `lazy images prefer the real source over a placeholder and resolve against a bare host`() {
+        val blocks = ArticleContentParser.parse(
+            "<img src=\"https://example.com/placeholder.gif\" data-src=\"img/real.jpg\">",
+            baseUrl = "https://example.com"
+        ).blocks
+        assertEquals(listOf(Image("https://example.com/img/real.jpg", null, null)), blocks)
+    }
+
+    @Test
+    fun `the header image is removed from lists too`() {
+        val html = "<ul><li><img src=\"https://cdn.example/photo.jpg\"></li><li>Item</li></ul>"
+        val blocks = parse(html, headerImageUrl = "https://cdn.example/photo.jpg")
+        assertEquals(listOf(BulletList(ordered = false, items = listOf(listOf(Paragraph(InlineText("Item")))))), blocks)
+    }
+
+    @Test
     fun `summary is the text on one line`() {
         assertEquals("Title Body text", ArticleContentParser.summary("<h1>Title</h1><p>Body&nbsp;text</p><img src=\"x.png\">"))
     }
