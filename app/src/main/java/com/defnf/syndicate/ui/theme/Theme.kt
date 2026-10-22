@@ -22,10 +22,7 @@ import androidx.core.view.WindowCompat
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun SyndicateTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
-) {
+fun SyndicateTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     val context = LocalContext.current
     val colorScheme = when {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {

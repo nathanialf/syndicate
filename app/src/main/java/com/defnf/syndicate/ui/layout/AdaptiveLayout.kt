@@ -31,11 +31,7 @@ import com.defnf.syndicate.ui.navigation.TopLevelDestination
  */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun AdaptiveLayout(
-    layoutType: AppLayoutType,
-    navigationState: NavigationState,
-    articlePaneNavigator: ThreePaneScaffoldNavigator<String>
-) {
+fun AdaptiveLayout(layoutType: AppLayoutType, navigationState: NavigationState, articlePaneNavigator: ThreePaneScaffoldNavigator<String>) {
     val navigationSuiteState = rememberNavigationSuiteScaffoldState()
     val hideNavigation = layoutType.hidesNavigationWhileReading && navigationState.openArticleId != null
     LaunchedEffect(hideNavigation) {

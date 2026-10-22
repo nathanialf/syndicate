@@ -18,12 +18,7 @@ import androidx.compose.ui.semantics.semantics
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun <T> ConnectedToggleButtonGroup(
-    options: List<Pair<T, String>>,
-    selected: T,
-    onSelect: (T) -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun <T> ConnectedToggleButtonGroup(options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)

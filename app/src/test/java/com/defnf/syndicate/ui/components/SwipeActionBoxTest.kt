@@ -8,12 +8,7 @@ class SwipeActionBoxTest {
     private val threshold = 100f
     private val flingVelocity = 1000f
 
-    private fun drag(
-        offset: Float,
-        delta: Float,
-        canSwipeToEnd: Boolean = true,
-        canSwipeToStart: Boolean = true
-    ) = swipeDragOffset(
+    private fun drag(offset: Float, delta: Float, canSwipeToEnd: Boolean = true, canSwipeToStart: Boolean = true) = swipeDragOffset(
         offset = offset,
         delta = delta,
         threshold = threshold,

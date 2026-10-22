@@ -26,10 +26,10 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     // Notification deep link waiting to be handled by the UI
     private var pendingNotification by mutableStateOf<NotificationData?>(null)
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         // Only read the launch intent on a fresh start; after a configuration change or process
         // restore the navigation state is restored instead of re-opening the notification target.
         // Relaunching from Recents redelivers the original intent, which must not reopen it either.
@@ -37,19 +37,19 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null && !launchedFromHistory) {
             pendingNotification = NotificationIntents.parse(intent)
         }
-        
+
         enableEdgeToEdge()
         setContent {
             val themeViewModel: ThemeViewModel = hiltViewModel()
             val themeMode by themeViewModel.themeMode.collectAsState()
             val isSystemInDarkTheme = isSystemInDarkTheme()
-            
+
             val isDarkTheme = when (themeMode) {
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
                 ThemeMode.SYSTEM -> isSystemInDarkTheme
             }
-            
+
             SyndicateTheme(darkTheme = isDarkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)

@@ -1,65 +1,65 @@
 package com.defnf.syndicate.ui.screens
 
-import com.defnf.syndicate.BuildConfig
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.defnf.syndicate.BuildConfig
+import com.defnf.syndicate.data.models.ThemeMode
 import com.defnf.syndicate.ui.components.ConnectedToggleButtonGroup
 import com.defnf.syndicate.ui.components.GroupedListDefaults
 import com.defnf.syndicate.ui.components.IconBadge
 import com.defnf.syndicate.ui.components.ListSectionHeader
 import com.defnf.syndicate.ui.components.SegmentedItem
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material3.LoadingIndicator
-import androidx.compose.ui.Alignment
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.ui.semantics.Role
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.ui.platform.LocalContext
-import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
-import androidx.core.app.NotificationManagerCompat
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.defnf.syndicate.data.models.ThemeMode
-import com.defnf.syndicate.ui.viewmodel.ThemeViewModel
-import com.defnf.syndicate.ui.viewmodel.SettingsViewModel
 import com.defnf.syndicate.ui.viewmodel.ExportState
+import com.defnf.syndicate.ui.viewmodel.SettingsViewModel
+import com.defnf.syndicate.ui.viewmodel.ThemeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -74,7 +74,7 @@ fun SettingsScreen(
     val notificationsEnabled by settingsViewModel.notificationsEnabled.collectAsState()
     val context = LocalContext.current
     val notificationManager = NotificationManagerCompat.from(context)
-    
+
     // Launcher for requesting notification permission (API 33+)
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -83,7 +83,7 @@ fun SettingsScreen(
             settingsViewModel.toggleNotifications(true)
         }
     }
-    
+
     // Clear export state after showing success/error for 3 seconds
     LaunchedEffect(exportState) {
         when (exportState) {
@@ -94,7 +94,7 @@ fun SettingsScreen(
             else -> {}
         }
     }
-    
+
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     // Like the Android Settings app, the bar keeps the page color when content scrolls under it
     val pageColor = GroupedListDefaults.containerColor
@@ -264,10 +264,7 @@ private fun SettingsIcon(icon: ImageVector, tone: IconTone) {
  * list at a readable width.
  */
 @Composable
-private fun SettingsSection(
-    title: String,
-    content: @Composable ColumnScope.() -> Unit
-) {
+private fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = Modifier
             .widthIn(max = SettingsMaxWidth)
@@ -325,12 +322,7 @@ private fun SettingsListItemContent(
 
 /** Theme choice as a connected button group under its title. */
 @Composable
-private fun SettingsThemeItem(
-    index: Int,
-    count: Int,
-    selected: ThemeMode,
-    onSelect: (ThemeMode) -> Unit
-) {
+private fun SettingsThemeItem(index: Int, count: Int, selected: ThemeMode, onSelect: (ThemeMode) -> Unit) {
     SegmentedItem(index = index, count = count) {
         Column(modifier = Modifier.padding(bottom = 16.dp)) {
             SettingsListItemContent(

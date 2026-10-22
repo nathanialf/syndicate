@@ -8,11 +8,11 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialShapes
-import androidx.compose.material3.toShape
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -70,7 +70,9 @@ fun GroupItem(
                     }
                 )
             }
-        } else null,
+        } else {
+            null
+        },
         trailingContent = if (group.notificationsEnabled) {
             {
                 Icon(
@@ -80,7 +82,9 @@ fun GroupItem(
                     modifier = Modifier.size(20.dp)
                 )
             }
-        } else null,
+        } else {
+            null
+        },
         colors = androidx.compose.material3.ListItemDefaults.colors(
             containerColor = GroupedListDefaults.itemColor(isSelected)
         ),

@@ -22,11 +22,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.traversalIndex
 
-private data class FabMenuAction(
-    val icon: ImageVector,
-    val label: String,
-    val onClick: () -> Unit
-)
+private data class FabMenuAction(val icon: ImageVector, val label: String, val onClick: () -> Unit)
 
 /**
  * The feeds screen's Material 3 Expressive FAB menu: a toggle FAB that morphs into a close button

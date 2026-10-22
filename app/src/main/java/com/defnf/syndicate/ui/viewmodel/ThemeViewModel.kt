@@ -5,22 +5,20 @@ import androidx.lifecycle.viewModelScope
 import com.defnf.syndicate.data.models.ThemeMode
 import com.defnf.syndicate.data.preferences.ThemePreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @HiltViewModel
-class ThemeViewModel @Inject constructor(
-    private val themePreferences: ThemePreferences
-) : ViewModel() {
-    
+class ThemeViewModel @Inject constructor(private val themePreferences: ThemePreferences) : ViewModel() {
+
     val themeMode = themePreferences.themeMode.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = ThemeMode.SYSTEM
     )
-    
+
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
             themePreferences.setThemeMode(mode)

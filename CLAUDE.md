@@ -22,6 +22,7 @@ Syndicate is a modern Android RSS reader built with Jetpack Compose and Material
 ### Code Quality
 - `./gradlew ktlintCheck` - Run ktlint code style checks
 - `./gradlew ktlintFormat` - Auto-format code with ktlint
+- ktlint 1.5 with the `android_studio` code style and 140 columns (`.editorconfig`); the check must pass
 
 ### Testing
 - `./gradlew test` - Run unit tests
@@ -109,6 +110,7 @@ The project uses Room with KSP. If you encounter cache corruption issues:
 
 ### RSS Processing
 - Uses Rome Tools library for RSS/Atom parsing
+- Article reader (`ui/reader/`): `ArticleContentParser` (jsoup) turns article HTML into `ArticleContent` blocks (paragraphs, headings, quotes, lists, figures, code, YouTube, tables read row by row) with inline styles; `ArticleBody` renders them in Compose. The parser drops scripts, tracking pixels and share widgets, removes the body image matching the header image (`imageKey` ignores scheme, CDN proxy and resize params) and a leading heading repeating the title. `ArticleDetailViewModel` parses off the main thread; list cards use `ArticleContentParser.summary`. Unit-tested on the JVM (`ArticleContentParserTest`)
 - Handles various feed formats with fallback mechanisms
 - Favicon URL generation from feed metadata
 

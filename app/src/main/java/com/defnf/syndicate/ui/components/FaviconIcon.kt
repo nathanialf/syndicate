@@ -17,11 +17,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import androidx.compose.ui.platform.LocalContext
 import com.defnf.syndicate.data.models.Feed
 
 @Composable
@@ -33,7 +33,7 @@ fun FaviconIcon(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    
+
     // Without a favicon the feed icon sits in a tonal badge, like the group icons
     val badgeColor = when {
         isSelected -> MaterialTheme.colorScheme.primary
@@ -47,7 +47,7 @@ fun FaviconIcon(
     }
 
     var imageLoadSuccess by remember { mutableStateOf(true) }
-    
+
     // Pre-build image request to reduce overhead during scroll
     val imageRequest = remember(feed.faviconUrl) {
         feed.faviconUrl?.let { url ->
@@ -86,7 +86,7 @@ fun FaviconIcon(
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
                         shape = CircleShape
                     ),
-                onError = { 
+                onError = {
                     imageLoadSuccess = false
                 }
             )

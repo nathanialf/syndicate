@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -27,7 +26,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun MaterialColorDebugGrid() {
     val colorScheme = MaterialTheme.colorScheme
-    
+
     val colors = listOf(
         "primary" to colorScheme.primary,
         "onPrimary" to colorScheme.onPrimary,
@@ -56,9 +55,9 @@ fun MaterialColorDebugGrid() {
         "scrim" to colorScheme.scrim,
         "inverseSurface" to colorScheme.inverseSurface,
         "inverseOnSurface" to colorScheme.inverseOnSurface,
-        "inversePrimary" to colorScheme.inversePrimary,
+        "inversePrimary" to colorScheme.inversePrimary
     )
-    
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -85,7 +84,7 @@ private fun ColorItem(name: String, color: Color) {
                 .clip(RoundedCornerShape(8.dp))
                 .background(color)
         )
-        
+
         Text(
             text = name,
             style = MaterialTheme.typography.labelSmall,

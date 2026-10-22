@@ -28,10 +28,7 @@ import com.defnf.syndicate.ui.navigation.rememberNavigationState
  */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun RssNavigation(
-    notificationData: NotificationData? = null,
-    onNotificationHandled: () -> Unit = {}
-) {
+fun RssNavigation(notificationData: NotificationData? = null, onNotificationHandled: () -> Unit = {}) {
     val windowAdaptiveInfo = currentWindowAdaptiveInfo(supportLargeAndXLargeWidth = true)
     val layoutType = AppLayoutType.fromWindowSizeClass(windowAdaptiveInfo.windowSizeClass)
     val articlePaneScaffoldNavigator = rememberArticlePaneScaffoldNavigator(windowAdaptiveInfo, layoutType)

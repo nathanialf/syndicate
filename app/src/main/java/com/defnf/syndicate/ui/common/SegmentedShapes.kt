@@ -14,8 +14,7 @@ object SegmentedShapes {
     val ItemGap = 2.dp
 
     /** Top corner size of item [index] in a group; a selected item is rounded all around. */
-    fun topCorner(index: Int, selected: Boolean = false): Dp =
-        if (selected || index == 0) OuterCorner else InnerCorner
+    fun topCorner(index: Int, selected: Boolean = false): Dp = if (selected || index == 0) OuterCorner else InnerCorner
 
     /** Bottom corner size of item [index] of [count] items; a selected item is rounded all around. */
     fun bottomCorner(index: Int, count: Int, selected: Boolean = false): Dp =

@@ -47,11 +47,11 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.defnf.syndicate.ui.common.LayoutConstants
+import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
-import kotlin.math.abs
-import kotlin.math.roundToInt
 
 /** An action revealed by swiping an item. [containerColor] fills the background once the swipe will trigger it. */
 data class SwipeAction(
@@ -282,12 +282,7 @@ internal fun swipeDragOffset(
  * past [threshold] it runs the action, and so does a fast fling in the same direction from part way.
  * A fast fling back the other way always cancels.
  */
-internal fun swipeReleaseResult(
-    offset: Float,
-    velocity: Float,
-    threshold: Float,
-    flingVelocity: Float
-): SwipeRelease {
+internal fun swipeReleaseResult(offset: Float, velocity: Float, threshold: Float, flingVelocity: Float): SwipeRelease {
     if (offset == 0f || threshold <= 0f) return SwipeRelease.Cancel
     val isFling = abs(velocity) >= flingVelocity
     val flungBack = isFling && velocity * offset < 0f

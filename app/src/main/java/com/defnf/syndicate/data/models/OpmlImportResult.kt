@@ -7,14 +7,6 @@ data class OpmlImportResult(
     val duplicateFeeds: List<String> = emptyList()
 )
 
-data class OpmlFeed(
-    val url: String,
-    val title: String,
-    val description: String? = null,
-    val groupName: String? = null
-)
+data class OpmlFeed(val url: String, val title: String, val description: String? = null, val groupName: String? = null)
 
-data class OpmlGroup(
-    val name: String,
-    val feeds: List<OpmlFeed>
-)
+data class OpmlGroup(val name: String, val feeds: List<OpmlFeed>)

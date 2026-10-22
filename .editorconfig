@@ -9,6 +9,10 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 
 [*.{kt,kts}]
+# The Android Studio code style: no trailing commas, wrapping that fits Compose code
+ktlint_code_style = android_studio
+max_line_length = 140
+ktlint_standard_function-expression-body = disabled
 ktlint_standard_function-naming = disabled
 ktlint_standard_property-naming = disabled
 ktlint_standard_filename = disabled

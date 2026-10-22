@@ -5,10 +5,10 @@ import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.defnf.syndicate.data.local.entities.ArticleEntity
 import com.defnf.syndicate.data.models.Feed
 import com.defnf.syndicate.data.repository.RssRepository
 import com.defnf.syndicate.notifications.NotificationManager
-import com.defnf.syndicate.data.local.entities.ArticleEntity
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
@@ -28,12 +28,12 @@ class SyncWorker @AssistedInject constructor(
             val isManualSync = inputData.getBoolean("isManualSync", false)
             val isLaunchSync = inputData.getBoolean("isLaunchSync", false)
             val shouldSendNotifications = !isManualSync && !isLaunchSync
-            
+
             Log.d("SyncWorker", "=== SYNC WORKER START ===")
             Log.d("SyncWorker", "Input data - Manual: $isManualSync, Launch: $isLaunchSync")
             Log.d("SyncWorker", "Calculated shouldSendNotifications: $shouldSendNotifications")
             Log.d("SyncWorker", "FeedId: $feedId, GroupId: $groupId")
-            
+
             when {
                 feedId != -1L -> {
                     Log.d("SyncWorker", "Starting targeted sync for feed: $feedId")
@@ -66,7 +66,7 @@ class SyncWorker @AssistedInject constructor(
     private suspend fun syncAllFeeds(shouldSendNotifications: Boolean = true) {
         // Get ALL feeds - sync regardless of notification settings
         val feeds = repository.getAllFeeds().first()
-        
+
         Log.d("SyncWorker", "Found ${feeds.size} total feeds to sync")
 
         val newArticlesByFeed = mutableMapOf<Long, List<ArticleEntity>>()
@@ -86,7 +86,7 @@ class SyncWorker @AssistedInject constructor(
             Log.d("SyncWorker", "Skipping group notifications - manual/launch sync")
         }
     }
-    
+
     private suspend fun syncSingleFeed(feedId: Long, shouldSendNotifications: Boolean = true) {
         try {
             val feed = repository.getFeedById(feedId)
@@ -99,12 +99,12 @@ class SyncWorker @AssistedInject constructor(
             Log.e("SyncWorker", "Failed to sync feed: $feedId - ${e.message}", e)
         }
     }
-    
+
     private suspend fun syncFeedsInGroup(groupId: Long, shouldSendNotifications: Boolean = true) {
         try {
             val feedsInGroup = repository.getFeedsByGroup(groupId).first()
             Log.d("SyncWorker", "Syncing ${feedsInGroup.size} feeds in group: $groupId")
-            
+
             val newArticlesByFeed = mutableMapOf<Long, List<ArticleEntity>>()
             for (feed in feedsInGroup) {
                 try {
@@ -114,7 +114,7 @@ class SyncWorker @AssistedInject constructor(
                     // Continue with other feeds if one fails
                 }
             }
-            
+
             if (shouldSendNotifications) {
                 notifyGroups(newArticlesByFeed)
             }
@@ -122,7 +122,7 @@ class SyncWorker @AssistedInject constructor(
             Log.e("SyncWorker", "Failed to sync feeds in group: $groupId - ${e.message}", e)
         }
     }
-    
+
     /**
      * Refreshes one feed and, if allowed, notifies about its new articles.
      * Returns the newly inserted articles (empty if the refresh failed).
@@ -134,9 +134,9 @@ class SyncWorker @AssistedInject constructor(
             return emptyList()
         }
         Log.d("SyncWorker", "Found ${newArticles.size} new articles for feed: ${feed.title}")
-        
+
         if (newArticles.isEmpty()) return newArticles
-        
+
         // Send notifications ONLY if enabled for this feed AND this is not a manual/launch sync
         if (shouldSendNotifications && feed.notificationsEnabled) {
             notificationManager.showNewArticlesNotification(feed, newArticles)
@@ -146,11 +146,11 @@ class SyncWorker @AssistedInject constructor(
         }
         return newArticles
     }
-    
+
     /** Notifies groups with notifications enabled that received new articles in this sync. */
     private suspend fun notifyGroups(newArticlesByFeed: Map<Long, List<ArticleEntity>>) {
         if (newArticlesByFeed.values.all { it.isEmpty() }) return
-        
+
         val notificationEnabledGroups = repository.getAllGroups().first().filter { it.notificationsEnabled }
         for (group in notificationEnabledGroups) {
             try {
@@ -158,7 +158,7 @@ class SyncWorker @AssistedInject constructor(
                     .flatMap { feed -> newArticlesByFeed[feed.id].orEmpty() }
                     .sortedByDescending { it.publishedDate ?: it.fetchedAt }
                 if (newInGroup.isEmpty()) continue
-                
+
                 notificationManager.showGroupNotification(
                     groupId = group.id,
                     groupName = group.name,

@@ -89,20 +89,17 @@ class ArticlePanesTest {
         assertEquals(listOf(listDestination), scaffoldNavigator.history)
     }
 
-    private fun windowDirective(
-        maxVerticalPartitions: Int = 1,
-        excludedBounds: List<Rect> = emptyList()
-    ) = PaneScaffoldDirective.Default.copy(
-        maxHorizontalPartitions = 3,
-        horizontalPartitionSpacerSize = 24.dp,
-        maxVerticalPartitions = maxVerticalPartitions,
-        excludedBounds = excludedBounds
-    )
+    private fun windowDirective(maxVerticalPartitions: Int = 1, excludedBounds: List<Rect> = emptyList()) =
+        PaneScaffoldDirective.Default.copy(
+            maxHorizontalPartitions = 3,
+            horizontalPartitionSpacerSize = 24.dp,
+            maxVerticalPartitions = maxVerticalPartitions,
+            excludedBounds = excludedBounds
+        )
 
     private val listDestination = ThreePaneScaffoldDestinationItem<String>(ListDetailPaneScaffoldRole.List)
 
-    private fun detailDestination(articleId: String) =
-        ThreePaneScaffoldDestinationItem(ListDetailPaneScaffoldRole.Detail, articleId)
+    private fun detailDestination(articleId: String) = ThreePaneScaffoldDestinationItem(ListDetailPaneScaffoldRole.Detail, articleId)
 
     /** Destination history semantics of the real navigator, without the pane animations. */
     private class FakeScaffoldNavigator : ThreePaneScaffoldNavigator<String> {

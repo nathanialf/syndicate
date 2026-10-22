@@ -11,11 +11,7 @@ import androidx.compose.runtime.Composable
 import com.defnf.syndicate.data.models.Group
 
 @Composable
-fun DeleteGroupDialog(
-    group: Group,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
+fun DeleteGroupDialog(group: Group, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = {

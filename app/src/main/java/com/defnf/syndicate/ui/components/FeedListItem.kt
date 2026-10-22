@@ -10,7 +10,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -37,21 +36,21 @@ fun FeedListItem(
             }
         }
     }
-    
+
     val headlineColor = if (isSelected) {
         MaterialTheme.colorScheme.onSecondaryContainer
     } else {
         MaterialTheme.colorScheme.onSurface
     }
-    
+
     val supportingColor = if (isSelected) {
         MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
-    
+
     val containerColor = GroupedListDefaults.itemColor(isSelected)
-    
+
     ListItem(
         headlineContent = {
             Text(
@@ -85,7 +84,9 @@ fun FeedListItem(
                     modifier = Modifier.size(20.dp)
                 )
             }
-        } else null,
+        } else {
+            null
+        },
         colors = androidx.compose.material3.ListItemDefaults.colors(
             containerColor = containerColor
         ),
