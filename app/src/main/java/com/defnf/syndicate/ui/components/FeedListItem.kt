@@ -69,7 +69,7 @@ fun FeedListItem(
         } else {
             null
         },
-        modifier = modifier
+        modifier = modifier.navigationItemRole()
     ) {
         Text(text = feed.title, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }

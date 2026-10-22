@@ -8,6 +8,7 @@ import androidx.compose.material3.ListItemShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import com.defnf.syndicate.data.models.Feed
 
 /** A feed row: swipe towards the end to delete, towards the start to toggle notifications, long press for options. */
@@ -16,6 +17,7 @@ fun SwipeableFeedItem(
     feed: Feed,
     isSelected: Boolean,
     shapes: ListItemShapes,
+    swipeBackgroundShape: Shape,
     onFeedClick: (Long) -> Unit,
     onFeedLongClick: (Long) -> Unit,
     onDeleteFeed: (Long) -> Unit,
@@ -25,6 +27,7 @@ fun SwipeableFeedItem(
     SwipeActionBox(
         startAction = deleteSwipeAction { onDeleteFeed(feed.id) },
         endAction = notificationsSwipeAction(feed.notificationsEnabled) { onNotificationToggle(feed.id) },
+        backgroundShape = swipeBackgroundShape,
         modifier = modifier
     ) { actionsModifier ->
         FeedListItem(

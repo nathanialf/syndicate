@@ -74,6 +74,7 @@ import com.defnf.syndicate.ui.components.IconBadge
 import com.defnf.syndicate.ui.components.ListSectionHeader
 import com.defnf.syndicate.ui.components.ToggleOption
 import com.defnf.syndicate.ui.components.groupedItemGap
+import com.defnf.syndicate.ui.components.switchRole
 import com.defnf.syndicate.ui.viewmodel.ExportState
 import com.defnf.syndicate.ui.viewmodel.SettingsViewModel
 import com.defnf.syndicate.ui.viewmodel.ThemeViewModel
@@ -165,7 +166,7 @@ fun SettingsScreen(
                             settingsViewModel.toggleNotifications(enabled)
                         }
                     },
-                    shapes = GroupedListDefaults.shapes(index = 0, count = 2)
+                    shapes = GroupedListDefaults.toggleShapes(index = 0, count = 2)
                 )
                 SettingsLinkItem(
                     title = "System notification settings",
@@ -211,7 +212,7 @@ fun SettingsScreen(
                     colors = GroupedListDefaults.colors(),
                     leadingContent = {
                         val failed = exportState is ExportState.Error
-                        SettingsIcon(
+                        IconBadge(
                             icon = when (exportState) {
                                 is ExportState.Success -> Icons.Default.CheckCircle
                                 is ExportState.Error -> Icons.Default.Error
@@ -276,12 +277,6 @@ private fun SettingsSection(title: String, content: @Composable ColumnScope.() -
 
 private val SettingsMaxWidth = 640.dp
 
-/** The leading icon of a settings row: a small icon on an expressive cookie shape. */
-@Composable
-private fun SettingsIcon(icon: ImageVector, containerColor: Color, contentColor: Color) {
-    IconBadge(icon = icon, containerColor = containerColor, contentColor = contentColor)
-}
-
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SettingsSwitchItem(
@@ -301,7 +296,7 @@ private fun SettingsSwitchItem(
         onCheckedChange = onCheckedChange,
         shapes = shapes,
         colors = GroupedListDefaults.toggleColors(),
-        leadingContent = { SettingsIcon(icon, iconContainerColor, iconContentColor) },
+        leadingContent = { IconBadge(icon = icon, containerColor = iconContainerColor, contentColor = iconContentColor) },
         supportingContent = { Text(subtitle) },
         trailingContent = {
             Switch(
@@ -320,7 +315,7 @@ private fun SettingsSwitchItem(
                 }
             )
         },
-        modifier = modifier
+        modifier = modifier.switchRole()
     ) {
         Text(title)
     }
@@ -343,7 +338,7 @@ private fun SettingsLinkItem(
         onClick = onClick,
         shapes = shapes,
         colors = GroupedListDefaults.colors(),
-        leadingContent = { SettingsIcon(icon, iconContainerColor, iconContentColor) },
+        leadingContent = { IconBadge(icon = icon, containerColor = iconContainerColor, contentColor = iconContentColor) },
         supportingContent = { Text(subtitle) },
         trailingContent = {
             Icon(imageVector = Icons.AutoMirrored.Filled.OpenInNew, contentDescription = "Opens outside the app")
@@ -377,7 +372,7 @@ private fun <T> SettingsChoiceItem(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                SettingsIcon(icon, iconContainerColor, iconContentColor)
+                IconBadge(icon = icon, containerColor = iconContainerColor, contentColor = iconContentColor)
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(

@@ -31,7 +31,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -44,6 +43,7 @@ import com.defnf.syndicate.ui.components.ListSectionHeader
 import com.defnf.syndicate.ui.components.SwipeableFeedItem
 import com.defnf.syndicate.ui.components.SwipeableGroupItem
 import com.defnf.syndicate.ui.components.groupedItemGap
+import com.defnf.syndicate.ui.components.navigationItemRole
 import com.defnf.syndicate.ui.dialogs.AddFeedDialog
 import com.defnf.syndicate.ui.dialogs.AddGroupDialog
 import com.defnf.syndicate.ui.dialogs.DeleteFeedDialog
@@ -388,10 +388,9 @@ private fun FeedListContent(
                         onGroupLongClick = onGroupLongClick,
                         onDeleteGroup = onDeleteGroup,
                         onNotificationToggle = onGroupNotificationToggle,
-                        // The swipe actions show through the item's own shape
-                        modifier = Modifier
-                            .groupedItemGap(index)
-                            .clip(GroupedListDefaults.currentShape(index, groups.size, selected))
+                        // The swipe actions show through the item's own (animated) shape
+                        swipeBackgroundShape = GroupedListDefaults.currentShape(index, groups.size, selected),
+                        modifier = Modifier.groupedItemGap(index)
                     )
                 }
             }
@@ -415,9 +414,8 @@ private fun FeedListContent(
                         onFeedLongClick = onFeedLongClick,
                         onDeleteFeed = onDeleteFeed,
                         onNotificationToggle = onFeedNotificationToggle,
-                        modifier = Modifier
-                            .groupedItemGap(index)
-                            .clip(GroupedListDefaults.currentShape(index, feeds.size, selected))
+                        swipeBackgroundShape = GroupedListDefaults.currentShape(index, feeds.size, selected),
+                        modifier = Modifier.groupedItemGap(index)
                     )
                 }
             }
@@ -460,7 +458,8 @@ private fun AllArticlesItem(isSelected: Boolean, onAllFeedsClick: () -> Unit) {
                     MaterialTheme.colorScheme.onPrimaryContainer
                 }
             )
-        }
+        },
+        modifier = Modifier.navigationItemRole()
     ) {
         Text("All Articles")
     }

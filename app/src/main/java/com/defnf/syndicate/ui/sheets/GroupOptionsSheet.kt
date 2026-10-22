@@ -159,7 +159,7 @@ fun GroupOptionsSheet(
                 SegmentedListItem(
                     checked = inGroup,
                     onCheckedChange = { onFeedChange(feed.id, it) },
-                    shapes = GroupedListDefaults.shapes(index, feeds.size),
+                    shapes = GroupedListDefaults.toggleShapes(index, feeds.size),
                     colors = GroupedListDefaults.toggleColors(sheetItemColor()),
                     leadingContent = {
                         FaviconIcon(

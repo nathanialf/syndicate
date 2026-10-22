@@ -75,7 +75,7 @@ fun GroupItem(
         } else {
             null
         },
-        modifier = modifier
+        modifier = modifier.navigationItemRole()
     ) {
         Text(text = group.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }

@@ -20,6 +20,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -60,11 +63,30 @@ object GroupedListDefaults {
     @Composable
     fun shapes(index: Int, count: Int): ListItemShapes = ListItemDefaults.segmentedShapes(index = index, count = count)
 
-    /** The shape item [index] of [count] currently has, for clipping what is drawn behind it. */
+    /**
+     * Shapes of a toggleable item. Like [toggleColors], it keeps its shape while on rather than
+     * morphing to the selected shape and breaking away from its group.
+     */
+    @Composable
+    fun toggleShapes(index: Int, count: Int): ListItemShapes = shapes(index, count).let { it.copy(selectedShape = it.shape) }
+
+    /** The shape item [index] of [count] has now, for what is drawn behind it, such as swipe actions. */
     @Composable
     fun currentShape(index: Int, count: Int, selected: Boolean): Shape =
         shapes(index, count).let { if (selected) it.selectedShape else it.shape }
 }
+
+/**
+ * Announces a toggle row as a switch. The checked [androidx.compose.material3.SegmentedListItem]
+ * says checkbox; an outer semantics modifier overrides the role it sets inside.
+ */
+fun Modifier.switchRole(): Modifier = semantics { role = Role.Switch }
+
+/**
+ * Announces a selectable row that opens something (a feed, a group) as a button that is selected,
+ * rather than the radio button the selected [androidx.compose.material3.SegmentedListItem] says.
+ */
+fun Modifier.navigationItemRole(): Modifier = semantics { role = Role.Button }
 
 /** Separates item [index] of a group from the one above it. */
 fun Modifier.groupedItemGap(index: Int): Modifier = padding(top = if (index == 0) 0.dp else GroupedListDefaults.ItemGap)

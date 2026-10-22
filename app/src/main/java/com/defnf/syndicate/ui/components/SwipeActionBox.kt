@@ -31,8 +31,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -71,7 +74,8 @@ data class SwipeAction(
  * grows); dragging back below it disarms it, so a swipe can always be cancelled before release.
  * Both actions are also exposed as accessibility actions, since swiping isn't available to everyone:
  * [content] must apply the modifier it is given to its clickable element, the node accessibility
- * services focus, so the actions are offered there.
+ * services focus, so the actions are offered there. The action's background is clipped to
+ * [backgroundShape], usually the item's own shape.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -79,6 +83,7 @@ fun SwipeActionBox(
     modifier: Modifier = Modifier,
     startAction: SwipeAction? = null,
     endAction: SwipeAction? = null,
+    backgroundShape: Shape = RectangleShape,
     content: @Composable (actionsModifier: Modifier) -> Unit
 ) {
     val density = LocalDensity.current
@@ -149,7 +154,9 @@ fun SwipeActionBox(
                     isArmed = isArmed,
                     progress = { if (threshold > 0f) (abs(offset) / threshold).coerceIn(0f, 1f) else 0f },
                     alignToStart = offset > 0f,
-                    modifier = Modifier.matchParentSize()
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clip(backgroundShape)
                 )
             }
         }

@@ -28,6 +28,7 @@ import com.defnf.syndicate.ui.components.GroupedListDefaults
 import com.defnf.syndicate.ui.components.IconBadge
 import com.defnf.syndicate.ui.components.ListSectionHeader
 import com.defnf.syndicate.ui.components.groupedItemGap
+import com.defnf.syndicate.ui.components.switchRole
 
 /*
  * Building blocks shared by the feed and group options sheets. Everything in the sheets is saved as
@@ -64,7 +65,7 @@ internal fun SheetSwitchItem(
     SegmentedListItem(
         checked = checked,
         onCheckedChange = onCheckedChange,
-        shapes = GroupedListDefaults.shapes(index, count),
+        shapes = GroupedListDefaults.toggleShapes(index, count),
         colors = GroupedListDefaults.toggleColors(sheetItemColor()),
         leadingContent = {
             IconBadge(
@@ -92,7 +93,9 @@ internal fun SheetSwitchItem(
                 }
             )
         },
-        modifier = Modifier.groupedItemGap(index)
+        modifier = Modifier
+            .groupedItemGap(index)
+            .switchRole()
     ) {
         Text(text = title)
     }
