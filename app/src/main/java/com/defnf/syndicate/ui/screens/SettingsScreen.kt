@@ -222,7 +222,7 @@ fun SettingsScreen(
                     title = "Developed by Nathanial Fine",
                     subtitle = "defnf.com",
                     icon = Icons.Default.Person,
-                    tone = IconTone.NEUTRAL,
+                    tone = IconTone.PRIMARY,
                     onClick = {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://defnf.com"))
                         context.startActivity(intent)
@@ -236,7 +236,7 @@ fun SettingsScreen(
                     title = "Version",
                     subtitle = BuildConfig.VERSION_NAME,
                     icon = Icons.Default.Info,
-                    tone = IconTone.NEUTRAL
+                    tone = IconTone.PRIMARY
                 )
             }
         }
@@ -244,7 +244,7 @@ fun SettingsScreen(
 }
 
 /** The tonal colors of an item's icon badge; each section has its own, as in the Android Settings app. */
-private enum class IconTone { PRIMARY, SECONDARY, TERTIARY, NEUTRAL, ERROR }
+private enum class IconTone { PRIMARY, SECONDARY, TERTIARY, ERROR }
 
 @Composable
 private fun SettingsIcon(icon: ImageVector, tone: IconTone) {
@@ -253,7 +253,6 @@ private fun SettingsIcon(icon: ImageVector, tone: IconTone) {
         IconTone.PRIMARY -> colors.primaryContainer to colors.onPrimaryContainer
         IconTone.SECONDARY -> colors.secondaryContainer to colors.onSecondaryContainer
         IconTone.TERTIARY -> colors.tertiaryContainer to colors.onTertiaryContainer
-        IconTone.NEUTRAL -> colors.surfaceContainerHighest to colors.onSurfaceVariant
         IconTone.ERROR -> colors.errorContainer to colors.onErrorContainer
     }
     IconBadge(icon = icon, containerColor = container, contentColor = content)
