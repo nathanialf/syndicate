@@ -17,25 +17,25 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-    
+
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): RssDatabase {
         return RssDatabase.getDatabase(context)
     }
-    
+
     @Provides
     fun provideFeedDao(database: RssDatabase): FeedDao = database.feedDao()
-    
+
     @Provides
     fun provideGroupDao(database: RssDatabase): GroupDao = database.groupDao()
-    
+
     @Provides
     fun provideArticleDao(database: RssDatabase): ArticleDao = database.articleDao()
-    
+
     @Provides
     fun provideReadStatusDao(database: RssDatabase): ReadStatusDao = database.readStatusDao()
-    
+
     @Provides
     @Singleton
     fun provideThemePreferences(@ApplicationContext context: Context): ThemePreferences {

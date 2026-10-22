@@ -10,21 +10,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 
 @Composable
-fun LazyListScrollHandler(
-    listState: LazyListState,
-    onScrollDirectionChanged: (Boolean) -> Unit,
-    threshold: Int = 100
-) {
+fun LazyListScrollHandler(listState: LazyListState, onScrollDirectionChanged: (Boolean) -> Unit, threshold: Int = 100) {
     var previousScrollOffset by remember { mutableStateOf(0) }
-    
+
     LaunchedEffect(listState) {
-        snapshotFlow { 
-            listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset 
+        snapshotFlow {
+            listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset
         }.collect { (index, offset) ->
             if (listState.isScrollInProgress) {
                 val currentPosition = index * 1000 + offset
                 val isScrollingDown = currentPosition > previousScrollOffset
-                
+
                 if (currentPosition > threshold) {
                     onScrollDirectionChanged(isScrollingDown)
                 }

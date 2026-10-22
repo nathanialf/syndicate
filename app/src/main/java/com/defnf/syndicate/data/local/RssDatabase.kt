@@ -1,12 +1,12 @@
 package com.defnf.syndicate.data.local
 
+import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import android.content.Context
 import com.defnf.syndicate.data.local.dao.ArticleDao
 import com.defnf.syndicate.data.local.dao.FeedDao
 import com.defnf.syndicate.data.local.dao.GroupDao
@@ -30,16 +30,16 @@ import com.defnf.syndicate.data.local.entities.ReadStatusEntity
 )
 @TypeConverters(Converters::class)
 abstract class RssDatabase : RoomDatabase() {
-    
+
     abstract fun feedDao(): FeedDao
     abstract fun groupDao(): GroupDao
     abstract fun articleDao(): ArticleDao
     abstract fun readStatusDao(): ReadStatusDao
-    
+
     companion object {
         @Volatile
         private var INSTANCE: RssDatabase? = null
-        
+
         /** Adds a composite index for per-feed article lists ordered by date. */
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -49,7 +49,7 @@ abstract class RssDatabase : RoomDatabase() {
                 )
             }
         }
-        
+
         fun getDatabase(context: Context): RssDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -57,9 +57,9 @@ abstract class RssDatabase : RoomDatabase() {
                     RssDatabase::class.java,
                     "rss_database"
                 )
-                .addMigrations(MIGRATION_2_3)
-                .build()
-                .also { INSTANCE = it }
+                    .addMigrations(MIGRATION_2_3)
+                    .build()
+                    .also { INSTANCE = it }
             }
         }
     }

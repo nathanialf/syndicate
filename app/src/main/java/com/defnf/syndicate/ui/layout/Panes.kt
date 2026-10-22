@@ -20,11 +20,7 @@ import com.defnf.syndicate.ui.screens.SettingsScreen
  */
 
 @Composable
-internal fun FeedsPane(
-    navigationState: NavigationState,
-    highlightSelection: Boolean,
-    modifier: Modifier = Modifier
-) {
+internal fun FeedsPane(navigationState: NavigationState, highlightSelection: Boolean, modifier: Modifier = Modifier) {
     FeedListScreen(
         onFeedClick = navigationState::selectFeed,
         onGroupClick = navigationState::selectGroup,
@@ -41,10 +37,7 @@ internal fun FeedsPane(
 }
 
 @Composable
-internal fun ArticleListPane(
-    navigationState: NavigationState,
-    layoutType: AppLayoutType
-) {
+internal fun ArticleListPane(navigationState: NavigationState, layoutType: AppLayoutType) {
     // With a sidebar the feeds list is already on screen, so there is nothing to go back to
     val canGoBack = !layoutType.hasFeedsSidebar && navigationState.hasSelection
 
@@ -64,10 +57,7 @@ internal fun ArticleListPane(
 }
 
 @Composable
-internal fun SettingsPane(
-    navigationState: NavigationState,
-    layoutType: AppLayoutType
-) {
+internal fun SettingsPane(navigationState: NavigationState, layoutType: AppLayoutType) {
     SettingsScreen(
         // Settings are a destination of the navigation bar or rail when there is one
         onBackClick = if (layoutType.hasNavigationChrome) {

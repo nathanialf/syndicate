@@ -56,17 +56,15 @@ fun rememberArticlePaneNavigator(navigator: ThreePaneScaffoldNavigator<String>):
  * than the window size class. Hinge avoidance ([PaneScaffoldDirective.excludedBounds]) is kept.
  */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
-internal fun articlePaneDirective(
-    windowDirective: PaneScaffoldDirective,
-    layoutType: AppLayoutType
-): PaneScaffoldDirective = windowDirective.copy(
-    maxHorizontalPartitions = if (layoutType.hasArticleListBesideDetail) 2 else 1,
-    horizontalPartitionSpacerSize = 0.dp,
-    // The article list and the article are never stacked, e.g. on tall windows or in tabletop posture
-    maxVerticalPartitions = 1,
-    verticalPartitionSpacerSize = 0.dp,
-    defaultPanePreferredWidth = LayoutConstants.ArticleListPaneWidth
-)
+internal fun articlePaneDirective(windowDirective: PaneScaffoldDirective, layoutType: AppLayoutType): PaneScaffoldDirective =
+    windowDirective.copy(
+        maxHorizontalPartitions = if (layoutType.hasArticleListBesideDetail) 2 else 1,
+        horizontalPartitionSpacerSize = 0.dp,
+        // The article list and the article are never stacked, e.g. on tall windows or in tabletop posture
+        maxVerticalPartitions = 1,
+        verticalPartitionSpacerSize = 0.dp,
+        defaultPanePreferredWidth = LayoutConstants.ArticleListPaneWidth
+    )
 
 /**
  * [ArticlePaneNavigator] backed by the list-detail scaffold's [navigator].
@@ -159,10 +157,7 @@ internal fun ArticleListDetail(
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-private fun ArticleDetailPane(
-    navigator: ThreePaneScaffoldNavigator<String>,
-    navigationState: NavigationState
-) {
+private fun ArticleDetailPane(navigator: ThreePaneScaffoldNavigator<String>, navigationState: NavigationState) {
     val openArticleId = navigationState.openArticleId
     val isLeaving = navigator.scaffoldValue[ListDetailPaneScaffoldRole.Detail] == PaneAdaptedValue.Hidden
     // While the pane animates out after closing an article, keep showing that article. Only what

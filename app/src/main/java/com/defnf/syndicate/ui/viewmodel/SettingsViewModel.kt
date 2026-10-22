@@ -8,6 +8,8 @@ import com.defnf.syndicate.data.preferences.NotificationPreferences
 import com.defnf.syndicate.data.repository.RssRepository
 import com.defnf.syndicate.sync.SyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.io.File
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -15,8 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.io.File
-import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -25,40 +25,40 @@ class SettingsViewModel @Inject constructor(
     private val notificationPreferences: NotificationPreferences,
     private val syncScheduler: SyncScheduler
 ) : ViewModel() {
-    
+
     private val _exportState = MutableStateFlow<ExportState>(ExportState.Idle)
     val exportState: StateFlow<ExportState> = _exportState.asStateFlow()
-    
+
     val notificationsEnabled: StateFlow<Boolean> = notificationPreferences.notificationsEnabled
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = true
         )
-    
+
     fun exportOpml(context: Context) {
         viewModelScope.launch {
             _exportState.value = ExportState.Loading
-            
+
             try {
                 // Collect all feeds and groups
                 val feeds = repository.getAllFeeds().first()
                 val groups = repository.getAllGroups().first()
-                
+
                 // Build map of feed ID to groups
                 val feedGroupMap = mutableMapOf<Long, List<com.defnf.syndicate.data.models.Group>>()
                 feeds.forEach { feed ->
                     val feedGroups = repository.getGroupsForFeed(feed.id).first()
                     feedGroupMap[feed.id] = feedGroups
                 }
-                
+
                 // Export to OPML
                 val result = opmlExporter.exportToOpml(context, feeds, groups, feedGroupMap)
-                
+
                 if (result.isSuccess) {
                     val file = result.getOrThrow()
                     _exportState.value = ExportState.Success(file)
-                    
+
                     // Share the file
                     opmlExporter.shareOpmlFile(context, file)
                 } else {
@@ -71,11 +71,11 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun clearExportState() {
         _exportState.value = ExportState.Idle
     }
-    
+
     fun toggleNotifications(enabled: Boolean) {
         viewModelScope.launch {
             notificationPreferences.setNotificationsEnabled(enabled)

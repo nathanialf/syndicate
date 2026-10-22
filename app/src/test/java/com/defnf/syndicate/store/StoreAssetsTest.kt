@@ -23,7 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.test.isRoot
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -44,6 +44,8 @@ import com.defnf.syndicate.ui.MainActivity
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
+import java.io.File
+import javax.inject.Inject
 import kotlinx.coroutines.runBlocking
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -55,8 +57,6 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import org.robolectric.shadows.ShadowLooper
-import java.io.File
-import javax.inject.Inject
 
 /**
  * Renders the Google Play listing assets (app icon, feature graphic, phone and tablet
@@ -127,20 +127,20 @@ class StoreAssetsTest {
             activity.setContent {
                 Box(
                     modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .background(Brand),
-                    contentAlignment = Alignment.Center,
+                    Modifier
+                        .fillMaxSize()
+                        .background(Brand),
+                    contentAlignment = Alignment.Center
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
                             bitmap = glyph.asImageBitmap(),
                             contentDescription = null,
                             modifier =
-                                Modifier
-                                    .size(216.dp)
-                                    .clip(RoundedCornerShape(56.dp))
-                                    .background(BrandDark),
+                            Modifier
+                                .size(216.dp)
+                                .clip(RoundedCornerShape(56.dp))
+                                .background(BrandDark)
                         )
                         Spacer(Modifier.width(48.dp))
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -149,7 +149,7 @@ class StoreAssetsTest {
                                 "Your feeds, beautifully organized",
                                 color = Color.White.copy(alpha = 0.9f),
                                 fontSize = 34.sp,
-                                modifier = Modifier.padding(start = 4.dp),
+                                modifier = Modifier.padding(start = 4.dp)
                             )
                         }
                     }
@@ -243,10 +243,7 @@ class StoreAssetsTest {
     }
 
     /** Draws the activity window; Compose's captureToImage times out under Robolectric. */
-    private fun capture(
-        scenario: ActivityScenario<*>,
-        name: String,
-    ) {
+    private fun capture(scenario: ActivityScenario<*>, name: String) {
         settle()
         scenario.onActivity { activity ->
             val view = activity.window.decorView
@@ -256,64 +253,54 @@ class StoreAssetsTest {
         }
     }
 
-    private fun save(
-        bitmap: Bitmap,
-        name: String,
-    ) {
+    private fun save(bitmap: Bitmap, name: String) {
         val dir = outputDir!!.apply { mkdirs() }
         // Play wants 24-bit PNGs (no alpha) for the feature graphic and screenshots
         if (name != "icon-512.png") bitmap.setHasAlpha(false)
         File(dir, name).outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
-    private fun seedSampleData() =
-        runBlocking {
-            val now = System.currentTimeMillis()
-            val feedIds =
-                SAMPLE_FEEDS.map { (title, url) ->
-                    database.feedDao().insertFeed(
-                        FeedEntity(
-                            url = url,
-                            title = title,
-                            description = null,
-                            siteUrl = null,
-                            faviconUrl = null,
-                            lastFetched = now,
-                        ),
+    private fun seedSampleData() = runBlocking {
+        val now = System.currentTimeMillis()
+        val feedIds =
+            SAMPLE_FEEDS.map { (title, url) ->
+                database.feedDao().insertFeed(
+                    FeedEntity(
+                        url = url,
+                        title = title,
+                        description = null,
+                        siteUrl = null,
+                        faviconUrl = null,
+                        lastFetched = now
                     )
-                }
-            val tech = database.groupDao().insertGroup(GroupEntity(name = "Tech"))
-            val outdoors = database.groupDao().insertGroup(GroupEntity(name = "Outdoors"))
-            database.groupDao().insertFeedGroupCrossRefs(
-                listOf(
-                    FeedGroupCrossRef(feedIds[0], tech),
-                    FeedGroupCrossRef(feedIds[1], tech),
-                    FeedGroupCrossRef(feedIds[3], outdoors),
-                ),
+                )
+            }
+        val tech = database.groupDao().insertGroup(GroupEntity(name = "Tech"))
+        val outdoors = database.groupDao().insertGroup(GroupEntity(name = "Outdoors"))
+        database.groupDao().insertFeedGroupCrossRefs(
+            listOf(
+                FeedGroupCrossRef(feedIds[0], tech),
+                FeedGroupCrossRef(feedIds[1], tech),
+                FeedGroupCrossRef(feedIds[3], outdoors)
             )
-            database.articleDao().insertArticles(
-                SAMPLE_ARTICLES.mapIndexed { index, article ->
-                    ArticleEntity(
-                        id = "sample-$index",
-                        feedId = feedIds[article.feed],
-                        title = article.title,
-                        description = article.body,
-                        url = "https://example.com/articles/$index",
-                        author = article.author,
-                        publishedDate = now - article.minutesAgo * 60_000L,
-                        thumbnailUrl = null,
-                    )
-                },
-            )
-        }
+        )
+        database.articleDao().insertArticles(
+            SAMPLE_ARTICLES.mapIndexed { index, article ->
+                ArticleEntity(
+                    id = "sample-$index",
+                    feedId = feedIds[article.feed],
+                    title = article.title,
+                    description = article.body,
+                    url = "https://example.com/articles/$index",
+                    author = article.author,
+                    publishedDate = now - article.minutesAgo * 60_000L,
+                    thumbnailUrl = null
+                )
+            }
+        )
+    }
 
-    private data class SampleArticle(
-        val feed: Int,
-        val title: String,
-        val author: String,
-        val minutesAgo: Long,
-        val body: String,
-    )
+    private data class SampleArticle(val feed: Int, val title: String, val author: String, val minutesAgo: Long, val body: String)
 
     private companion object {
         val Brand = Color(0xFF00B55C)
@@ -325,7 +312,7 @@ class StoreAssetsTest {
                 "The Compile Times" to "https://compiletimes.example.com/rss",
                 "Kitchen Table" to "https://kitchentable.example.com/feed.xml",
                 "Trail Journal" to "https://trailjournal.example.com/atom",
-                "Field & Frame" to "https://fieldandframe.example.com/rss",
+                "Field & Frame" to "https://fieldandframe.example.com/rss"
             )
 
         val SAMPLE_ARTICLES =
@@ -335,65 +322,76 @@ class StoreAssetsTest {
                     "Why small, open protocols keep outliving the platforms built on them",
                     "Maya Okafor",
                     12,
-                    "<p>Every few years a new platform promises to replace the humble feed. Every few years the feed is still here.</p>" +
-                        "<p>The reason is not nostalgia. A feed is a plain file that any client can read, any server can publish, and no single company controls. That simplicity is a feature: it lets readers choose their own tools and keeps publishers from depending on an algorithm to reach the people who asked to hear from them.</p>" +
+                    "<p>Every few years a new platform promises to replace the humble feed. " +
+                        "Every few years the feed is still here.</p>" +
+                        "<p>The reason is not nostalgia. " +
+                        "A feed is a plain file that any client can read, any server can publish, and no single company controls. " +
+                        "That simplicity is a feature: it lets readers choose their own tools and keeps publishers from depending " +
+                        "on an algorithm to reach the people who asked to hear from them.</p>" +
                         "<h3>Built to last</h3>" +
-                        "<p>The formats have barely changed in two decades, which means a reader written today still understands feeds published in 2005. Few other parts of the web can say the same.</p>" +
-                        "<p>If you follow a handful of writers you trust, a reader that checks their feeds and tells you when something new arrives is still the calmest way to keep up.</p>",
+                        "<p>The formats have barely changed in two decades, which means a reader written today still understands " +
+                        "feeds published in 2005. Few other parts of the web can say the same.</p>" +
+                        "<p>If you follow a handful of writers you trust, a reader that checks their feeds and tells you when something new arrives is still the calmest way to keep up.</p>"
                 ),
                 SampleArticle(
                     1,
                     "A gentle guide to keeping your build fast as the project grows",
                     "Daniel Reyes",
                     47,
-                    "<p>Slow builds rarely arrive all at once. They creep in one dependency and one code generator at a time.</p>" +
-                        "<p>Start by measuring: profile a clean build and an incremental one, and write both numbers down. Then look for tasks that run on every change even though their inputs did not move.</p>" +
-                        "<p>Caching, configuration avoidance and splitting large modules each help, but the biggest wins usually come from deleting work the build never needed to do.</p>",
+                    "<p>Slow builds rarely arrive all at once. " +
+                        "They creep in one dependency and one code generator at a time.</p>" +
+                        "<p>Start by measuring: profile a clean build and an incremental one, and write both numbers down. " +
+                        "Then look for tasks that run on every change even though their inputs did not move.</p>" +
+                        "<p>Caching, configuration avoidance and splitting large modules each help, but the biggest wins usually come from deleting work the build never needed to do.</p>"
                 ),
                 SampleArticle(
                     3,
                     "Five quiet trails for an early autumn morning",
                     "Priya Nandakumar",
                     95,
-                    "<p>The crowds thin out once school starts, and the light gets better every week. These five loops are short enough for a morning and pretty enough to linger on.</p>" +
-                        "<p>Bring a layer: the valley floor stays cool until the sun clears the ridge, and the creek crossings can be slick after a dewy night.</p>" +
-                        "<p>Each trail below lists the distance, elevation gain and the best spot to stop for coffee on the way home.</p>",
+                    "<p>The crowds thin out once school starts, and the light gets better every week. " +
+                        "These five loops are short enough for a morning and pretty enough to linger on.</p>" +
+                        "<p>Bring a layer: the valley floor stays cool until the sun clears the ridge, " +
+                        "and the creek crossings can be slick after a dewy night.</p>" +
+                        "<p>Each trail below lists the distance, elevation gain and the best spot to stop for coffee on the way home.</p>"
                 ),
                 SampleArticle(
                     2,
                     "The one-pan weeknight pasta we keep coming back to",
                     "Sam Whitaker",
                     180,
-                    "<p>Tomatoes, garlic, a splash of pasta water and ten minutes. That is the whole recipe, and it is better than it has any right to be.</p>",
+                    "<p>Tomatoes, garlic, a splash of pasta water and ten minutes. " +
+                        "That is the whole recipe, and it is better than it has any right to be.</p>"
                 ),
                 SampleArticle(
                     4,
                     "Shooting golden hour with only a phone",
                     "Lena Fischer",
                     260,
-                    "<p>You do not need a bag of lenses to catch the best light of the day. Lock exposure on the brightest part of the sky, then let the shadows fall where they will.</p>",
+                    "<p>You do not need a bag of lenses to catch the best light of the day. " +
+                        "Lock exposure on the brightest part of the sky, then let the shadows fall where they will.</p>"
                 ),
                 SampleArticle(
                     1,
                     "What changed in the latest language release, and what to try first",
                     "Daniel Reyes",
                     420,
-                    "<p>The headline features get the attention, but the small quality-of-life fixes are what you will notice every day.</p>",
+                    "<p>The headline features get the attention, but the small quality-of-life fixes are what you will notice every day.</p>"
                 ),
                 SampleArticle(
                     0,
                     "Reading less, but reading better",
                     "Maya Okafor",
                     720,
-                    "<p>Trimming a feed list to the sources you actually open each week turns an inbox into a magazine.</p>",
+                    "<p>Trimming a feed list to the sources you actually open each week turns an inbox into a magazine.</p>"
                 ),
                 SampleArticle(
                     3,
                     "Packing light for a two-night hut trip",
                     "Priya Nandakumar",
                     1500,
-                    "<p>A short checklist that fits in a 30 litre pack, with room left for snacks.</p>",
-                ),
+                    "<p>A short checklist that fits in a 30 litre pack, with room left for snacks.</p>"
+                )
             )
     }
 }

@@ -14,9 +14,9 @@ import com.defnf.syndicate.data.local.entities.ArticleEntity
 import com.defnf.syndicate.data.models.Feed
 import com.defnf.syndicate.data.preferences.NotificationPreferences
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.first
 
 /**
  * Posts and dismisses new-article notifications.
@@ -145,12 +145,7 @@ class NotificationManager @Inject constructor(
     }
 
     /** Notifies about new articles in a feed group; tapping opens the group. */
-    suspend fun showGroupNotification(
-        groupId: Long,
-        groupName: String,
-        newArticleTitles: List<String>,
-        unreadCount: Int
-    ) {
+    suspend fun showGroupNotification(groupId: Long, groupName: String, newArticleTitles: List<String>, unreadCount: Int) {
         if (newArticleTitles.isEmpty() || !canPostNotifications()) return
 
         val newCount = newArticleTitles.size
@@ -239,22 +234,19 @@ class NotificationManager @Inject constructor(
         emptyList()
     }
 
-    private fun StatusBarNotification.isArticleNotification(): Boolean =
-        tag?.startsWith(ARTICLE_TAG_PREFIX) == true
+    private fun StatusBarNotification.isArticleNotification(): Boolean = tag?.startsWith(ARTICLE_TAG_PREFIX) == true
 
-    private fun activityPendingIntent(intent: Intent): PendingIntent =
-        PendingIntent.getActivity(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+    private fun activityPendingIntent(intent: Intent): PendingIntent = PendingIntent.getActivity(
+        context,
+        0,
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
 
-    private fun broadcastPendingIntent(intent: Intent): PendingIntent =
-        PendingIntent.getBroadcast(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+    private fun broadcastPendingIntent(intent: Intent): PendingIntent = PendingIntent.getBroadcast(
+        context,
+        0,
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
 }

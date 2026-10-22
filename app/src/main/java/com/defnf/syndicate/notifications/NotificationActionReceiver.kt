@@ -6,11 +6,11 @@ import android.content.Intent
 import android.util.Log
 import com.defnf.syndicate.data.repository.RssRepository
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * Handles the "Mark as Read" actions on notifications. Marking articles read through the
@@ -33,7 +33,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
         if (action != ACTION_MARK_AS_READ && action != ACTION_MARK_FEED_AS_READ && action != ACTION_MARK_GROUP_AS_READ) return
-        
+
         // Keep the receiver alive until the database write finishes
         val pendingResult = goAsync()
         scope.launch {
@@ -46,7 +46,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
             }
         }
     }
-    
+
     private suspend fun handleAction(action: String?, intent: Intent) {
         when (action) {
             ACTION_MARK_AS_READ -> {

@@ -7,6 +7,7 @@ import com.defnf.syndicate.data.models.Group
 import com.defnf.syndicate.data.preferences.NotificationPreferences
 import com.defnf.syndicate.data.repository.RssRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,21 +18,14 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /** A snackbar message, optionally with an action such as undoing what was just done. */
-data class UserMessage(
-    val text: String,
-    val actionLabel: String? = null,
-    val onAction: (() -> Unit)? = null
-)
+data class UserMessage(val text: String, val actionLabel: String? = null, val onAction: (() -> Unit)? = null)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
-class FeedListViewModel @Inject constructor(
-    private val repository: RssRepository,
-    notificationPreferences: NotificationPreferences
-) : ViewModel() {
+class FeedListViewModel @Inject constructor(private val repository: RssRepository, notificationPreferences: NotificationPreferences) :
+    ViewModel() {
 
     init {
         // Update favicon URLs for existing feeds on first load

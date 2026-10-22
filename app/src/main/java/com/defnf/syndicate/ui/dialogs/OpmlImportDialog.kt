@@ -1,6 +1,5 @@
 package com.defnf.syndicate.ui.dialogs
 
-import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,8 +24,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -43,18 +42,15 @@ import androidx.compose.ui.unit.dp
 import com.defnf.syndicate.data.models.OpmlImportResult
 
 @Composable
-fun OpmlFilePickerDialog(
-    onFileSelected: (Uri) -> Unit,
-    onDismiss: () -> Unit
-) {
+fun OpmlFilePickerDialog(onFileSelected: (Uri) -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
-    
+
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let { onFileSelected(it) }
     }
-    
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Import OPML File") },
@@ -66,7 +62,8 @@ fun OpmlFilePickerDialog(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "OPML files are commonly exported from other RSS readers and contain your feed subscriptions and folder organization.",
+                    text = "OPML files are commonly exported from other RSS readers and contain your feed subscriptions " +
+                        "and folder organization.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -88,13 +85,9 @@ fun OpmlFilePickerDialog(
 }
 
 @Composable
-fun OpmlPreviewDialog(
-    importResult: OpmlImportResult,
-    onImport: (Boolean) -> Unit,
-    onDismiss: () -> Unit
-) {
+fun OpmlPreviewDialog(importResult: OpmlImportResult, onImport: (Boolean) -> Unit, onDismiss: () -> Unit) {
     var skipDuplicates by remember { mutableStateOf(true) }
-    
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("OPML Import Preview") },
@@ -131,7 +124,7 @@ fun OpmlPreviewDialog(
                         }
                     }
                 }
-                
+
                 if (importResult.duplicateFeeds.isNotEmpty()) {
                     item {
                         Row(
@@ -146,7 +139,7 @@ fun OpmlPreviewDialog(
                             Text("Skip duplicate feeds")
                         }
                     }
-                    
+
                     item {
                         Text(
                             text = "Duplicate Feeds:",
@@ -154,7 +147,7 @@ fun OpmlPreviewDialog(
                             color = MaterialTheme.colorScheme.error
                         )
                     }
-                    
+
                     items(importResult.duplicateFeeds.take(10)) { url ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically
@@ -173,7 +166,7 @@ fun OpmlPreviewDialog(
                             )
                         }
                     }
-                    
+
                     if (importResult.duplicateFeeds.size > 10) {
                         item {
                             Text(
@@ -184,7 +177,7 @@ fun OpmlPreviewDialog(
                         }
                     }
                 }
-                
+
                 if (importResult.groupsToCreate.isNotEmpty()) {
                     item {
                         Text(
@@ -192,7 +185,7 @@ fun OpmlPreviewDialog(
                             style = MaterialTheme.typography.titleSmall
                         )
                     }
-                    
+
                     items(importResult.groupsToCreate) { groupName ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically
@@ -208,14 +201,14 @@ fun OpmlPreviewDialog(
                         }
                     }
                 }
-                
+
                 item {
                     Text(
                         text = "Feeds to Import:",
                         style = MaterialTheme.typography.titleSmall
                     )
                 }
-                
+
                 items(importResult.feedsToImport.take(10)) { feed ->
                     Column(
                         modifier = Modifier.padding(start = 16.dp)
@@ -238,7 +231,7 @@ fun OpmlPreviewDialog(
                         }
                     }
                 }
-                
+
                 if (importResult.feedsToImport.size > 10) {
                     item {
                         Text(
@@ -289,14 +282,10 @@ fun OpmlImportProgressDialog() {
 }
 
 @Composable
-fun OpmlImportResultDialog(
-    success: Boolean,
-    message: String,
-    onDismiss: () -> Unit
-) {
+fun OpmlImportResultDialog(success: Boolean, message: String, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { 
+        title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {

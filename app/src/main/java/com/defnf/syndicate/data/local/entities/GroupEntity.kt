@@ -13,16 +13,16 @@ import com.defnf.syndicate.data.models.Group
 data class GroupEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    
+
     @ColumnInfo(name = "name")
     val name: String,
-    
+
     @ColumnInfo(name = "is_default", defaultValue = "0")
     val isDefault: Boolean = false,
-    
+
     @ColumnInfo(name = "notifications_enabled", defaultValue = "0")
     val notificationsEnabled: Boolean = false,
-    
+
     @ColumnInfo(name = "created_at")
     val createdAt: Long = System.currentTimeMillis()
 ) {

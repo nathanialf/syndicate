@@ -10,8 +10,7 @@ import org.junit.Test
 
 class AppLayoutTypeTest {
 
-    private fun layoutForWidth(widthDp: Int) =
-        AppLayoutType.fromWindowSizeClass(WindowSizeClass(minWidthDp = widthDp, minHeightDp = 0))
+    private fun layoutForWidth(widthDp: Int) = AppLayoutType.fromWindowSizeClass(WindowSizeClass(minWidthDp = widthDp, minHeightDp = 0))
 
     @Test
     fun `layout follows the material window size class breakpoints`() {

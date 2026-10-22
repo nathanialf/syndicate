@@ -11,11 +11,7 @@ import androidx.compose.runtime.Composable
 import com.defnf.syndicate.data.models.Feed
 
 @Composable
-fun DeleteFeedDialog(
-    feed: Feed,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
+fun DeleteFeedDialog(feed: Feed, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = {

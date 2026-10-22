@@ -29,28 +29,33 @@ const val READ_STATE_READ = 1
 
 @Dao
 interface ArticleDao {
-    
-    @Query("""
+
+    @Query(
+        """
         $ARTICLE_LIST_COLUMNS
         FROM articles a
         INNER JOIN feeds f ON a.feed_id = f.id
         LEFT JOIN read_status rs ON a.id = rs.article_id
         WHERE $READ_STATE_CONDITION
         ORDER BY a.published_date DESC
-    """)
+    """
+    )
     fun getAllArticles(readState: Int): Flow<List<ArticleWithReadStatus>>
-    
-    @Query("""
+
+    @Query(
+        """
         $ARTICLE_LIST_COLUMNS
         FROM articles a
         INNER JOIN feeds f ON a.feed_id = f.id
         LEFT JOIN read_status rs ON a.id = rs.article_id
         WHERE a.feed_id = :feedId AND $READ_STATE_CONDITION
         ORDER BY a.published_date DESC
-    """)
+    """
+    )
     fun getArticlesByFeed(feedId: Long, readState: Int): Flow<List<ArticleWithReadStatus>>
-    
-    @Query("""
+
+    @Query(
+        """
         $ARTICLE_LIST_COLUMNS
         FROM articles a
         INNER JOIN feed_group_cross_ref fgcr ON a.feed_id = fgcr.feed_id
@@ -58,10 +63,12 @@ interface ArticleDao {
         LEFT JOIN read_status rs ON a.id = rs.article_id
         WHERE fgcr.group_id = :groupId AND $READ_STATE_CONDITION
         ORDER BY a.published_date DESC
-    """)
+    """
+    )
     fun getArticlesByGroup(groupId: Long, readState: Int): Flow<List<ArticleWithReadStatus>>
-    
-    @Query("""
+
+    @Query(
+        """
         $ARTICLE_LIST_COLUMNS
         FROM articles a
         INNER JOIN feeds f ON a.feed_id = f.id
@@ -69,19 +76,22 @@ interface ArticleDao {
         WHERE (a.title LIKE '%' || :query || '%' OR a.description LIKE '%' || :query || '%')
             AND $READ_STATE_CONDITION
         ORDER BY a.published_date DESC
-    """)
+    """
+    )
     fun searchArticles(query: String, readState: Int): Flow<List<ArticleWithReadStatus>>
-    
-    @Query("""
+
+    @Query(
+        """
         SELECT a.*, f.title as feed_title, f.favicon_url as feed_favicon_url,
                COALESCE(rs.is_read, 0) as is_read, rs.read_at
         FROM articles a
         INNER JOIN feeds f ON a.feed_id = f.id
         LEFT JOIN read_status rs ON a.id = rs.article_id
         WHERE a.id = :articleId
-    """)
+    """
+    )
     suspend fun getArticleById(articleId: String): ArticleWithReadStatus?
-    
+
     /**
      * Inserts articles that are not stored yet and leaves existing ones untouched, so their read
      * status is preserved (REPLACE would delete the old row and cascade-delete its read status).
@@ -89,13 +99,13 @@ interface ArticleDao {
      */
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertArticles(articles: List<ArticleEntity>): List<Long>
-    
+
     @Query("DELETE FROM articles WHERE feed_id = :feedId AND fetched_at < :cutoffTime")
     suspend fun deleteOldArticlesForFeed(feedId: Long, cutoffTime: Long)
-    
+
     @Query("DELETE FROM articles WHERE id = :articleId")
     suspend fun deleteArticle(articleId: String)
-    
+
     @Query("SELECT COUNT(*) FROM articles WHERE feed_id = :feedId")
     suspend fun getArticleCountForFeed(feedId: Long): Int
 }

@@ -8,6 +8,7 @@ import com.defnf.syndicate.data.models.Feed
 import com.defnf.syndicate.data.repository.RssRepository
 import com.defnf.syndicate.sync.SyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,26 +19,25 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 enum class ArticleShowFilter {
-    ALL, UNREAD, READ
+    ALL,
+    UNREAD,
+    READ
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
-class ArticleListViewModel @Inject constructor(
-    private val repository: RssRepository,
-    private val syncScheduler: SyncScheduler
-) : ViewModel() {
-    
-    private val _feedId = MutableStateFlow<Long?>(null)
-    private val _groupId = MutableStateFlow<Long?>(null)
+class ArticleListViewModel @Inject constructor(private val repository: RssRepository, private val syncScheduler: SyncScheduler) :
+    ViewModel() {
+
+    private val selectedFeedId = MutableStateFlow<Long?>(null)
+    private val selectedGroupId = MutableStateFlow<Long?>(null)
     private val _showFilter = MutableStateFlow(ArticleShowFilter.UNREAD) // Default to unread only
-    
-    val articles: StateFlow<List<Article>> = combine(_feedId, _groupId, _showFilter) { feedId, groupId, showFilter ->
-            Triple(feedId, groupId, showFilter)
-        }
+
+    val articles: StateFlow<List<Article>> = combine(selectedFeedId, selectedGroupId, _showFilter) { feedId, groupId, showFilter ->
+        Triple(feedId, groupId, showFilter)
+    }
         .flatMapLatest { (feedId, groupId, showFilter) ->
             repository.getArticles(
                 ArticleFilter(
@@ -56,24 +56,24 @@ class ArticleListViewModel @Inject constructor(
             started = SharingStarted.Lazily,
             initialValue = emptyList()
         )
-    
+
     private val _currentFeed = MutableStateFlow<Feed?>(null)
     val currentFeed: StateFlow<Feed?> = _currentFeed.asStateFlow()
-    
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-    
+
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
-    
+
     private val _isStartupSyncing = MutableStateFlow(true) // Start with true to show sync on app launch
     val isStartupSyncing: StateFlow<Boolean> = _isStartupSyncing.asStateFlow()
-    
+
     private val _shouldScrollToTop = MutableStateFlow(false)
     val shouldScrollToTop: StateFlow<Boolean> = _shouldScrollToTop.asStateFlow()
-    
+
     val showFilter: StateFlow<ArticleShowFilter> = _showFilter.asStateFlow()
-    
+
     // Combined state for showing refresh indicator (either manual refresh or startup sync)
     val isRefreshingOrStartup: StateFlow<Boolean> = combine(_isRefreshing, _isStartupSyncing) { isRefreshing, isStartupSyncing ->
         isRefreshing || isStartupSyncing
@@ -82,7 +82,7 @@ class ArticleListViewModel @Inject constructor(
         started = SharingStarted.Lazily,
         initialValue = true
     )
-    
+
     init {
         // Clear startup sync after a reasonable delay to simulate sync completion
         viewModelScope.launch {
@@ -90,19 +90,19 @@ class ArticleListViewModel @Inject constructor(
             _isStartupSyncing.value = false
         }
     }
-    
+
     fun setFeedId(feedId: Long?) {
-        _feedId.value = feedId
-        _groupId.value = null // Clear group when setting feed
+        selectedFeedId.value = feedId
+        selectedGroupId.value = null // Clear group when setting feed
         loadFeedInfo(feedId)
     }
-    
+
     fun setGroupId(groupId: Long?) {
-        _groupId.value = groupId
-        _feedId.value = null // Clear feed when setting group
+        selectedGroupId.value = groupId
+        selectedFeedId.value = null // Clear feed when setting group
         loadGroupInfo(groupId)
     }
-    
+
     private fun loadFeedInfo(feedId: Long?) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -114,14 +114,14 @@ class ArticleListViewModel @Inject constructor(
             _isLoading.value = false
         }
     }
-    
+
     private fun loadGroupInfo(groupId: Long?) {
         viewModelScope.launch {
             _isLoading.value = true
             groupId?.let { id ->
                 // For groups, we'll create a virtual feed with the group name
                 val group = repository.getGroupById(id)
-                _currentFeed.value = group?.let { 
+                _currentFeed.value = group?.let {
                     Feed(
                         id = -id, // Negative ID to distinguish from real feeds
                         url = "",
@@ -141,29 +141,29 @@ class ArticleListViewModel @Inject constructor(
             _isLoading.value = false
         }
     }
-    
+
     fun markAsRead(articleId: String) {
         viewModelScope.launch {
             repository.markAsRead(articleId, true)
         }
     }
-    
+
     fun markAsUnread(articleId: String) {
         viewModelScope.launch {
             repository.markAsRead(articleId, false)
         }
     }
-    
+
     fun markAllAsRead() {
         viewModelScope.launch {
             when {
-                _feedId.value != null -> {
+                selectedFeedId.value != null -> {
                     // Mark all articles in the current feed as read
-                    repository.markAllAsReadForFeed(_feedId.value!!)
+                    repository.markAllAsReadForFeed(selectedFeedId.value!!)
                 }
-                _groupId.value != null -> {
+                selectedGroupId.value != null -> {
                     // Mark all articles in the current group as read
-                    repository.markAllAsReadForGroup(_groupId.value!!)
+                    repository.markAllAsReadForGroup(selectedGroupId.value!!)
                 }
                 else -> {
                     // Mark all articles as read
@@ -172,11 +172,11 @@ class ArticleListViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun setShowFilter(filter: ArticleShowFilter) {
         _showFilter.value = filter
     }
-    
+
     suspend fun getDefaultGroup(): com.defnf.syndicate.data.models.Group? {
         return try {
             repository.getDefaultGroup()
@@ -184,40 +184,40 @@ class ArticleListViewModel @Inject constructor(
             null
         }
     }
-    
+
     fun refreshFeeds() {
         viewModelScope.launch {
             _isRefreshing.value = true
-            
+
             // Use targeted sync based on current context
             when {
-                _feedId.value != null -> {
+                selectedFeedId.value != null -> {
                     // Sync only the current feed
-                    syncScheduler.triggerManualSyncForFeed(_feedId.value!!)
+                    syncScheduler.triggerManualSyncForFeed(selectedFeedId.value!!)
                 }
-                _groupId.value != null -> {
+                selectedGroupId.value != null -> {
                     // Sync all feeds in the current group
-                    syncScheduler.triggerManualSyncForGroup(_groupId.value!!)
+                    syncScheduler.triggerManualSyncForGroup(selectedGroupId.value!!)
                 }
                 else -> {
                     // Sync all feeds (default behavior)
                     syncScheduler.triggerManualSync()
                 }
             }
-            
+
             // Wait a brief moment to ensure sync is started, then monitor for completion
             kotlinx.coroutines.delay(500)
-            
+
             // Reset refresh state after a reasonable time
             // In a real implementation, you'd monitor the WorkManager for completion
             kotlinx.coroutines.delay(3000)
             _isRefreshing.value = false
-            
+
             // Trigger scroll to top to show new articles
             _shouldScrollToTop.value = true
         }
     }
-    
+
     fun onScrollToTopHandled() {
         _shouldScrollToTop.value = false
     }

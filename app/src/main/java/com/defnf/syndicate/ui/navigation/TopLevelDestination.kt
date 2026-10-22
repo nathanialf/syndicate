@@ -11,10 +11,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
  * In multi-pane layouts the feeds list is always visible as a sidebar, so only
  * [ARTICLES] and [SETTINGS] are reachable there.
  */
-enum class TopLevelDestination(
-    val label: String,
-    val icon: ImageVector
-) {
+enum class TopLevelDestination(val label: String, val icon: ImageVector) {
     ARTICLES("Articles", Icons.AutoMirrored.Filled.Article),
     FEEDS("Feeds", Icons.Default.RssFeed),
     SETTINGS("Settings", Icons.Default.Settings)

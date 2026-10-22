@@ -3,15 +3,15 @@ package com.defnf.syndicate.data.remote
 import com.rometools.rome.feed.synd.SyndFeed
 import com.rometools.rome.io.SyndFeedInput
 import com.rometools.rome.io.XmlReader
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.net.URL
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Singleton
 class RssFetcher @Inject constructor() {
-    
+
     suspend fun fetchFeed(url: String): Result<SyndFeed> = withContext(Dispatchers.IO) {
         try {
             android.util.Log.d("RssFetcher", "Fetching feed from: $url")

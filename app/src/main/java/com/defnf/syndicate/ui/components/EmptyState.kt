@@ -22,12 +22,7 @@ import androidx.compose.ui.unit.dp
 /** An icon set in an expressive cookie shape, with a title and an optional message below it. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun EmptyState(
-    icon: ImageVector,
-    title: String,
-    modifier: Modifier = Modifier,
-    message: String? = null
-) {
+fun EmptyState(icon: ImageVector, title: String, modifier: Modifier = Modifier, message: String? = null) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,

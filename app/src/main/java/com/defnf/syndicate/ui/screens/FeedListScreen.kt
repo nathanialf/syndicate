@@ -1,109 +1,57 @@
 package com.defnf.syndicate.ui.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.ui.draw.clip
-import com.defnf.syndicate.ui.dialogs.AddFeedDialog
-import com.defnf.syndicate.ui.dialogs.AddGroupDialog
-import com.defnf.syndicate.ui.dialogs.DeleteFeedDialog
-import com.defnf.syndicate.ui.dialogs.DeleteGroupDialog
-import com.defnf.syndicate.ui.dialogs.OpmlFilePickerDialog
-import com.defnf.syndicate.ui.dialogs.OpmlPreviewDialog
-import com.defnf.syndicate.ui.dialogs.OpmlImportProgressDialog
-import com.defnf.syndicate.ui.dialogs.OpmlImportResultDialog
-import com.defnf.syndicate.ui.components.EmptyState
-import com.defnf.syndicate.ui.components.ExpandableFabMenu
-import com.defnf.syndicate.ui.components.FaviconIcon
-import com.defnf.syndicate.ui.components.FeedListItem
-import com.defnf.syndicate.ui.components.GroupItem
-import com.defnf.syndicate.ui.components.SegmentedItem
-import com.defnf.syndicate.ui.components.SwipeableGroupItem
-import com.defnf.syndicate.ui.components.SwipeableFeedItem
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.RssFeed
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.GroupAdd
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.CreateNewFolder
-import coil.compose.AsyncImage
-import coil.compose.AsyncImagePainter
-import androidx.compose.foundation.border
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.LargeFloatingActionButton
-import androidx.compose.material3.SmallFloatingActionButton
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialShapes
-import androidx.compose.material3.toShape
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.defnf.syndicate.ui.common.LayoutConstants
+import com.defnf.syndicate.ui.components.EmptyState
+import com.defnf.syndicate.ui.components.ExpandableFabMenu
+import com.defnf.syndicate.ui.components.GroupedListDefaults
+import com.defnf.syndicate.ui.components.IconBadge
+import com.defnf.syndicate.ui.components.ListSectionHeader
+import com.defnf.syndicate.ui.components.SwipeableFeedItem
+import com.defnf.syndicate.ui.components.SwipeableGroupItem
+import com.defnf.syndicate.ui.components.groupedItemGap
+import com.defnf.syndicate.ui.components.navigationItemRole
+import com.defnf.syndicate.ui.dialogs.AddFeedDialog
+import com.defnf.syndicate.ui.dialogs.AddGroupDialog
+import com.defnf.syndicate.ui.dialogs.DeleteFeedDialog
+import com.defnf.syndicate.ui.dialogs.DeleteGroupDialog
+import com.defnf.syndicate.ui.dialogs.OpmlFilePickerDialog
+import com.defnf.syndicate.ui.dialogs.OpmlImportProgressDialog
+import com.defnf.syndicate.ui.dialogs.OpmlImportResultDialog
+import com.defnf.syndicate.ui.dialogs.OpmlPreviewDialog
 import com.defnf.syndicate.ui.sheets.FeedOptionsSheet
 import com.defnf.syndicate.ui.sheets.GroupOptionsSheet
 import com.defnf.syndicate.ui.viewmodel.FeedListViewModel
@@ -135,23 +83,22 @@ fun FeedListScreen(
     var fabExpanded by remember { mutableStateOf(false) }
     var feedUrlInput by remember { mutableStateOf("") }
     var groupNameInput by remember { mutableStateOf("") }
-    
+
     val feedOptionsId by viewModel.feedOptionsId.collectAsState()
     val feedOptionsGroupIds by viewModel.feedOptionsGroupIds.collectAsState()
     val groupOptionsId by viewModel.groupOptionsId.collectAsState()
     val groupOptionsFeedIds by viewModel.groupOptionsFeedIds.collectAsState()
     val feedToDelete by viewModel.feedToDelete.collectAsState()
     val groupToDelete by viewModel.groupToDelete.collectAsState()
-    
+
     // OPML Import state
     val importState by opmlImportViewModel.importState.collectAsState()
     val showFileDialog by opmlImportViewModel.showFileDialog.collectAsState()
     val showPreviewDialog by opmlImportViewModel.showPreviewDialog.collectAsState()
     val importResult by opmlImportViewModel.importResult.collectAsState()
     val importErrorMessage by opmlImportViewModel.errorMessage.collectAsState()
-    
+
     val context = LocalContext.current
-    
 
     LaunchedEffect(message) {
         message?.let {
@@ -221,13 +168,13 @@ fun FeedListScreen(
         AddFeedDialog(
             urlInput = feedUrlInput,
             onUrlChange = { feedUrlInput = it },
-            onConfirm = { 
+            onConfirm = {
                 if (feedUrlInput.isNotBlank()) {
                     viewModel.addFeed(feedUrlInput)
                     feedUrlInput = ""
                 }
             },
-            onDismiss = { 
+            onDismiss = {
                 viewModel.hideAddFeedDialog()
                 feedUrlInput = ""
             }
@@ -238,13 +185,13 @@ fun FeedListScreen(
         AddGroupDialog(
             groupNameInput = groupNameInput,
             onGroupNameChange = { groupNameInput = it },
-            onConfirm = { 
+            onConfirm = {
                 if (groupNameInput.isNotBlank()) {
                     viewModel.addGroup(groupNameInput)
                     groupNameInput = ""
                 }
             },
-            onDismiss = { 
+            onDismiss = {
                 viewModel.hideAddGroupDialog()
                 groupNameInput = ""
             }
@@ -312,7 +259,7 @@ fun FeedListScreen(
             onDismiss = viewModel::cancelDeleteGroup
         )
     }
-    
+
     // OPML Import Dialogs
     if (showFileDialog) {
         OpmlFilePickerDialog(
@@ -327,7 +274,7 @@ fun FeedListScreen(
             onDismiss = opmlImportViewModel::hideFileDialog
         )
     }
-    
+
     if (showPreviewDialog && importResult != null) {
         OpmlPreviewDialog(
             importResult = importResult!!,
@@ -337,7 +284,7 @@ fun FeedListScreen(
             onDismiss = opmlImportViewModel::hidePreviewDialog
         )
     }
-    
+
     when (importState) {
         is com.defnf.syndicate.ui.viewmodel.OpmlImportState.Parsing,
         is com.defnf.syndicate.ui.viewmodel.OpmlImportState.Importing -> {
@@ -416,80 +363,65 @@ private fun FeedListContent(
                 key = "all_articles_group",
                 contentType = "card_group"
             ) {
-                SegmentedItem(
-                    index = 0,
-                    count = 1,
-                    selected = isAllArticlesSelected
-                ) {
-                    AllArticlesItem(
-                        isSelected = isAllArticlesSelected,
-                        onAllFeedsClick = onAllFeedsClick
-                    )
-                }
+                AllArticlesItem(
+                    isSelected = isAllArticlesSelected,
+                    onAllFeedsClick = onAllFeedsClick
+                )
             }
-            
-            // Spacer between groups
-            item(key = "spacer_1") {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-            
+
             // Group 2: Feed Groups
             if (groups.isNotEmpty()) {
+                item(key = "groups_header", contentType = "header") {
+                    ListSectionHeader(text = "Groups", modifier = Modifier.padding(top = 24.dp))
+                }
                 items(
                     items = groups.withIndex().toList(),
                     key = { "group_${it.value.id}" },
                     contentType = { "group" }
                 ) { (index, group) ->
-                    SegmentedItem(
-                        index = index,
-                        count = groups.size,
-                        selected = selectedGroupId == group.id
-                    ) {
-                        SwipeableGroupItem(
-                            group = group,
-                            onGroupClick = onGroupClick,
-                            onGroupLongClick = onGroupLongClick,
-                            onDeleteGroup = onDeleteGroup,
-                            onNotificationToggle = onGroupNotificationToggle,
-                            isSelected = selectedGroupId == group.id
-                        )
-                    }
+                    val selected = selectedGroupId == group.id
+                    SwipeableGroupItem(
+                        group = group,
+                        isSelected = selected,
+                        shapes = GroupedListDefaults.shapes(index, groups.size),
+                        onGroupClick = onGroupClick,
+                        onGroupLongClick = onGroupLongClick,
+                        onDeleteGroup = onDeleteGroup,
+                        onNotificationToggle = onGroupNotificationToggle,
+                        // The swipe actions show through the item's own (animated) shape
+                        swipeBackgroundShape = GroupedListDefaults.currentShape(index, groups.size, selected),
+                        modifier = Modifier.groupedItemGap(index)
+                    )
                 }
             }
-            
-            // Spacer between groups
-            if (groups.isNotEmpty()) {
-                item(key = "spacer_2") {
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-            }
-            
+
             // Group 3: Individual Feeds
             if (feeds.isNotEmpty()) {
+                item(key = "feeds_header", contentType = "header") {
+                    ListSectionHeader(text = "Subscriptions", modifier = Modifier.padding(top = 24.dp))
+                }
                 items(
                     items = feeds.withIndex().toList(),
                     key = { "feed_${it.value.id}" },
                     contentType = { "feed" }
                 ) { (index, feed) ->
-                    SegmentedItem(
-                        index = index,
-                        count = feeds.size,
-                        selected = selectedFeedId == feed.id
-                    ) {
-                        SwipeableFeedItem(
-                            feed = feed,
-                            isSelected = selectedFeedId == feed.id,
-                            onFeedClick = onFeedClick,
-                            onFeedLongClick = onFeedLongClick,
-                            onDeleteFeed = onDeleteFeed,
-                            onNotificationToggle = onFeedNotificationToggle
-                        )
-                    }
+                    val selected = selectedFeedId == feed.id
+                    SwipeableFeedItem(
+                        feed = feed,
+                        isSelected = selected,
+                        shapes = GroupedListDefaults.shapes(index, feeds.size),
+                        onFeedClick = onFeedClick,
+                        onFeedLongClick = onFeedLongClick,
+                        onDeleteFeed = onDeleteFeed,
+                        onNotificationToggle = onFeedNotificationToggle,
+                        swipeBackgroundShape = GroupedListDefaults.currentShape(index, feeds.size, selected),
+                        modifier = Modifier.groupedItemGap(index)
+                    )
                 }
             }
         }
     }
-    
+
     if (isLoading) {
         Box(
             modifier = Modifier
@@ -502,62 +434,33 @@ private fun FeedListContent(
     }
 }
 
-/**
- * The "All Articles" list item extracted as a separate composable for use in grouped cards
- */
+/** Every article, in a group of its own above the groups and feeds. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun AllArticlesItem(
-    isSelected: Boolean,
-    onAllFeedsClick: () -> Unit
-) {
-    ListItem(
-        headlineContent = {
-            Text(
-                text = "All Articles",
-                style = MaterialTheme.typography.titleMedium,
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.onSecondaryContainer
+private fun AllArticlesItem(isSelected: Boolean, onAllFeedsClick: () -> Unit) {
+    SegmentedListItem(
+        selected = isSelected,
+        onClick = onAllFeedsClick,
+        shapes = GroupedListDefaults.shapes(index = 0, count = 1),
+        colors = GroupedListDefaults.colors(),
+        leadingContent = {
+            IconBadge(
+                icon = Icons.Default.RssFeed,
+                // The selected row takes a strong tone; a surface-colored badge stays clear on it
+                containerColor = if (isSelected) {
+                    MaterialTheme.colorScheme.surface
                 } else {
-                    MaterialTheme.colorScheme.onSurface
+                    MaterialTheme.colorScheme.primaryContainer
+                },
+                contentColor = if (isSelected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onPrimaryContainer
                 }
             )
         },
-        leadingContent = {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(MaterialShapes.Cookie4Sided.toShape())
-                    .background(
-                        if (isSelected) {
-                            MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f)
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
-                        }
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.RssFeed,
-                    contentDescription = null,
-                    tint = if (isSelected) {
-                        MaterialTheme.colorScheme.onSecondaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        },
-        colors = androidx.compose.material3.ListItemDefaults.colors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceContainer // Same as default card color
-            }
-        ),
-        modifier = Modifier
-            .clickable { onAllFeedsClick() }
-            .fillMaxWidth()
-    )
+        modifier = Modifier.navigationItemRole()
+    ) {
+        Text("All Articles")
+    }
 }

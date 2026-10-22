@@ -20,10 +20,10 @@ data class ReadStatusEntity(
     @PrimaryKey
     @ColumnInfo(name = "article_id")
     val articleId: String,
-    
+
     @ColumnInfo(name = "is_read", defaultValue = "0")
     val isRead: Boolean = false,
-    
+
     @ColumnInfo(name = "read_at")
     val readAt: Long? = null
 )

@@ -1,15 +1,15 @@
 package com.defnf.syndicate.data.remote
 
-import com.rometools.rome.feed.synd.SyndEntry
-import com.rometools.rome.feed.synd.SyndFeed
 import com.defnf.syndicate.data.local.entities.ArticleEntity
 import com.defnf.syndicate.data.local.entities.FeedEntity
+import com.rometools.rome.feed.synd.SyndEntry
+import com.rometools.rome.feed.synd.SyndFeed
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class RssParser @Inject constructor() {
-    
+
     fun parseFeed(syndFeed: SyndFeed, feedUrl: String): FeedEntity {
         return FeedEntity(
             url = feedUrl,
@@ -21,7 +21,7 @@ class RssParser @Inject constructor() {
             isAvailable = true
         )
     }
-    
+
     fun generateFaviconUrl(siteUrl: String?, feedUrl: String): String? {
         val baseUrl = siteUrl ?: run {
             // Extract domain from RSS feed URL as fallback
@@ -34,13 +34,13 @@ class RssParser @Inject constructor() {
         }
         return baseUrl?.let { "$it/favicon.ico" }
     }
-    
+
     fun parseArticles(syndFeed: SyndFeed, feedId: Long, feedUrl: String): List<ArticleEntity> {
         return syndFeed.entries.map { entry ->
             parseArticle(entry, feedId, feedUrl)
         }
     }
-    
+
     private fun parseArticle(entry: SyndEntry, feedId: Long, feedUrl: String): ArticleEntity {
         val articleUrl = resolveUrl(entry.link ?: "", feedUrl)
         return ArticleEntity(
@@ -55,17 +55,18 @@ class RssParser @Inject constructor() {
             fetchedAt = System.currentTimeMillis()
         )
     }
-    
+
     private fun resolveUrl(url: String, feedUrl: String): String {
         if (url.isBlank()) return ""
         if (url.startsWith("http://") || url.startsWith("https://")) {
             return url // Already absolute
         }
-        
+
         try {
             val baseUrl = java.net.URL(feedUrl)
-            val baseHost = "${baseUrl.protocol}://${baseUrl.host}${if (baseUrl.port != -1 && baseUrl.port != baseUrl.defaultPort) ":${baseUrl.port}" else ""}"
-            
+            val port = if (baseUrl.port != -1 && baseUrl.port != baseUrl.defaultPort) ":${baseUrl.port}" else ""
+            val baseHost = "${baseUrl.protocol}://${baseUrl.host}$port"
+
             return if (url.startsWith("/")) {
                 baseHost + url // Absolute path
             } else {
@@ -75,7 +76,7 @@ class RssParser @Inject constructor() {
             return url // Return original if URL parsing fails
         }
     }
-    
+
     private fun getArticleContent(entry: SyndEntry): String? {
         // Priority: 1. Content field (full content), 2. Description (summary)
         // Check if there's actual content in the contents field
@@ -83,11 +84,11 @@ class RssParser @Inject constructor() {
         if (!content.isNullOrBlank() && content != entry.description?.value) {
             return content
         }
-        
+
         // Fall back to description if no separate content or if content is same as description
         return entry.description?.value
     }
-    
+
     private fun extractThumbnailUrl(entry: SyndEntry): String? {
         // Try to extract thumbnail from enclosures (media content)
         entry.enclosures.forEach { enclosure ->
@@ -95,7 +96,7 @@ class RssParser @Inject constructor() {
                 return enclosure.url
             }
         }
-        
+
         // Try to extract from content
         entry.contents.forEach { content ->
             val value = content.value
@@ -107,7 +108,7 @@ class RssParser @Inject constructor() {
                 }
             }
         }
-        
+
         return null
     }
 }

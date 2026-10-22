@@ -27,7 +27,7 @@ import androidx.room.Index
 data class FeedGroupCrossRef(
     @ColumnInfo(name = "feed_id")
     val feedId: Long,
-    
+
     @ColumnInfo(name = "group_id")
     val groupId: Long
 )

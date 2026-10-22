@@ -23,18 +23,15 @@ object NotificationIntents {
     const val EXTRA_FEED_ID = "feedId"
     const val EXTRA_GROUP_ID = "groupId"
 
-    fun openArticle(context: Context, feedId: Long, articleId: String): Intent =
-        activityIntent(context, targetUri(HOST_ARTICLE, articleId))
-            .putExtra(EXTRA_FEED_ID, feedId)
-            .putExtra(EXTRA_ARTICLE_ID, articleId)
+    fun openArticle(context: Context, feedId: Long, articleId: String): Intent = activityIntent(context, targetUri(HOST_ARTICLE, articleId))
+        .putExtra(EXTRA_FEED_ID, feedId)
+        .putExtra(EXTRA_ARTICLE_ID, articleId)
 
-    fun openFeed(context: Context, feedId: Long): Intent =
-        activityIntent(context, targetUri(HOST_FEED, feedId.toString()))
-            .putExtra(EXTRA_FEED_ID, feedId)
+    fun openFeed(context: Context, feedId: Long): Intent = activityIntent(context, targetUri(HOST_FEED, feedId.toString()))
+        .putExtra(EXTRA_FEED_ID, feedId)
 
-    fun openGroup(context: Context, groupId: Long): Intent =
-        activityIntent(context, targetUri(HOST_GROUP, groupId.toString()))
-            .putExtra(EXTRA_GROUP_ID, groupId)
+    fun openGroup(context: Context, groupId: Long): Intent = activityIntent(context, targetUri(HOST_GROUP, groupId.toString()))
+        .putExtra(EXTRA_GROUP_ID, groupId)
 
     fun markArticleAsRead(context: Context, articleId: String): Intent =
         receiverIntent(context, NotificationActionReceiver.ACTION_MARK_AS_READ, targetUri(HOST_ARTICLE, articleId))
@@ -62,12 +59,11 @@ object NotificationIntents {
         }
     }
 
-    private fun activityIntent(context: Context, data: Uri): Intent =
-        Intent(context, MainActivity::class.java).apply {
-            this.data = data
-            // Reuse the running activity (delivered to onNewIntent) instead of tearing down the task
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-        }
+    private fun activityIntent(context: Context, data: Uri): Intent = Intent(context, MainActivity::class.java).apply {
+        this.data = data
+        // Reuse the running activity (delivered to onNewIntent) instead of tearing down the task
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+    }
 
     private fun receiverIntent(context: Context, action: String, data: Uri): Intent =
         Intent(context, NotificationActionReceiver::class.java).apply {
@@ -75,6 +71,5 @@ object NotificationIntents {
             this.data = data
         }
 
-    private fun targetUri(host: String, id: String): Uri =
-        Uri.Builder().scheme(SCHEME).authority(host).appendPath(id).build()
+    private fun targetUri(host: String, id: String): Uri = Uri.Builder().scheme(SCHEME).authority(host).appendPath(id).build()
 }

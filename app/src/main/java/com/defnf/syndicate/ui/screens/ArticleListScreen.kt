@@ -21,8 +21,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MarkEmailUnread
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -59,13 +61,14 @@ import com.defnf.syndicate.ui.common.LayoutConstants
 import com.defnf.syndicate.ui.components.ConnectedToggleButtonGroup
 import com.defnf.syndicate.ui.components.EmptyState
 import com.defnf.syndicate.ui.components.SwipeableArticleCard
+import com.defnf.syndicate.ui.components.ToggleOption
 import com.defnf.syndicate.ui.viewmodel.ArticleListViewModel
 import com.defnf.syndicate.ui.viewmodel.ArticleShowFilter
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -111,7 +114,7 @@ fun ArticleListScreen(
             }
         }
     }
-    
+
     // Handle scroll to top after refresh
     LaunchedEffect(shouldScrollToTop) {
         if (shouldScrollToTop) {
@@ -238,16 +241,12 @@ private fun articleCountLabel(count: Int, filter: ArticleShowFilter): String {
 
 /** Connected button group choosing which articles are listed. */
 @Composable
-private fun ArticleFilterButtonGroup(
-    selected: ArticleShowFilter,
-    onSelect: (ArticleShowFilter) -> Unit,
-    modifier: Modifier = Modifier
-) {
+private fun ArticleFilterButtonGroup(selected: ArticleShowFilter, onSelect: (ArticleShowFilter) -> Unit, modifier: Modifier = Modifier) {
     ConnectedToggleButtonGroup(
         options = listOf(
-            ArticleShowFilter.UNREAD to "Unread",
-            ArticleShowFilter.ALL to "All",
-            ArticleShowFilter.READ to "Read"
+            ToggleOption(ArticleShowFilter.UNREAD, "Unread", Icons.Default.MarkEmailUnread),
+            ToggleOption(ArticleShowFilter.ALL, "All", Icons.AutoMirrored.Filled.ViewList),
+            ToggleOption(ArticleShowFilter.READ, "Read", Icons.Default.DoneAll)
         ),
         selected = selected,
         onSelect = onSelect,
@@ -320,7 +319,10 @@ private fun ArticleListContent(
                             message = when (showFilter) {
                                 ArticleShowFilter.UNREAD -> "All articles have been read"
                                 ArticleShowFilter.READ -> "No articles have been read yet"
-                                ArticleShowFilter.ALL -> if (feedId != null) "This feed doesn't have any articles yet" else "Add some feeds to see articles here"
+                                ArticleShowFilter.ALL -> when (feedId) {
+                                    null -> "Add some feeds to see articles here"
+                                    else -> "This feed doesn't have any articles yet"
+                                }
                             }
                         )
                     }
@@ -361,16 +363,16 @@ private fun formatDate(timestamp: Long): String {
     val date = Date(timestamp)
     val calendar = Calendar.getInstance()
     val currentYear = calendar.get(Calendar.YEAR)
-    
+
     calendar.time = date
     val articleYear = calendar.get(Calendar.YEAR)
-    
+
     val dateFormat = if (articleYear == currentYear) {
         SimpleDateFormat("MMM dd", Locale.getDefault())
     } else {
         SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
     }
-    
+
     return dateFormat.format(date)
 }
 
