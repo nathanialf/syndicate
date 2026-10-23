@@ -102,7 +102,6 @@ fun ListSectionHeader(text: String, modifier: Modifier = Modifier) {
 }
 
 /** An item's leading icon on a tonal [shape], by default the device's launcher icon shape. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun IconBadge(
     icon: ImageVector,
