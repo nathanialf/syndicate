@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.RssFeed
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -81,7 +80,7 @@ fun FaviconIcon(feed: Feed, isSelected: Boolean, isAvailable: Boolean, modifier:
     Box(
         modifier = modifier
             .size(size)
-            .clip(CircleShape)
+            .clip(LauncherIconShape)
             .background(badgeColor),
         contentAlignment = Alignment.Center
     ) {
@@ -97,7 +96,7 @@ fun FaviconIcon(feed: Feed, isSelected: Boolean, isAvailable: Boolean, modifier:
             AsyncImage(
                 model = request,
                 contentDescription = null,
-                // Fill the circle even when a site's icon isn't square
+                // Fill the shape even when a site's icon isn't square
                 contentScale = ContentScale.Crop,
                 onSuccess = { loaded = true },
                 // Network errors (offline, timeouts) are retried next time; only a missing or undecodable icon is remembered
@@ -106,11 +105,11 @@ fun FaviconIcon(feed: Feed, isSelected: Boolean, isAvailable: Boolean, modifier:
                     .matchParentSize()
                     .graphicsLayer { alpha = faviconAlpha }
                     // Favicons are often transparent, drawn for a light page
-                    .background(Color.White, CircleShape)
+                    .background(Color.White, LauncherIconShape)
                     .border(
                         width = 0.5.dp,
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                        shape = CircleShape
+                        shape = LauncherIconShape
                     )
             )
         }
