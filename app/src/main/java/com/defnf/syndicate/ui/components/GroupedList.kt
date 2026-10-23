@@ -9,10 +9,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.ListItemShapes
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -103,15 +101,14 @@ fun ListSectionHeader(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-/** An item's leading icon on a tonal expressive [shape]. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+/** An item's leading icon on a tonal [shape], by default the device's launcher icon shape. */
 @Composable
 fun IconBadge(
     icon: ImageVector,
     containerColor: Color,
     contentColor: Color,
     modifier: Modifier = Modifier,
-    shape: Shape = MaterialShapes.Cookie4Sided.toShape(),
+    shape: Shape = LauncherIconShape,
     size: Dp = 40.dp,
     iconSize: Dp = 22.dp
 ) {
